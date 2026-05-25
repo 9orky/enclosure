@@ -8,6 +8,8 @@ import shutil
 import sys
 import uuid
 from collections.abc import Callable
+from dataclasses import dataclass
+from fnmatch import fnmatch
 from pathlib import Path
 
 import modwire.definitions
@@ -20,7 +22,6 @@ from modwire.extraction import (
     ExtractionSummary,
 )
 from modwire.extractors import load_extractor
-from modwire.extractors.base import _collect_extraction_targets
 from modwire.graph import build_dependency_graph
 from pydantic import BaseModel, ConfigDict, ValidationError
 
@@ -52,6 +53,7 @@ class ArchitectureCodeCacheKey(_CacheModel):
     schema_version: int
     language: str
     project_root: str
+    source_prefix: str
     exclusions: tuple[str, ...]
     python_version: str
     runtime: RuntimeStamp
@@ -89,6 +91,12 @@ class ArchitectureCodeCacheEntry(_CacheModel):
 ExtractCode = Callable[[str, Path, tuple[str, ...]], CodeMap]
 
 
+@dataclass(frozen=True)
+class SourceTarget:
+    source_id: str
+    path: Path
+
+
 def extract_with_cache(
     *,
     language: str,
@@ -96,14 +104,26 @@ def extract_with_cache(
     exclusions: tuple[str, ...],
     extract_code: ExtractCode,
     cache_root: Path | None = None,
+    source_prefix: str = "",
 ) -> CodeMap:
     if not project_root.is_dir():
         return extract_code(language, project_root, exclusions)
 
     active_cache_root = cache_root or project_root
     try:
-        cache_key = _cache_key(language, project_root, exclusions)
-        source_manifest = _source_manifest(language, project_root, exclusions)
+        normalized_source_prefix = source_prefix.strip("/")
+        cache_key = _cache_key(
+            language,
+            project_root,
+            exclusions,
+            source_prefix=normalized_source_prefix,
+        )
+        source_manifest = _source_manifest(
+            language,
+            project_root,
+            exclusions,
+            source_prefix=normalized_source_prefix,
+        )
     except Exception:
         return extract_code(language, project_root, exclusions)
 
@@ -114,7 +134,12 @@ def extract_with_cache(
 
     code_map = extract_code(language, project_root, exclusions)
     try:
-        refreshed_manifest = _source_manifest(language, project_root, exclusions)
+        refreshed_manifest = _source_manifest(
+            language,
+            project_root,
+            exclusions,
+            source_prefix=normalized_source_prefix,
+        )
     except Exception:
         return code_map
 
@@ -217,12 +242,15 @@ def _cache_key(
     language: str,
     project_root: Path,
     exclusions: tuple[str, ...],
+    *,
+    source_prefix: str,
 ) -> ArchitectureCodeCacheKey:
     extractor = load_extractor(language)
     return ArchitectureCodeCacheKey(
         schema_version=CACHE_SCHEMA_VERSION,
         language=language,
         project_root=str(project_root.resolve()),
+        source_prefix=source_prefix,
         exclusions=tuple(sorted(exclusion.strip() for exclusion in exclusions)),
         python_version=sys.version,
         runtime=_runtime_stamp(extractor.command),
@@ -234,12 +262,15 @@ def _source_manifest(
     language: str,
     project_root: Path,
     exclusions: tuple[str, ...],
+    *,
+    source_prefix: str,
 ) -> SourceManifest:
     extractor = load_extractor(language)
-    targets, files_found, files_excluded = _collect_extraction_targets(
+    targets, files_found, files_excluded = _collect_source_targets(
         project_root,
         extractor.file_extensions,
         exclusions,
+        source_prefix=source_prefix,
     )
     return SourceManifest(
         files_found=files_found,
@@ -250,6 +281,55 @@ def _source_manifest(
             for target in targets
         ),
     )
+
+
+def _collect_source_targets(
+    sources_root: Path,
+    file_extensions: tuple[str, ...],
+    exclusions: tuple[str, ...],
+    *,
+    source_prefix: str,
+) -> tuple[tuple[SourceTarget, ...], int, int]:
+    targets = []
+    files_found = 0
+    files_excluded = 0
+    for path in sorted(sources_root.rglob("*")):
+        if path.suffix not in file_extensions:
+            continue
+
+        source_id = path.relative_to(sources_root).as_posix()
+        if source_prefix and not _is_in_source_prefix(source_id, source_prefix):
+            continue
+
+        files_found += 1
+        if any(_matches_exclusion(source_id, exclusion) for exclusion in exclusions):
+            files_excluded += 1
+            continue
+
+        targets.append(SourceTarget(source_id, path))
+
+    return tuple(targets), files_found, files_excluded
+
+
+def _is_in_source_prefix(source_id: str, source_prefix: str) -> bool:
+    normalized_source_id = source_id.strip("/")
+    normalized_prefix = source_prefix.strip("/")
+    return (
+        normalized_source_id == normalized_prefix
+        or normalized_source_id.startswith(f"{normalized_prefix}/")
+    )
+
+
+def _matches_exclusion(source_id: str, exclusion: str) -> bool:
+    if fnmatch(source_id, exclusion):
+        return True
+
+    normalized = exclusion.strip("/")
+    has_glob = any(char in normalized for char in "*?[")
+    if not normalized or has_glob:
+        return False
+
+    return source_id.startswith(f"{normalized}/")
 
 
 def _implementation_file_stamps(

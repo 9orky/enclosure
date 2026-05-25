@@ -35,7 +35,6 @@ architecture:
       - { name: ui, match: &ui "*/*/ui", except: [], exclude: [] }
 
     rules:
-      - { source: src/enclosure/__main__, disallow: [*feature], allow: [*ui], allow_same_match: false }
       - { source: *feature, disallow: [*feature], allow: [*module_api], allow_same_match: true }
       - { source: *module, disallow: [*module], allow: [*module_api], allow_same_match: true }
       - { source: "*/config/domain", disallow: [*module], allow: [*domain], allow_same_match: true }

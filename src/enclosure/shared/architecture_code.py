@@ -51,19 +51,21 @@ def extract_architecture_code() -> ArchitectureCodeMap:
         config_path,
     )
     architecture_root = _architecture_root(project_root, architecture_config)
+    source_prefix = _source_prefix(project_root, architecture_root)
     code_map = architecture_code_cache.extract_with_cache(
         language=architecture_config.language,
         project_root=project_root,
         exclusions=_extraction_exclusions(architecture_config),
         extract_code=extract_code,
         cache_root=project_root,
+        source_prefix=source_prefix,
     )
     return ArchitectureCodeMap(
         project_root=project_root,
         config_path=config_path,
         config=architecture_config,
         matching_config=_matching_config(architecture_config),
-        code_map=_scoped_code_map(code_map, project_root, architecture_root),
+        code_map=_scoped_code_map(code_map, source_prefix),
     )
 
 
@@ -141,10 +143,8 @@ def _rebase_import(
 
 def _scoped_code_map(
     code_map: CodeMap,
-    project_root: Path,
-    architecture_root: Path,
+    prefix: str,
 ) -> CodeMap:
-    prefix = _source_prefix(project_root, architecture_root)
     files_by_source_id: dict[str, SourceFile] = {}
     for source_id, source_file in code_map.extraction_result.files.items():
         scoped_source_id = _rebase_source_id(source_id, prefix)

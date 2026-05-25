@@ -167,6 +167,38 @@ class ArchitectureCodeCacheTest(unittest.TestCase):
                 code_analysis.code_map.graph.outgoing("app")[0].to_id,
             )
 
+    def test_out_of_scope_source_file_does_not_invalidate_scoped_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_root = _project_root(temporary_directory)
+            source_root = project_root / "src"
+            source_root.mkdir()
+            (source_root / "app.py").write_text("VALUE = 1\n", encoding="utf-8")
+            (project_root / "outside.py").write_text("VALUE = 1\n", encoding="utf-8")
+            extract_code = _extract_code_mock(_fake_code_map(prefix="src"))
+            config = SimpleNamespace(
+                language="python",
+                exclusions=[],
+                architecture_root="src",
+            )
+
+            with _architecture_config(project_root, configs=(config,)), patch.object(
+                architecture_code,
+                "extract_code",
+                extract_code,
+            ):
+                architecture_code.extract_architecture_code()
+                (project_root / "outside.py").write_text(
+                    "VALUE = 2\n",
+                    encoding="utf-8",
+                )
+                cached = architecture_code.extract_architecture_code()
+
+            extract_code.assert_called_once()
+            self.assertEqual(
+                ("app", "dep"),
+                tuple(cached.code_map.graph.node_ids()),
+            )
+
     def test_changing_non_extraction_config_reuses_cache(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_root = _project_root(temporary_directory)

@@ -4,7 +4,7 @@ UV ?= uv
 DEV_DIR ?= .dev
 DEV_WHEELHOUSE ?= $(DEV_DIR)/wheels
 UV_CACHE_DIR ?= $(DEV_DIR)/uv-cache
-PYTEST ?= $(UV) run pytest
+PYTEST ?= $(UV) run --group dev python -m pytest
 DEV_REFRESH_VERSION ?= 0.0.0.dev0
 
 .PHONY: dev-refresh docs-modules test

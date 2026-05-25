@@ -108,12 +108,13 @@ enclosure workspace recipe --docs
 ```yaml
 architecture:
   language: python
-  root: src
-  exclusions:
-    - .venv/**
-    - tests/**
+  root: src/enclosure/features
+  exclusions: [.venv/**, .enclosure/**, tests/**, libraries/**]
   shape:
     max_classes_per_file: -1
+    max_interfaces_per_file: -1
+    max_types_per_file: -1
+    max_abstract_classes_per_file: -1
     max_functions_per_file: -1
     max_methods_per_class: -1
     max_declared_args_per_function: -1
@@ -129,16 +130,24 @@ architecture:
     allowed_imports_crossing_types: [module, symbol]
   boundaries:
     tags:
-      - { name: domain, match: "*/domain", except: [], exclude: [] }
-      - { name: application, match: "*/application", except: [], exclude: [] }
-      - { name: infrastructure, match: "*/infrastructure", except: [], exclude: [] }
-      - { name: ui, match: "*/ui", except: [], exclude: [] }
+      - { name: feature, match: &feature "*", except: [], exclude: [] }
+      - { name: module, match: &module "*/*", except: ["*/__init__"], exclude: [] }
+      - { name: module_api, match: &module_api "*/*/__init__", except: [], exclude: [] }
+      - { name: domain, match: &domain "*/*/domain", except: [], exclude: [] }
+      - { name: application, match: &application "*/*/application", except: [], exclude: [] }
+      - { name: infrastructure, match: &infrastructure "*/*/infrastructure", except: [], exclude: [] }
+      - { name: ui, match: &ui "*/*/ui", except: [], exclude: [] }
     rules:
-      - { source: "*/*/domain", disallow: ["*/*/application", "*/*/infrastructure", "*/*/ui"], allow: [], allow_same_match: false }
-      - { source: "*/*/application", disallow: ["*/*/ui"], allow: [], allow_same_match: false }
+      - { source: *feature, disallow: [*feature], allow: [*module_api], allow_same_match: true }
+      - { source: *module, disallow: [*module], allow: [*module_api], allow_same_match: true }
+      - { source: "*/config/domain", disallow: [*module], allow: [*domain], allow_same_match: true }
+      - { source: *domain, disallow: [*application, *infrastructure, *ui], allow: [], allow_same_match: false }
+      - { source: *infrastructure, disallow: [*application, *ui], allow: [], allow_same_match: false }
+      - { source: *application, disallow: [*ui], allow: [], allow_same_match: false }
+      - { source: *ui, disallow: [*infrastructure], allow: [], allow_same_match: false }
     flow:
       layers: [ui, application, infrastructure, domain]
-      module_tag: domain
+      module_tag: feature
       analyzers: [backward-flow, no-cycles]
   map:
     top: 20
@@ -152,7 +161,9 @@ architecture:
 workspace:
   recipe:
     skip: []
-  rules: {}
+  rules:
+    local:
+      max_content_chars: 2400
   sync: {}
 ```
 
