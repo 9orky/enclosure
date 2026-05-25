@@ -10,24 +10,24 @@ import uuid
 from collections.abc import Callable
 from pathlib import Path
 
-import code_map.definitions
-import code_map.extraction
-import code_map.extractors.base
-from code_map.definitions import SourceFile
-from code_map.extraction import (
+import modwire.definitions
+import modwire.extraction
+import modwire.extractors.base
+from modwire.definitions import SourceFile
+from modwire.extraction import (
     CodeMap,
     ExtractionResult,
     ExtractionSummary,
 )
-from code_map.extractors import load_extractor
-from code_map.extractors.base import _collect_extraction_targets
-from code_map.graph import build_dependency_graph
+from modwire.extractors import load_extractor
+from modwire.extractors.base import _collect_extraction_targets
+from modwire.graph import build_dependency_graph
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 from enclosure.shared import layout
 
 CACHE_SCHEMA_VERSION = 1
-CACHE_NAMESPACE = "code-map"
+CACHE_NAMESPACE = "modwire"
 MAX_CACHE_ENTRIES = 3
 
 
@@ -255,10 +255,10 @@ def _implementation_file_stamps(
 ) -> tuple[ImplementationFileStamp, ...]:
     paths = (
         Path(inspect.getfile(type(extractor))),
-        Path(code_map.definitions.__file__),
-        Path(code_map.extraction.__file__),
+        Path(modwire.definitions.__file__),
+        Path(modwire.extraction.__file__),
         Path(__file__),
-        Path(code_map.extractors.base.__file__).parent
+        Path(modwire.extractors.base.__file__).parent
         / "scripts"
         / getattr(extractor, "extractor_file"),
     )

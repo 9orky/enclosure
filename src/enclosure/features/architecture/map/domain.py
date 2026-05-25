@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
 
-from code_map.architecture.matching import match_node
+from modwire.architecture.matching import match_node
 from pydantic import field_validator
 
 from enclosure.shared import architecture, config, limits

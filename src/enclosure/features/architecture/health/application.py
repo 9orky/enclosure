@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from code_map.architecture import ArchitecturePolicyEvaluator
+from modwire.architecture import ArchitecturePolicyEvaluator
 
 import enclosure.features.architecture.clusters
 import enclosure.features.architecture.map

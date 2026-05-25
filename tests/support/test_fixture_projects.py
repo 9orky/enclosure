@@ -4,7 +4,7 @@ from pathlib import Path
 import shutil
 
 import pytest
-from code_map import extract_code, supported_languages
+from modwire import extract_code, supported_languages
 
 from tests.support.projects import fixture_project_names
 

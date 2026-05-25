@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from code_map import CodeMap, extract_code
+from modwire import CodeMap, extract_code
 
 from enclosure.shared import architecture_code_cache, config
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 from types import SimpleNamespace
 
-from code_map.definitions import SourceFile
+from modwire.definitions import SourceFile
 
 from enclosure.features.architecture.shape import domain
 

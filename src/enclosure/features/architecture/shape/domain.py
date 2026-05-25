@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, Protocol
 
-from code_map import CodeMap
+from modwire import CodeMap
 from pydantic import field_validator
 
 from enclosure.shared import architecture, config

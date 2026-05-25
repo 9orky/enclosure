@@ -37,7 +37,7 @@ classifiers = [
     "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = [
-    "code-map>=0.1.0",
+    "modwire>=1.0.0",
     "Jinja2>=3.1",
     "pydantic>=2.8",
     "PyYAML>=6.0",
@@ -66,7 +66,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "libraries/code_map/tests"]
+testpaths = ["tests"]
 cache_dir = ".dev/pytest_cache"
 
 [tool.ruff]
@@ -92,9 +92,6 @@ enclosure = [
     "templates/*.tmpl",
     "features/**/ui/templates/*.tmpl",
 ]
-
-[tool.uv.sources]
-code-map = { path = "libraries/code_map", editable = true }
 
 [tool.setuptools_scm]
 fallback_version = "0.0.0.dev0"

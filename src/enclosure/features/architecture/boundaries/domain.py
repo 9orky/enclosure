@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from code_map.architecture import EdgeRuleViolation, FlowViolation, supported_analyzers
+from modwire.architecture import EdgeRuleViolation, FlowViolation, supported_analyzers
 from pydantic import Field, field_validator
 
 from enclosure.shared import architecture, config

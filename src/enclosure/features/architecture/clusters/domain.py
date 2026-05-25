@@ -6,7 +6,7 @@ from dataclasses import field
 from pathlib import PurePosixPath
 from pathlib import Path
 
-from code_map import CodeMap
+from modwire import CodeMap
 from pydantic import Field, field_validator
 
 from enclosure.shared import architecture, config, limits

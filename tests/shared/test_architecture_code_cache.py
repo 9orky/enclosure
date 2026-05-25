@@ -8,9 +8,9 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from code_map.definitions import SourceFile, SourceImport
-from code_map.extraction import CodeMap, ExtractionResult, ExtractionSummary
-from code_map.graph import build_dependency_graph
+from modwire.definitions import SourceFile, SourceImport
+from modwire.extraction import CodeMap, ExtractionResult, ExtractionSummary
+from modwire.graph import build_dependency_graph
 
 from enclosure.shared import architecture_code, architecture_code_cache
 
@@ -239,7 +239,7 @@ class ArchitectureCodeCacheTest(unittest.TestCase):
     def test_successful_write_prunes_old_cache_entries(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_root = _project_root(temporary_directory)
-            cache_dir = project_root / ".dev" / "cache" / "code-map"
+            cache_dir = project_root / ".dev" / "cache" / "modwire"
             cache_dir.mkdir(parents=True)
             old_cache_files = tuple(
                 cache_dir / f"old-{index}.json"
@@ -388,7 +388,7 @@ def _extract_code_mock(code_map: CodeMap):
 
 
 def _cache_files(project_root: Path) -> tuple[Path, ...]:
-    cache_dir = project_root / ".dev" / "cache" / "code-map"
+    cache_dir = project_root / ".dev" / "cache" / "modwire"
     if not cache_dir.is_dir():
         return ()
     return tuple(sorted(cache_dir.glob("*.json")))

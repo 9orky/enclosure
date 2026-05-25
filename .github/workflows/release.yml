@@ -20,32 +20,51 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
           fetch-depth: 0
+
+      - name: Check out release tag
+        if: github.event_name == 'release'
+        run: |
+          git fetch --force --tags origin "refs/tags/${{ github.event.release.tag_name }}:refs/tags/${{ github.event.release.tag_name }}"
+          git -c advice.detachedHead=false checkout --force "refs/tags/${{ github.event.release.tag_name }}"
+          git clean -ffdx
+
+      - name: Verify release checkout
+        if: github.event_name == 'release'
+        run: |
+          tag_name="${{ github.event.release.tag_name }}"
+          tag_sha="$(git rev-list -n 1 "$tag_name")"
+          head_sha="$(git rev-parse HEAD)"
+
+          echo "Release tag: $tag_name"
+          echo "Tag commit: $tag_sha"
+          echo "HEAD commit: $head_sha"
+          git describe --tags --dirty --always
+
+          if [ "$head_sha" != "$tag_sha" ]; then
+            echo "Release checkout mismatch: HEAD is not the release tag commit." >&2
+            exit 1
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.3"
-
       - name: Clean packaging artifacts
         run: |
-          rm -rf .dev build dist src/*.egg-info libraries/code_map/build libraries/code_map/src/*.egg-info
+          rm -rf .dev build dist src/*.egg-info src/enclosure/_version.py
+
+      - name: Export package version from GitHub release
+        if: github.event_name == 'release'
+        run: |
+          release_version="${{ github.event.release.tag_name }}"
+          release_version="${release_version#v}"
+          echo "SETUPTOOLS_SCM_PRETEND_VERSION_FOR_ENCLOSURE=$release_version" >> "$GITHUB_ENV"
 
       - name: Install package and release tooling
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e libraries/code_map
           python -m pip install -e .[dev]
 
       - name: Verify release tag matches derived package version
@@ -56,7 +75,6 @@ jobs:
           from importlib.metadata import version
 
           enclosure_version = version("enclosure")
-          code_map_version = version("code-map")
           tag_name = "${{ github.event.release.tag_name }}"
           expected_tag = f"v{enclosure_version}"
 
@@ -67,18 +85,11 @@ jobs:
               )
               raise SystemExit(1)
 
-          if code_map_version != enclosure_version:
-              print(
-                  f"Release package version mismatch: enclosure is '{enclosure_version}' but code-map is '{code_map_version}'.",
-                  file=sys.stderr,
-              )
-              raise SystemExit(1)
-
           print(f"Verified release tag {tag_name} matches package version {enclosure_version}.")
           PY
 
       - name: Run tests
-        run: python -m pytest tests libraries/code_map/tests
+        run: python -m pytest tests
 
       - name: Bootstrap enclosure contract
         run: enclosure workspace sync init
@@ -88,15 +99,46 @@ jobs:
           enclosure architecture boundaries
           enclosure architecture shape
 
-      - name: Validate extractor syntax
-        run: |
-          node --check libraries/code_map/src/code_map/extractors/scripts/typescript_extractor.js
-          php -l libraries/code_map/src/code_map/extractors/scripts/php_extractor.php
-
       - name: Build distributions
+        run: python -m build --outdir dist
+
+      - name: Verify built artifact versions
+        if: github.event_name == 'release'
         run: |
-          python -m build --outdir dist libraries/code_map
-          python -m build --outdir dist
+          python - <<'PY'
+          import sys
+          import zipfile
+          from email.parser import Parser
+          from pathlib import Path
+
+          expected_version = "${{ github.event.release.tag_name }}".removeprefix("v")
+          wheels = sorted(Path("dist").glob("*.whl"))
+          versions: dict[str, str] = {}
+
+          for wheel in wheels:
+              with zipfile.ZipFile(wheel) as archive:
+                  metadata_name = next(
+                      name for name in archive.namelist()
+                      if name.endswith(".dist-info/METADATA")
+                  )
+                  metadata = Parser().parsestr(
+                      archive.read(metadata_name).decode("utf-8")
+                  )
+              versions[metadata["Name"]] = metadata["Version"]
+
+          for package_name in ("enclosure",):
+              package_version = versions.get(package_name)
+              if package_version != expected_version:
+                  print(
+                      f"Built artifact version mismatch: {package_name} is "
+                      f"'{package_version}' but release tag expects "
+                      f"'{expected_version}'.",
+                      file=sys.stderr,
+                  )
+                  raise SystemExit(1)
+
+          print(f"Verified built artifacts match {expected_version}.")
+          PY
 
       - name: Check distribution metadata
         run: python -m twine check dist/*
@@ -104,7 +146,7 @@ jobs:
       - name: Smoke test wheel install
         run: |
           python -m venv .dev/pkg-smoke
-          .dev/pkg-smoke/bin/pip install dist/code_map-*.whl dist/enclosure-*.whl
+          .dev/pkg-smoke/bin/pip install dist/enclosure-*.whl
           .dev/pkg-smoke/bin/enclosure --help
 
       - name: Upload distribution artifacts

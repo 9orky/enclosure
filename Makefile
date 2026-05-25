@@ -5,16 +5,16 @@ DEV_DIR ?= .dev
 DEV_WHEELHOUSE ?= $(DEV_DIR)/wheels
 UV_CACHE_DIR ?= $(DEV_DIR)/uv-cache
 PYTEST ?= $(UV) run pytest
+DEV_REFRESH_VERSION ?= 0.0.0.dev0
 
 .PHONY: dev-refresh docs-modules test
 
 dev-refresh:
-	UV_CACHE_DIR=$(UV_CACHE_DIR) $(UV) build --wheel --clear --out-dir $(DEV_WHEELHOUSE) libraries/code_map
-	$(PIPX) install --force --editable --pip-args="--find-links=$(abspath $(DEV_WHEELHOUSE))" .
-	rm -rf libraries/code_map/build libraries/code_map/src/*.egg-info src/*.egg-info
+	SETUPTOOLS_SCM_PRETEND_VERSION_FOR_ENCLOSURE=$(DEV_REFRESH_VERSION) $(PIPX) install --force --editable .
+	rm -rf src/*.egg-info src/enclosure/_version.py
 
 docs-modules:
 	UV_CACHE_DIR=$(abspath $(UV_CACHE_DIR)) $(UV) run python scripts/generate_module_docs.py
 
 test:
-	UV_CACHE_DIR=$(UV_CACHE_DIR) PYTHONDONTWRITEBYTECODE=1 $(PYTEST) tests libraries/code_map/tests
+	UV_CACHE_DIR=$(UV_CACHE_DIR) PYTHONDONTWRITEBYTECODE=1 $(PYTEST) tests

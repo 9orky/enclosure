@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from code_map import supported_languages
+from modwire import supported_languages
 from pydantic import field_validator
 
 import enclosure.features.architecture.boundaries.domain

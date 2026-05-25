@@ -3,7 +3,7 @@ from __future__ import annotations
 from importlib.resources import files
 
 import pytest
-from code_map import supported_languages
+from modwire import supported_languages
 
 from enclosure.__main__ import app
 

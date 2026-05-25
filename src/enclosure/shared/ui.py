@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, ParamSpec, TypeVar, get_type_hints
 
 import typer
-import code_map.architecture.render
+import modwire.architecture.render
 from jinja2 import Environment, StrictUndefined
 
 from enclosure.shared import architecture, layout, limits
@@ -159,7 +159,7 @@ def _relative_label(path: Path | None, root: Path) -> str:
 
 _TEMPLATE_ENVIRONMENT.filters.update(
     {
-        "architecture_violations": code_map.architecture.render.violations,
+        "architecture_violations": modwire.architecture.render.violations,
         "layer_summary": _layer_summary,
         "limit_items": limits.apply_limit,
         "present_path": _relative_label,
