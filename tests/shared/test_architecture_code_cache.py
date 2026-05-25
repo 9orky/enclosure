@@ -30,6 +30,7 @@ class ArchitectureCodeCacheTest(unittest.TestCase):
 
             extract_code.assert_called_once_with("python", project_root, ())
             self.assertEqual(1, len(_cache_files(project_root)))
+            self.assertTrue((project_root / ".enclosure" / ".cache").is_dir())
 
     def test_cache_hit_reuses_extraction_and_rebuilds_graph(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -157,7 +158,7 @@ class ArchitectureCodeCacheTest(unittest.TestCase):
                 architecture_code.DEFAULT_ARCHITECTURE_EXCLUSIONS,
             )
             self.assertEqual(1, len(_cache_files(project_root)))
-            self.assertFalse((source_root / ".dev").exists())
+            self.assertFalse((source_root / ".enclosure").exists())
             self.assertEqual(
                 ("app", "dep"),
                 tuple(code_analysis.code_map.graph.node_ids()),
@@ -307,7 +308,7 @@ class ArchitectureCodeCacheTest(unittest.TestCase):
     def test_successful_write_prunes_old_cache_entries(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_root = _project_root(temporary_directory)
-            cache_dir = project_root / ".dev" / "cache" / "modwire"
+            cache_dir = project_root / ".enclosure" / ".cache" / "modwire"
             cache_dir.mkdir(parents=True)
             old_cache_files = tuple(
                 cache_dir / f"old-{index}.json"
@@ -458,7 +459,7 @@ def _extract_code_mock(code_map: CodeMap):
 
 
 def _cache_files(project_root: Path) -> tuple[Path, ...]:
-    cache_dir = project_root / ".dev" / "cache" / "modwire"
+    cache_dir = project_root / ".enclosure" / ".cache" / "modwire"
     if not cache_dir.is_dir():
         return ()
     return tuple(sorted(cache_dir.glob("*.json")))

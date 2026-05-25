@@ -24,7 +24,7 @@ class EnclosureProjectLayoutTest(unittest.TestCase):
             self.assertEqual(contract_root, project_layout.target_dir(project_root))
             self.assertEqual(project_root / ".dev", project_layout.dev_dir(project_root))
             self.assertEqual(
-                project_root / ".dev" / "cache",
+                contract_root / ".cache",
                 project_layout.cache_dir(project_root),
             )
             self.assertEqual(
