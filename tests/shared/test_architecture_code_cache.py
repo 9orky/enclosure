@@ -131,6 +131,42 @@ class ArchitectureCodeCacheTest(unittest.TestCase):
             )
             self.assertEqual(2, len(_cache_files(project_root)))
 
+    def test_configured_architecture_root_is_extracted_with_workspace_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_root = _project_root(temporary_directory)
+            source_root = project_root / "src"
+            source_root.mkdir()
+            (source_root / "app.py").write_text("VALUE = 1\n", encoding="utf-8")
+            extract_code = _extract_code_mock(_fake_code_map(prefix="src"))
+            config = SimpleNamespace(
+                language="python",
+                exclusions=[],
+                architecture_root="src",
+            )
+
+            with _architecture_config(project_root, configs=(config,)), patch.object(
+                architecture_code,
+                "extract_code",
+                extract_code,
+            ):
+                code_analysis = architecture_code.extract_architecture_code()
+
+            extract_code.assert_called_once_with(
+                "python",
+                project_root,
+                architecture_code.DEFAULT_ARCHITECTURE_EXCLUSIONS,
+            )
+            self.assertEqual(1, len(_cache_files(project_root)))
+            self.assertFalse((source_root / ".dev").exists())
+            self.assertEqual(
+                ("app", "dep"),
+                tuple(code_analysis.code_map.graph.node_ids()),
+            )
+            self.assertEqual(
+                "dep",
+                code_analysis.code_map.graph.outgoing("app")[0].to_id,
+            )
+
     def test_changing_non_extraction_config_reuses_cache(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_root = _project_root(temporary_directory)
@@ -337,14 +373,16 @@ class _ArchitectureConfigPatch:
             active_patch.stop()
 
 
-def _fake_code_map() -> CodeMap:
+def _fake_code_map(*, prefix: str = "") -> CodeMap:
+    source_id = f"{prefix}/app" if prefix else "app"
+    dependency_id = f"{prefix}/dep" if prefix else "dep"
     files = {
-        "app": SourceFile(
+        source_id: SourceFile(
             imports=[
                 SourceImport(
                     path="dep",
                     is_relative=False,
-                    normalized_path="dep",
+                    normalized_path=dependency_id,
                     imported_name="",
                     is_aliased=False,
                     crossing_type="module",
@@ -360,7 +398,7 @@ def _fake_code_map() -> CodeMap:
             code_line_count=1,
             public_symbol_count=0,
         ),
-        "dep": SourceFile(
+        dependency_id: SourceFile(
             imports=[],
             classes=[],
             functions=[],

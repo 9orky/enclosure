@@ -22,7 +22,7 @@ def _build_map_report(top_override: int | None) -> domain.ArchitectureMapReport:
     )
     mapped = domain.describe_architecture_map(
         code_map.graph,
-        config,
+        code_analysis.matching_config,
         tracked_files=tuple(code_map.extraction_result.files),
         top=top,
     )

@@ -95,17 +95,19 @@ def extract_with_cache(
     project_root: Path,
     exclusions: tuple[str, ...],
     extract_code: ExtractCode,
+    cache_root: Path | None = None,
 ) -> CodeMap:
     if not project_root.is_dir():
         return extract_code(language, project_root, exclusions)
 
+    active_cache_root = cache_root or project_root
     try:
         cache_key = _cache_key(language, project_root, exclusions)
         source_manifest = _source_manifest(language, project_root, exclusions)
     except Exception:
         return extract_code(language, project_root, exclusions)
 
-    cache_path = _cache_path(project_root, cache_key)
+    cache_path = _cache_path(active_cache_root, cache_key)
     cached_code_map = _read_code_map(cache_path, cache_key, source_manifest)
     if cached_code_map is not None:
         return cached_code_map

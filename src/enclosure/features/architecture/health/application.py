@@ -27,7 +27,10 @@ def _build_health_report(top_override: int | None) -> domain.ArchitectureHealthR
         config.health.top if top_override is None else top_override
     )
     boundary_violations = tuple(
-        ArchitecturePolicyEvaluator().evaluate(code_map.graph, config)
+        ArchitecturePolicyEvaluator().evaluate(
+            architecture_code.tracked_dependency_graph(code_map),
+            code_analysis.matching_config,
+        )
     )
     shape_violations = enclosure.features.architecture.shape.evaluate_shape(
         code_map,
@@ -35,7 +38,7 @@ def _build_health_report(top_override: int | None) -> domain.ArchitectureHealthR
     )
     mapped = enclosure.features.architecture.map.describe_architecture_map(
         code_map.graph,
-        config,
+        code_analysis.matching_config,
         tracked_files=tuple(code_map.extraction_result.files),
         top=config.map.top,
     )
