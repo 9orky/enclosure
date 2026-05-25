@@ -30,27 +30,27 @@ jobs:
         run: |
           rm -rf .dev build dist src/*.egg-info
 
-      - name: Install package and packaging tools
+      - name: Install uv
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e .[dev]
+          python -m pip install uv
 
       - name: Run unit tests
-        run: python -m pytest tests
+        run: make test
 
       - name: Bootstrap enclosure contract
-        run: enclosure workspace sync init
+        run: uv run --group dev enclosure workspace sync init
 
       - name: Run architecture self-checks
         run: |
-          enclosure architecture boundaries
-          enclosure architecture shape
+          uv run --group dev enclosure architecture boundaries
+          uv run --group dev enclosure architecture shape
 
       - name: Build distributions
-        run: python -m build --outdir dist
+        run: uv run --group dev python -m build --outdir dist
 
       - name: Check distribution metadata
-        run: python -m twine check dist/*
+        run: uv run --group dev python -m twine check dist/*
 
       - name: Smoke test installed wheel
         run: |

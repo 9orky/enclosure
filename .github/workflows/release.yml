@@ -62,15 +62,15 @@ jobs:
           release_version="${release_version#v}"
           echo "SETUPTOOLS_SCM_PRETEND_VERSION_FOR_ENCLOSURE=$release_version" >> "$GITHUB_ENV"
 
-      - name: Install package and release tooling
+      - name: Install uv
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e .[dev]
+          python -m pip install uv
 
       - name: Verify release tag matches derived package version
         if: github.event_name == 'release'
         run: |
-          python - <<'PY'
+          uv run --group dev python - <<'PY'
           import sys
           from importlib.metadata import version
 
@@ -89,23 +89,23 @@ jobs:
           PY
 
       - name: Run tests
-        run: python -m pytest tests
+        run: make test
 
       - name: Bootstrap enclosure contract
-        run: enclosure workspace sync init
+        run: uv run --group dev enclosure workspace sync init
 
       - name: Run architecture self-checks
         run: |
-          enclosure architecture boundaries
-          enclosure architecture shape
+          uv run --group dev enclosure architecture boundaries
+          uv run --group dev enclosure architecture shape
 
       - name: Build distributions
-        run: python -m build --outdir dist
+        run: uv run --group dev python -m build --outdir dist
 
       - name: Verify built artifact versions
         if: github.event_name == 'release'
         run: |
-          python - <<'PY'
+          uv run --group dev python - <<'PY'
           import sys
           import zipfile
           from email.parser import Parser
@@ -141,7 +141,7 @@ jobs:
           PY
 
       - name: Check distribution metadata
-        run: python -m twine check dist/*
+        run: uv run --group dev python -m twine check dist/*
 
       - name: Smoke test wheel install
         run: |

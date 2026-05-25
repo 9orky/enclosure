@@ -110,7 +110,7 @@ The generated contract has four important surfaces:
 
 ```text
 .enclosure/
-  enclosure.yaml        # architecture roots, tags, flow, rules, limits
+  ./enclosure.yaml      # architecture roots, tags, flow, rules, limits
   rules/                # shared and local guidance for agents
   recipes/              # known-good scaffolds generated from working examples
 AGENTS.md               # assistant entry instruction
