@@ -1,14 +1,14 @@
 [build-system]
-requires = ["setuptools>=77", "wheel"]
+requires = ["setuptools>=77", "setuptools-scm[toml]>=8", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "code-map"
-version = "0.1.0"
 description = "Extract source-code dependencies and build dependency graphs."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
+dynamic = ["version"]
 dependencies = [
     "pydantic>=2.8",
 ]
@@ -24,3 +24,8 @@ where = ["src"]
 code_map = [
     "extractors/scripts/*",
 ]
+
+[tool.setuptools_scm]
+fallback_version = "0.0.0.dev0"
+root = "../.."
+version_file = "src/code_map/_version.py"

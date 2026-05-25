@@ -20,8 +20,31 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
           fetch-depth: 0
+
+      - name: Check out release tag
+        if: github.event_name == 'release'
+        run: |
+          git fetch --force --tags origin "refs/tags/${{ github.event.release.tag_name }}:refs/tags/${{ github.event.release.tag_name }}"
+          git -c advice.detachedHead=false checkout --force "refs/tags/${{ github.event.release.tag_name }}"
+          git clean -ffdx
+
+      - name: Verify release checkout
+        if: github.event_name == 'release'
+        run: |
+          tag_name="${{ github.event.release.tag_name }}"
+          tag_sha="$(git rev-list -n 1 "$tag_name")"
+          head_sha="$(git rev-parse HEAD)"
+
+          echo "Release tag: $tag_name"
+          echo "Tag commit: $tag_sha"
+          echo "HEAD commit: $head_sha"
+          git describe --tags --dirty --always
+
+          if [ "$head_sha" != "$tag_sha" ]; then
+            echo "Release checkout mismatch: HEAD is not the release tag commit." >&2
+            exit 1
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -97,6 +120,44 @@ jobs:
         run: |
           python -m build --outdir dist libraries/code_map
           python -m build --outdir dist
+
+      - name: Verify built artifact versions
+        if: github.event_name == 'release'
+        run: |
+          python - <<'PY'
+          import sys
+          import zipfile
+          from email.parser import Parser
+          from pathlib import Path
+
+          expected_version = "${{ github.event.release.tag_name }}".removeprefix("v")
+          wheels = sorted(Path("dist").glob("*.whl"))
+          versions: dict[str, str] = {}
+
+          for wheel in wheels:
+              with zipfile.ZipFile(wheel) as archive:
+                  metadata_name = next(
+                      name for name in archive.namelist()
+                      if name.endswith(".dist-info/METADATA")
+                  )
+                  metadata = Parser().parsestr(
+                      archive.read(metadata_name).decode("utf-8")
+                  )
+              versions[metadata["Name"]] = metadata["Version"]
+
+          for package_name in ("code-map", "enclosure"):
+              package_version = versions.get(package_name)
+              if package_version != expected_version:
+                  print(
+                      f"Built artifact version mismatch: {package_name} is "
+                      f"'{package_version}' but release tag expects "
+                      f"'{expected_version}'.",
+                      file=sys.stderr,
+                  )
+                  raise SystemExit(1)
+
+          print(f"Verified built artifacts match {expected_version}.")
+          PY
 
       - name: Check distribution metadata
         run: python -m twine check dist/*
