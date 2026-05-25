@@ -1,0 +1,12 @@
+from __future__ import annotations
+
+from .models import {{ module.class }}Item
+
+
+def sort_{{ module.snake }}_items(
+    items: tuple[{{ module.class }}Item, ...],
+) -> tuple[{{ module.class }}Item, ...]:
+    return tuple(sorted(items, key=lambda item: (-item.priority, item.name)))
+
+
+__all__ = ["sort_{{ module.snake }}_items"]

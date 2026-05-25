@@ -1,0 +1,26 @@
+Architecture Clusters:
+{{ report|scan_summary }}
+- Group depth: {{ report.group_depth }}
+{% if report.clusters %}
+
+Score  Files  In  Out  Internal  External  Lines  Cluster
+{% for cluster in report.clusters %}
+{{ "%5.2f"|format(cluster.pressure_score) }}  {{ "%5d"|format(cluster.file_count) }}  {{ "%2d"|format(cluster.incoming_edges) }}  {{ "%3d"|format(cluster.outgoing_edges) }}  {{ "%8d"|format(cluster.internal_edges) }}  {{ "%8d"|format(cluster.external_imports) }}  {{ "%5d"|format(cluster.line_count) }}  {{ cluster.name }}
+{% endfor %}
+{% for cluster in report.clusters %}
+
+{{ cluster.name }}:
+{% if cluster.dependencies %}
+- Depends on: {{ cluster.dependencies|join(", ") }}
+{% endif %}
+{% if cluster.dependents %}
+- Used by: {{ cluster.dependents|join(", ") }}
+{% endif %}
+- Key files:
+{% for file in cluster.files|limit_items(report.files_top) %}
+  - {{ file.path }} (imports {{ file.imports_count }}, imported by {{ file.imported_by_count }}, public {{ file.public_symbol_count }}, lines {{ file.line_count }})
+{% endfor %}
+{% endfor %}
+{% else %}
+- No tracked files found.
+{% endif %}

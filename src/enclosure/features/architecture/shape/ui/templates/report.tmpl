@@ -1,0 +1,11 @@
+Architecture Shape:
+{{ report|scan_summary }}
+{% if report.violations %}
+
+Shape Violations:
+{% for violation in report.violations %}
+- {{ violation|violation_subject }} {{ violation.rule }} actual {{ violation.actual }}, limit {{ violation.limit }}
+{% endfor %}
+{% else %}
+Architecture Shape Passed! No violations found.
+{% endif %}

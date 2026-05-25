@@ -1,0 +1,20 @@
+schema_version: 1
+description: Basic feature-module recipe using the compact domain/infrastructure/application/ui architecture.
+inputs:
+  module:
+    type: string
+    default_from: target_name
+  cli_command:
+    type: slug
+    default_from: target_kebab
+files:
+  - source: templates/__init__.py.tmpl
+    target: "{{ target.path }}/__init__.py"
+  - source: templates/domain.py.tmpl
+    target: "{{ target.path }}/domain.py"
+  - source: templates/infrastructure.py.tmpl
+    target: "{{ target.path }}/infrastructure.py"
+  - source: templates/application.py.tmpl
+    target: "{{ target.path }}/application.py"
+  - source: templates/ui.py.tmpl
+    target: "{{ target.path }}/ui.py"

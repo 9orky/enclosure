@@ -1,0 +1,8 @@
+{% if recipes %}
+Available recipes:
+{% for recipe in recipes %}
+- {{ recipe.name }}{{ " - " ~ recipe.description if recipe.description else "" }}
+{% endfor %}
+{% else %}
+No recipes found.
+{% endif %}

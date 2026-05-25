@@ -1,0 +1,32 @@
+# Architecture Health LLM Guide
+
+## Purpose
+
+Use this command to get a compact architecture preflight: boundary status, shape status, unmapped files, hotspots, and dependency-pressure clusters.
+
+## When To Run
+
+- Before starting a non-trivial implementation.
+- After touching imports, module seams, or feature structure.
+- Before finalizing work when you need one architecture-oriented summary.
+
+## How To Read The Result
+
+- Boundary and shape findings are blockers when marked as errors.
+- Unknown files are classification signals, not automatic failures.
+- Hotspots point to module-size or dependency-pressure areas worth treating carefully.
+- Pressure clusters show likely blast radius and shared-code gravity.
+
+## Examples
+
+- If boundaries or shape report errors, fix those before summarizing the work.
+- If unknown files appear, inspect local rules before moving or editing them.
+- If a high-pressure cluster is involved, prefer smaller commits and rerun checks often.
+- If health passes but shows attention findings, mention the residual risk briefly.
+
+## Agent Tips
+
+- Use this as an overview, not a replacement for focused boundary or shape checks.
+- Follow up with `architecture boundaries` when changing dependency direction.
+- Follow up with `architecture shape` after editing imports or public code shape.
+- Do not treat hotspot ranking as ownership policy; policy comes from the contract.

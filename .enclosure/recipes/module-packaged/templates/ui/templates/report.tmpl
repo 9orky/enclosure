@@ -1,0 +1,11 @@
+{{ module.class }} Report:
+{% raw %}
+- Items: {{ output.report.items|length }}
+- Total priority: {{ output.report.total_priority }}
+{% if output.report.highest_priority_name %}
+- Highest priority: {{ output.report.highest_priority_name }}
+{% endif %}
+{% for item in output.report.items %}
+- {{ item.name }}: {{ item.priority }}
+{% endfor %}
+{% endraw %}

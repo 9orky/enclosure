@@ -1,0 +1,12 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class {{ module.class }}Item:
+    name: str
+    priority: int
+
+
+__all__ = ["{{ module.class }}Item"]

@@ -1,0 +1,18 @@
+{% set target_dir = result.target_dir|present_path(project_root) %}
+{% if result.created_dir %}Created{% else %}Found{% endif %} {{ target_dir }}.
+{% if result.created_files %}
+Created {{ result.created_files|length }} file(s).
+{% for path in result.created_files %}
+- {{ path|present_path(project_root) }}
+{% endfor %}
+{% endif %}
+{% if result.updated_files %}
+Updated {{ result.updated_files|length }} shared file(s).
+{% for path in result.updated_files %}
+- {{ path|present_path(project_root) }}
+{% endfor %}
+{% endif %}
+{% if result.preserved_files %}
+Preserved {{ result.preserved_files|length }} existing file(s).
+{% endif %}
+Next step: review refreshed shared rules, {{ target_dir }}/enclosure.yaml, and {{ target_dir }}/rules/local/ and run 'enclosure architecture boundaries'.

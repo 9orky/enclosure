@@ -1,0 +1,12 @@
+Recipe check report.
+Recipes discovered: {{ report.recipes_discovered }}
+Recipes checked: {{ report.recipes_checked }}
+Rendered paths checked: {{ report.rendered_paths_checked }}
+{% if report.violations %}
+Violations:
+{% for violation in report.violations %}
+- {{ violation.code }}: {{ violation.message }}
+{% endfor %}
+{% else %}
+Recipe check passed.
+{% endif %}

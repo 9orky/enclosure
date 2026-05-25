@@ -1,0 +1,32 @@
+# Architecture Clusters LLM Guide
+
+## Purpose
+
+Use this command to inspect dependency pressure by grouped source areas. It helps identify dense or influential areas before planning edits.
+
+## When To Run
+
+- Before broad refactors.
+- When choosing the safest starting point for untangling dependencies.
+- When a change may affect many related files.
+
+## How To Read The Result
+
+- Higher pressure suggests more imports, dependents, edges, or lines.
+- Incoming edges show who relies on a cluster.
+- Outgoing edges show what a cluster relies on.
+- Key files are useful entry points for exploration, not automatic ownership boundaries.
+
+## Examples
+
+- If a cluster has many incoming edges, treat edits there as high blast-radius work.
+- If a cluster has many outgoing edges, inspect whether it is doing too much coordination.
+- If a small cluster has high pressure, consider whether it is a hidden shared dependency.
+- If a cluster has no dependents, it may be safer for exploratory refactoring.
+
+## Agent Tips
+
+- Use this for orientation, not pass/fail validation.
+- Prefer changing lower-pressure areas first when the goal is incremental work.
+- Combine this with the boundaries command before finalizing architecture changes.
+- Do not infer policy from clusters alone; policy comes from the configured agreement.

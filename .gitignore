@@ -1,0 +1,11 @@
+# Local development artifacts
+.venv/
+.dev/
+uv.lock
+build/
+dist/
+*.egg-info/
+__pycache__/
+
+# Bootstrapped project-local enclosure folder
+/enclosure/

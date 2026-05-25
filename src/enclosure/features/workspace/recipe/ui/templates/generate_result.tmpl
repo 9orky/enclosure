@@ -1,0 +1,23 @@
+{% if result.recipe_found %}
+Generated recipe '{{ result.recipe_name }}'.
+{% if result.created_paths %}
+Created {{ result.created_paths|length }} path(s).
+{% for path in result.created_paths %}
+- {{ path|present_path(result.project_root) }}
+{% endfor %}
+{% endif %}
+{% if result.skipped_paths %}
+Skipped {{ result.skipped_paths|length }} path(s).
+{% for path in result.skipped_paths %}
+- {{ path|present_path(result.project_root) }}
+{% endfor %}
+{% endif %}
+{% if not result.created_paths and not result.skipped_paths %}
+No changes.
+{% endif %}
+{% if result.recipe_empty %}
+Warning: recipe '{{ result.recipe_name }}' is empty.
+{% endif %}
+{% else %}
+Recipe not found: {{ recipe_root_label }}/{{ result.recipe_name }}/.
+{% endif %}

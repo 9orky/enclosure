@@ -1,0 +1,9 @@
+Boundaries Summary:
+{{ report|scan_summary }}
+{% if report.violations %}
+
+=== Architectural Violations Detected ===
+{{ report|architecture_violations }}
+{% else %}
+Architecture Boundaries Passed! No violations found.
+{% endif %}

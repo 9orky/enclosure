@@ -1,0 +1,23 @@
+{% if result.recipe_found %}
+Dry run for recipe '{{ result.recipe_name }}'.
+{% if result.create_paths %}
+Would create {{ result.create_paths|length }} path(s).
+{% for path in result.create_paths %}
+- {{ path|present_path(result.project_root) }}
+{% endfor %}
+{% endif %}
+{% if result.skipped_paths %}
+Skipped {{ result.skipped_paths|length }} path(s).
+{% for path in result.skipped_paths %}
+- {{ path|present_path(result.project_root) }}
+{% endfor %}
+{% endif %}
+{% if not result.create_paths and not result.skipped_paths %}
+No changes.
+{% endif %}
+{% if result.recipe_empty %}
+Warning: recipe '{{ result.recipe_name }}' is empty.
+{% endif %}
+{% else %}
+Recipe not found: {{ recipe_root_label }}/{{ result.recipe_name }}/.
+{% endif %}

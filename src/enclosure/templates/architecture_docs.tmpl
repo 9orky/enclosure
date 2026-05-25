@@ -1,0 +1,25 @@
+# Architecture Command Docs
+
+Architecture commands inspect the contract between code structure and `.enclosure/enclosure.yaml`.
+
+## Common Workflows
+
+- Start with `enclosure architecture health` for a compact preflight.
+- Use `enclosure architecture boundaries` after changing imports or module ownership.
+- Use `enclosure architecture shape` after changing imports, functions, classes, or file shape.
+- Use `enclosure architecture map` before deciding where behavior belongs.
+- Use `enclosure architecture clusters` before broad refactors or risky dependency work.
+
+## Reading Results
+
+- Boundary and shape findings are blocking checks.
+- Map, cluster, hotspot, and unknown-file output are orientation signals.
+- Policy comes from `.enclosure/enclosure.yaml`; command output explains how current code matches it.
+
+## Related Commands
+
+- `enclosure architecture health --docs`
+- `enclosure architecture boundaries --docs`
+- `enclosure architecture shape --docs`
+- `enclosure architecture map --docs`
+- `enclosure architecture clusters --docs`

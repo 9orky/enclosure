@@ -1,0 +1,19 @@
+from __future__ import annotations
+
+# Domain package rule:
+# Domain owns models, errors, reports, and policies. It must not import
+# application, infrastructure, or UI. Other layers should import domain through
+# this package seam instead of reaching into domain internals.
+
+from .errors import {{ module.class }}Error
+from .models import {{ module.class }}Item
+from .policies import sort_{{ module.snake }}_items
+from .reports import {{ module.class }}Report, summarize_{{ module.snake }}
+
+__all__ = [
+    "{{ module.class }}Error",
+    "{{ module.class }}Item",
+    "{{ module.class }}Report",
+    "sort_{{ module.snake }}_items",
+    "summarize_{{ module.snake }}",
+]

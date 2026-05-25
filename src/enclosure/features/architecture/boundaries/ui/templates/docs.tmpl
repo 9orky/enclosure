@@ -1,0 +1,22 @@
+# Architecture Boundaries Docs
+
+Use `enclosure architecture boundaries` to validate dependency rules and architecture flow from `.enclosure/enclosure.yaml`.
+
+## When To Use It
+
+- After changing imports across modules or layers.
+- After moving files between ownership areas.
+- Before finishing a refactor that could change dependency direction.
+
+## How To Respond
+
+- Treat reported violations as blockers.
+- Prefer depending on a module's public seam instead of private implementation files.
+- Move orchestration outward and policy inward when dependency direction is wrong.
+- Break cycles by moving shared behavior to the true owner or adding a narrower handoff.
+
+## Related Commands
+
+- `enclosure architecture health --docs`
+- `enclosure architecture map --docs`
+- `enclosure architecture shape --docs`

@@ -1,0 +1,101 @@
+[build-system]
+requires = ["setuptools>=77", "setuptools-scm[toml]>=8", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "enclosure"
+description = "A pipx-first CLI for architecture-aware collaboration between humans and coding agents."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+dynamic = ["version"]
+authors = [
+    {name = "Tomasz Szpak"},
+]
+keywords = [
+    "agents",
+    "architecture",
+    "cli",
+    "llm",
+    "pipx",
+    "software-architecture",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = [
+    "code-map>=0.1.0",
+    "Jinja2>=3.1",
+    "pydantic>=2.8",
+    "PyYAML>=6.0",
+    "typer>=0.12",
+]
+
+[project.urls]
+Homepage = "https://github.com/9orky/enclosure"
+Blog = "https://szpak.dev/"
+Repository = "https://github.com/9orky/enclosure"
+Issues = "https://github.com/9orky/enclosure/issues"
+Changelog = "https://github.com/9orky/enclosure/blob/main/docs/repo/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+    "build>=1.2",
+    "pytest>=8.0",
+    "ruff>=0.8",
+    "twine>=5.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "libraries/code_map/tests"]
+cache_dir = ".dev/pytest_cache"
+
+[tool.ruff]
+cache-dir = ".dev/ruff_cache"
+
+[project.scripts]
+enclosure = "enclosure.__main__:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+enclosure = [
+    "resources/enclosure.yaml",
+    "resources/AGENTS.md",
+    "resources/copilot-instructions.md",
+    "resources/rules/*.md",
+    "resources/rules/**/*.md",
+    "templates/*.tmpl",
+    "features/**/ui/templates/*.tmpl",
+]
+
+[tool.uv.sources]
+code-map = { path = "libraries/code_map", editable = true }
+
+[tool.setuptools_scm]
+fallback_version = "0.0.0.dev0"
+version_file = "src/enclosure/_version.py"

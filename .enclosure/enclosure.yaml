@@ -1,0 +1,72 @@
+# Local architecture contract for this repository.
+#
+# Canonical module pattern: architecture/boundaries
+# New or refactored feature modules should use a small package seam plus
+# domain.py, infrastructure.py, application.py, and ui.py when those
+# responsibilities are needed. Legacy layer folders may remain until refactored.
+
+architecture:
+  language: python
+  root: src/enclosure/features
+  exclusions: [.venv/**, .enclosure/**, tests/**, libraries/**]
+
+  shape:
+    max_classes_per_file: -1
+    max_interfaces_per_file: -1
+    max_types_per_file: -1
+    max_abstract_classes_per_file: -1
+    max_functions_per_file: -1
+    max_methods_per_class: -1
+    max_declared_args_per_function: -1
+    max_declared_args_per_method: -1
+    max_lines_count_per_function: -1
+    max_lines_count_per_method: -1
+    max_lines_count_per_class: -1
+    allow_optional_function_args: false
+    allow_optional_method_args: false
+    allow_optional_class_properties: false
+    allow_imports_aliases: false
+    enforce_joined_imports: true
+    allowed_imports_crossing_types: [module]
+
+  boundaries:
+    tags:
+      - { name: feature, match: &feature "*", except: [], exclude: [] }
+      - { name: module, match: &module "*/*", except: ["*/__init__"], exclude: [] }
+      - { name: module_api, match: &module_api "*/*/__init__", except: [], exclude: [] }
+      - { name: domain, match: &domain "*/*/domain", except: [], exclude: [] }
+      - { name: infrastructure, match: &infrastructure "*/*/infrastructure", except: [], exclude: [] }
+      - { name: application, match: &application "*/*/application", except: [], exclude: [] }
+      - { name: ui, match: &ui "*/*/ui", except: [], exclude: [] }
+
+    rules:
+      - { source: src/enclosure/__main__, disallow: [*feature], allow: [*ui], allow_same_match: false }
+      - { source: *feature, disallow: [*feature], allow: [*module_api], allow_same_match: true }
+      - { source: *module, disallow: [*module], allow: [*module_api], allow_same_match: true }
+      - { source: "*/config/domain", disallow: [*module], allow: [*domain], allow_same_match: true }
+      - { source: *domain, disallow: [*application, *infrastructure, *ui], allow: [], allow_same_match: false }
+      - { source: *infrastructure, disallow: [*application, *ui], allow: [], allow_same_match: false }
+      - { source: *application, disallow: [*ui], allow: [], allow_same_match: false }
+      - { source: *ui, disallow: [*infrastructure], allow: [], allow_same_match: false }
+
+    flow:
+      layers: [ui, application, infrastructure, domain]
+      module_tag: feature
+      analyzers: [backward-flow, no-cycles]
+
+  map:
+    top: 20
+  clusters:
+    group_depth: 5
+    top: 20
+    files_top: 5
+  health:
+    top: 5
+
+workspace:
+  recipe:
+    skip: []
+  rules:
+    local:
+      max_content_chars: 2400
+  sync: {}

@@ -1,0 +1,38 @@
+schema_version: 1
+description: Feature-module recipe for modules that need package-per-layer internals.
+inputs:
+  module:
+    type: string
+    default_from: target_name
+  cli_command:
+    type: slug
+    default_from: target_kebab
+files:
+  - source: templates/__init__.py.tmpl
+    target: "{{ target.path }}/__init__.py"
+  - source: templates/domain/__init__.py.tmpl
+    target: "{{ target.path }}/domain/__init__.py"
+  - source: templates/domain/errors.py.tmpl
+    target: "{{ target.path }}/domain/errors.py"
+  - source: templates/domain/models.py.tmpl
+    target: "{{ target.path }}/domain/models.py"
+  - source: templates/domain/policies.py.tmpl
+    target: "{{ target.path }}/domain/policies.py"
+  - source: templates/domain/reports.py.tmpl
+    target: "{{ target.path }}/domain/reports.py"
+  - source: templates/infrastructure/__init__.py.tmpl
+    target: "{{ target.path }}/infrastructure/__init__.py"
+  - source: templates/infrastructure/loader.py.tmpl
+    target: "{{ target.path }}/infrastructure/loader.py"
+  - source: templates/infrastructure/repository.py.tmpl
+    target: "{{ target.path }}/infrastructure/repository.py"
+  - source: templates/application/__init__.py.tmpl
+    target: "{{ target.path }}/application/__init__.py"
+  - source: templates/application/service.py.tmpl
+    target: "{{ target.path }}/application/service.py"
+  - source: templates/ui/__init__.py.tmpl
+    target: "{{ target.path }}/ui/__init__.py"
+  - source: templates/ui/cli.py.tmpl
+    target: "{{ target.path }}/ui/cli.py"
+  - source: templates/ui/templates/report.tmpl
+    target: "{{ target.path }}/ui/templates/report.tmpl"

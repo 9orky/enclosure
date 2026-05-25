@@ -1,0 +1,23 @@
+<!-- Generated from feature ui/templates/docs.tmpl files. Do not edit by hand. -->
+
+# Workspace Rules Docs
+
+Use `enclosure workspace rules` to validate shared and local rule markdown documents in the current workspace.
+
+## When To Use It
+
+- After editing local rule documents.
+- After refreshing packaged shared rules.
+- After adding, removing, or renaming rule references.
+
+## How To Respond
+
+- Fix parse errors before interpreting other findings.
+- Keep local rules project-specific and narrow.
+- Keep shared guidance reusable.
+- Update navigation links when rule files or headings change.
+
+## Related Commands
+
+- `enclosure workspace sync --docs`
+- `enclosure architecture health --docs`

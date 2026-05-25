@@ -1,0 +1,40 @@
+# Enclosure LLM Guide
+
+## How To Navigate
+
+- Use standard `--help` output to browse available commands and options.
+- Every command shown by help exposes an `--llm` flag.
+- Use a command's `--llm` flag to print agent-focused guidance for that command.
+
+Standard help explains syntax. LLM help explains how an agent should use and interpret the command.
+
+## Agent Operating Loop
+
+1. If `.enclosure/` is missing, run `enclosure workspace sync init`.
+2. Read `.enclosure/enclosure.yaml`, `.enclosure/rules/INDEX.md`, and any referenced local rules before editing code.
+3. Use `enclosure architecture health` for the fastest architecture overview.
+4. Use `enclosure architecture boundaries` to check dependency rules and `enclosure architecture shape` to check file and symbol limits.
+5. Use `enclosure architecture map` and `enclosure architecture clusters` when you need to understand ownership, hotspots, or coupling before making a larger change.
+6. Use `enclosure workspace recipe --list`, `--show`, and `--dry-run` before generating recipe-based code.
+7. After changes, rerun the relevant architecture command and `enclosure workspace rules`.
+
+## Flexibility
+
+- `architecture.root` chooses the source tree to analyze.
+- `architecture.exclusions` removes generated code, tests, vendored code, or local workspaces from checks.
+- `architecture.shape` sets file and symbol limits; `-1` disables a numeric limit.
+- `architecture.boundaries.tags` defines the project vocabulary with match patterns, exceptions, and exclusions.
+- `architecture.boundaries.rules` describes which tagged areas may depend on each other.
+- `allow_same_match` lets a rule permit dependencies inside the same matched area.
+- `architecture.boundaries.flow.layers` adapts the expected dependency direction to the project's layer model.
+- `architecture.boundaries.flow.analyzers` enables higher-level checks such as backward flow and cycles.
+- `architecture.map`, `architecture.clusters`, and `workspace.rules.local` tune report size and local rule strictness.
+- `workspace.recipe.skip` lets a project opt out of specific generated recipe paths.
+
+## Configuration
+
+Here is a full, valid, strong example of an `enclosure.yaml` configuration:
+
+```yaml
+{{ config_yaml }}
+```

@@ -1,0 +1,31 @@
+# Enclosure Command Docs
+
+`enclosure` creates and checks a project-local collaboration contract for humans and coding agents.
+
+## Everyday Flow
+
+1. Run `enclosure workspace sync init` in a repository that does not yet have a contract.
+2. Review `.enclosure/enclosure.yaml`, `.enclosure/rules/`, and any local decisions before editing code.
+3. Use `enclosure architecture health` for a compact preflight.
+4. Use focused architecture commands when changing dependency direction, file shape, or module ownership.
+5. Use `enclosure workspace recipe` when a local recipe should create project-shaped scaffolding.
+6. Use `enclosure workspace rules` after changing rule documents.
+
+## Documentation Surfaces
+
+- Use `enclosure --help` for authoritative command syntax and available options.
+- Use `enclosure --docs` for this human-facing overview.
+- Use `enclosure --llm` for agent-focused operating guidance.
+- Use `enclosure <group> --docs` or `enclosure <group> <command> --docs` for command-level docs.
+
+## Main Command Groups
+
+- `workspace` creates, refreshes, validates, and uses the local contract surface.
+- `architecture` inspects dependency rules, file shape, ownership, hotspots, and coupling pressure.
+
+## Related Commands
+
+- `enclosure workspace --docs`
+- `enclosure architecture --docs`
+- `enclosure workspace sync --docs`
+- `enclosure architecture health --docs`

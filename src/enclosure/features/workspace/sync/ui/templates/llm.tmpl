@@ -1,0 +1,32 @@
+# Workspace Sync LLM Guide
+
+## Purpose
+
+Use this command group to create or refresh the project-local contract that agents read before operating in a repository.
+
+## When To Run
+
+- Run init when a repository does not yet have a local contract.
+- Run update when packaged shared guidance should be refreshed.
+- Run update after upgrading the CLI package.
+
+## How To Read The Result
+
+- Created entries are newly written contract assets.
+- Updated entries are packaged shared assets refreshed from the current CLI version.
+- Preserved entries are local assets kept intact.
+- Validation errors mean a generated contract asset failed before it was written.
+
+## Examples
+
+- If init creates the contract, read it before editing project code.
+- If update preserves local assets, treat that as intentional user-owned knowledge.
+- If update changes shared guidance, rerun relevant checks before making architecture edits.
+- If a local rule conflicts with refreshed shared guidance, ask which project-specific decision should win.
+
+## Agent Tips
+
+- Do not overwrite local rule decisions just to refresh shared guidance.
+- After sync, read the contract before editing application code.
+- If sync reports preserved local assets, treat them as user-owned project knowledge.
+- Run architecture checks after sync when architecture rules changed.

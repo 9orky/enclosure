@@ -1,0 +1,45 @@
+architecture:
+  language: python
+  root: src
+  exclusions: [.enclosure/**]
+  shape:
+    max_classes_per_file: -1
+    max_interfaces_per_file: -1
+    max_types_per_file: -1
+    max_abstract_classes_per_file: -1
+    max_functions_per_file: -1
+    max_methods_per_class: -1
+    max_declared_args_per_function: -1
+    max_declared_args_per_method: -1
+    max_lines_count_per_function: -1
+    max_lines_count_per_method: -1
+    max_lines_count_per_class: -1
+    allow_optional_function_args: true
+    allow_optional_method_args: true
+    allow_optional_class_properties: true
+    allow_imports_aliases: true
+    enforce_joined_imports: false
+    allowed_imports_crossing_types: [module, symbol]
+  boundaries:
+    tags: []
+    rules: []
+    flow:
+      layers: []
+      module_tag: feature
+      analyzers: []
+  map:
+    top: 20
+  clusters:
+    group_depth: 5
+    top: 20
+    files_top: 5
+  health:
+    top: 5
+
+workspace:
+  recipe:
+    skip: ["generated/skipped.py"]
+  rules:
+    local:
+      max_content_chars: 2400
+  sync: {}

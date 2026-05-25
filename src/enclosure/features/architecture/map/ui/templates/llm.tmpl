@@ -1,0 +1,32 @@
+# Architecture Map LLM Guide
+
+## Purpose
+
+Use this command to render a descriptive map of configured modules, layers, cross-module dependencies, unknown files, and hotspots.
+
+## When To Run
+
+- Before deciding where a behavior belongs.
+- When onboarding into an unfamiliar codebase.
+- Before adding a new dependency between modules.
+
+## How To Read The Result
+
+- Modules show the configured ownership grouping.
+- Layer summaries show how files are distributed within each module.
+- Dependencies show cross-module import direction and count.
+- Unknown files may need classification or may be intentionally outside current rules.
+
+## Examples
+
+- If a behavior belongs to one module but the map shows dependencies from several others, look for an existing public seam before adding imports.
+- If a module has no layer summary, inspect whether it is intentionally outside the configured layer model.
+- If unknown files appear, avoid editing them until local ownership is clear.
+- If a hotspot is also dependency-heavy, plan smaller commits and rerun checks often.
+
+## Agent Tips
+
+- Use module and layer names from the map in your implementation notes.
+- If a file is unknown, avoid guessing ownership; inspect local rules first.
+- Treat hotspots as risk signals for planning, not automatic failures.
+- Pair this with boundaries before changing imports.

@@ -1,0 +1,9 @@
+schema_version: 1
+description: Generate a tiny Python component.
+inputs:
+  component:
+    type: identifier
+    required: true
+files:
+  - source: component.py.tmpl
+    target: "{{ target.path }}/{{ component.snake }}.py"

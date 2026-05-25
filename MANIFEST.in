@@ -1,0 +1,16 @@
+include README.md
+include LICENSE
+include docs/repo/CHANGELOG.md
+include docs/repo/CONTRIBUTING.md
+include docs/repo/SECURITY.md
+include docs/repo/CODE_OF_CONDUCT.md
+recursive-include docs/modules *.md
+recursive-include src/enclosure/resources *
+prune .enclosure
+prune .github
+prune .dev
+prune libraries
+prune tests
+exclude AGENTS.md
+exclude Makefile
+exclude uv.lock

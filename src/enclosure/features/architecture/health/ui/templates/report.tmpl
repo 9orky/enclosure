@@ -1,0 +1,28 @@
+Architecture Health:
+{{ report|scan_summary }}
+- Boundary violations: {{ report.boundary_violation_count }}
+- Shape violations: {{ report.shape_violation_count }}
+- Unknown files: {{ report.unknown_file_count }}
+{% if report.findings %}
+
+Findings:
+{% for finding in report.findings %}
+- {{ finding.severity }} {{ finding.category }}: {{ finding.subject }} - {{ finding.detail }}
+{% endfor %}
+{% else %}
+Architecture Health Passed! No findings.
+{% endif %}
+{% if report.hotspots %}
+
+Hotspots:
+{% for hotspot in report.hotspots %}
+- {{ hotspot.kind }}: {{ hotspot.name }} ({{ hotspot.detail }}, score {{ hotspot.score }})
+{% endfor %}
+{% endif %}
+{% if report.pressure_clusters %}
+
+Pressure Clusters:
+{% for cluster in report.pressure_clusters %}
+- {{ cluster.name }}: score {{ cluster.pressure_score }}, files {{ cluster.file_count }}, in {{ cluster.incoming_edges }}, out {{ cluster.outgoing_edges }}
+{% endfor %}
+{% endif %}

@@ -1,0 +1,23 @@
+<!-- Generated from feature ui/templates/docs.tmpl files. Do not edit by hand. -->
+
+# Workspace Sync Docs
+
+Use `enclosure workspace sync` to create or refresh the project-local contract.
+
+## When To Use It
+
+- Run `enclosure workspace sync init` when a repository does not yet have `.enclosure/`.
+- Run `enclosure workspace sync update` after upgrading the CLI or refreshing shared guidance.
+- Sync validates generated config, instruction, and shared rule assets before writing them.
+- Review preserved local files after each sync; they contain project-owned decisions.
+
+## How To Respond
+
+- Do not overwrite local rule decisions just to refresh shared assets.
+- Review `.enclosure/enclosure.yaml` after initialization.
+- Rerun relevant architecture and rules checks after shared guidance changes.
+
+## Related Commands
+
+- `enclosure workspace rules --docs`
+- `enclosure architecture health --docs`

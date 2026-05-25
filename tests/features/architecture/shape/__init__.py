@@ -1,0 +1,1 @@
+"""Architecture shape feature tests."""

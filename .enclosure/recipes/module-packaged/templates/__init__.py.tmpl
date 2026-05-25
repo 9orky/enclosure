@@ -1,0 +1,10 @@
+from __future__ import annotations
+
+# Use module-layered when a module has already outgrown compact layer files.
+# Keep this root seam small even when internal layer packages grow.
+# Prefer module-basic for new modules until at least one layer has stable
+# internal responsibilities worth naming as files.
+#
+# Do not re-export every layer from the module root. Callers should import the
+# layer seam they need, such as:
+# from . import application

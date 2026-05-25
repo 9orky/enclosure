@@ -1,0 +1,11 @@
+Rule schema report.
+Documents discovered: {{ report.documents_discovered }}.
+Documents checked: {{ report.documents_checked }}.
+Local documents checked: {{ report.local_documents_checked }}.
+Local documents with issues: {{ report.local_documents_with_issues }}.
+Local content threshold: {% if report.local_max_content_chars < 0 %}disabled{% else %}{{ report.local_max_content_chars }} chars{% endif %}.
+Collection coverage: {% if report.collection_complete %}complete{% else %}incomplete{% endif %}.
+Documents with issues: {{ report.documents_with_issues }}.
+{{ "\n" }}{% for document in report.documents -%}
+- {{ document.path }}{% if document.scope %} [{{ document.scope }}]{% endif %}: {{ document|rule_document_status }}{% if document.is_local %} (content {{ document.content_char_count }} chars){% endif %}
+{{ "\n" }}{% endfor -%}

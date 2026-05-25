@@ -1,0 +1,53 @@
+from __future__ import annotations
+
+from typing import Annotated
+
+import typer
+
+from enclosure.shared import ui
+
+from .. import application
+
+app = typer.Typer(
+    help="Render a module and dependency map from the architecture agreement.",
+    invoke_without_command=True,
+)
+
+
+@app.callback()
+@ui.command_error_boundary
+def map_command(
+    llm: Annotated[
+        bool,
+        typer.Option("--llm", help="Print LLM-focused guidance for this command."),
+    ],
+    docs: Annotated[
+        bool,
+        typer.Option(
+            "--docs",
+            help="Print human-focused documentation for this command.",
+        ),
+    ],
+    top: Annotated[
+        int | None,
+        typer.Option(
+            "--top",
+            help="Override architecture.map.top; -1 shows all, 0 shows none.",
+        ),
+    ],
+) -> None:
+    if llm:
+        ui.render_llm("llm.tmpl")
+        return
+    if docs:
+        ui.render_docs("docs.tmpl")
+        return
+
+    report = application.build_map_report_for_top(top)
+    ui.render(report, template_name="report.tmpl", context={})
+
+
+ui.set_command_defaults(map_command, {"llm": False, "docs": False, "top": None})
+
+
+__all__ = ["app"]

@@ -1,0 +1,32 @@
+# Architecture Shape LLM Guide
+
+## Purpose
+
+Use this command to validate configured file, symbol, argument, import alias, joined import, and line-count shape rules.
+
+## When To Run
+
+- After editing imports.
+- After adding functions, methods, classes, or constructor arguments.
+- Before finishing work that changed public shape or file structure.
+
+## How To Read The Result
+
+- Each violation names the rule, actual value, and configured limit.
+- A limit of zero on boolean-style rules means the behavior is not allowed.
+- Import alias findings mean joined imports or direct imports should be preferred.
+- Line and count findings usually indicate the code wants a smaller unit.
+
+## Examples
+
+- If a function has too many arguments, introduce a clearer value object or split the workflow.
+- If a class has too many methods, separate responsibilities by ownership rather than by convenience.
+- If an import alias is flagged, import the named module or symbol directly.
+- If joined imports are required, combine imports from the same source into one statement.
+
+## Agent Tips
+
+- Do not suppress shape findings with local exceptions.
+- Make imports direct and joined when the configured rules require it.
+- Split behavior only where it improves ownership or readability.
+- Always rerun this command before final response.

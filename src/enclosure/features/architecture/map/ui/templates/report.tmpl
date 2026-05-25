@@ -1,0 +1,36 @@
+Architecture Map:
+{{ report|scan_summary }}
+- Modules found: {{ report.modules|length }}
+- Cross-module dependencies: {{ report.dependencies|length }}
+- Unknown files: {{ report.unknown_files|length }}
+{% if report.modules %}
+
+Modules:
+{% for module in report.modules %}
+- {{ module.name }}: {{ module.files|length }} file(s){{ module.layers|layer_summary }}
+{% endfor %}
+{% if report.dependencies %}
+
+Dependencies:
+{% for dependency in report.dependencies %}
+- {{ dependency.source }} -> {{ dependency.target }}: {{ dependency.count }}
+{% endfor %}
+{% endif %}
+{% if report.hotspots %}
+
+Hotspots:
+{% for hotspot in report.hotspots %}
+- {{ hotspot.kind }}: {{ hotspot.name }} ({{ hotspot.detail }}, score {{ hotspot.score }})
+{% endfor %}
+{% endif %}
+{% set visible_unknown_files = report.unknown_files|limit_items(report.top) %}
+{% if visible_unknown_files %}
+
+Unknown Files:
+{% for file_path in visible_unknown_files %}
+- {{ file_path }}
+{% endfor %}
+{% endif %}
+{% else %}
+- No modules matched the configured module tag.
+{% endif %}

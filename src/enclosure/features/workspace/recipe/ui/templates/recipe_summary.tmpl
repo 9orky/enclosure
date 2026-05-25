@@ -1,0 +1,23 @@
+{% if recipe %}
+Recipe '{{ recipe.name }}'.
+{% if recipe.description %}
+{{ recipe.description }}
+{% endif %}
+{% if recipe.inputs %}
+Inputs:
+{% for input_name in recipe.inputs %}
+- {{ input_name }}
+{% endfor %}
+{% endif %}
+{% if recipe.files %}
+Files:
+{% for file in recipe.files %}
+- {{ file }}
+{% endfor %}
+{% endif %}
+{% if not recipe.inputs and not recipe.files %}
+No inputs or files.
+{% endif %}
+{% else %}
+Recipe not found: {{ recipe_root_label }}/{{ recipe_name }}/.
+{% endif %}

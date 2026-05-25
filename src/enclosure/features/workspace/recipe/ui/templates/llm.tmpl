@@ -1,0 +1,32 @@
+# Workspace Recipe LLM Guide
+
+## Purpose
+
+Use this command to inspect, validate, preview, and render local recipes. Recipes are the preferred way to create project-shaped scaffolding.
+
+## When To Run
+
+- Before hand-writing a new module shape that may already have a recipe.
+- When validating recipe changes.
+- When previewing generated files before writing them.
+
+## How To Read The Result
+
+- Listing shows available recipes.
+- Summary shows required inputs and planned targets.
+- Check validates recipe metadata and sample rendering.
+- Dry run shows what would be created or skipped without writing changes.
+
+## Examples
+
+- If a recipe exists for a module shape, inspect it before creating files manually.
+- If required inputs are missing, provide them with explicit variables instead of editing rendered output afterward.
+- If dry run shows an existing target will be skipped, decide whether to preserve, rename, or edit manually.
+- If check fails, fix the recipe before attempting generation.
+
+## Agent Tips
+
+- Prefer a local recipe over inventing scaffolding.
+- Inspect a recipe before rendering it.
+- Use variables explicitly and keep generated names aligned with the target module.
+- Run check or dry run before writing generated files.

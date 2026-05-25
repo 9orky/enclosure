@@ -1,0 +1,34 @@
+# Workspace Rules LLM Guide
+
+## Purpose
+
+Use this command to validate shared and local rule documents in the current workspace. It checks metadata, section shape, navigation links, reference integrity, and local content-size thresholds.
+
+## When To Run
+
+- After editing local rule documents.
+- After syncing or editing shared rule documents.
+- After adding or removing rule references.
+- Before deciding which local rule documents need optimization.
+
+## How To Read The Result
+
+- A passing result means discovered rule documents satisfy the schema policy.
+- Parse errors mean the document could not be inspected safely.
+- Reference findings mean linked rule documents or sections do not match what was discovered.
+- Structural findings mean the document shape does not match the expected rule contract.
+- Local content findings mean a local rule body exceeded `workspace.rules.local.max_content_chars`.
+
+## Examples
+
+- If a navigation reference fails, update the reference to match the discovered rule target.
+- If a required section is missing, add the section only when it reflects real guidance.
+- If frontmatter is invalid, fix metadata before changing body text.
+- If local and shared guidance overlap, keep reusable guidance shared and project-specific guidance local.
+
+## Agent Tips
+
+- Fix parse errors before interpreting other findings.
+- Keep rule documents navigable and narrow in purpose.
+- Avoid copying shared policy into local rules.
+- Rerun after every rule-document edit.

@@ -1,0 +1,33 @@
+from __future__ import annotations
+
+from typing import Annotated
+
+import typer
+
+from enclosure.shared import ui
+
+from . import application
+
+app = typer.Typer(
+    help="Render a basic {{ module.name }} report from name:priority items.",
+    invoke_without_command=True,
+)
+
+
+@app.callback()
+@ui.command_error_boundary
+def {{ module.snake }}_command(
+    raw_items: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--item",
+            metavar="NAME:PRIORITY",
+            help="Add an item to include in the report.",
+        ),
+    ] = None,
+) -> None:
+    output = application.build_{{ module.snake }}_report_output(tuple(raw_items or ()))
+    typer.echo(output.text)
+
+
+__all__ = ["app"]

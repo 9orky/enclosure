@@ -1,0 +1,17 @@
+from __future__ import annotations
+
+# Application package rule:
+# Orchestrate use cases here. Import domain and infrastructure through their
+# package seams, and keep UI concerns outside this package.
+
+from .service import (
+    {{ module.class }}ApplicationError,
+    {{ module.class }}ReportOutput,
+    build_{{ module.snake }}_report_output,
+)
+
+__all__ = [
+    "{{ module.class }}ApplicationError",
+    "{{ module.class }}ReportOutput",
+    "build_{{ module.snake }}_report_output",
+]
