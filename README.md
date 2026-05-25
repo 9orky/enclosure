@@ -5,67 +5,54 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/9orky/enclosure/ci.yml?branch=main&label=ci)](https://github.com/9orky/enclosure/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/9orky/enclosure/blob/main/LICENSE)
 
-Coding agents are brilliant.
+`enclosure` is a small CLI for making coding agents architecture-aware inside a real repository.
 
-They are also very enthusiastic strangers in your house.
+It creates a project-local contract in `.enclosure/`: rules, architecture boundaries, dependency flow, file-shape constraints, and scaffolding recipes that agents can read before they edit and checks can validate after they edit.
 
-`enclosure` is a tiny CLI that gives them a room, a map, a few house rules, and a polite reminder that the production database is not a toy chest.
+You do not have to hand-author the whole contract. The intended workflow is to ask an agent to inspect the repository, initialize `enclosure`, draft the rules and config from the code that already works, and then refine the result with you.
 
-It creates a project-local operating contract for humans and agents: readable rules, architecture boundaries, local recipes, and checks that turn "please understand this repo" into something visible, reviewable, and repeatable.
+The name is literal. Every agent coding task starts inside the enclosure. If the agent jumps the fence by crossing a boundary, importing through the wrong layer, inventing a module shape, or ignoring local guidance, the loop makes that visible quickly: read the contract, change the code, run the checks, steer back.
 
-Small tool. Big reduction in "wait, why did it touch that?"
+## Why Architects Should Care
 
-The ambition is simple: be the smallest powerful thing in the category.
+Agentic coding fails less from syntax mistakes than from architectural amnesia.
 
-## The Problem
+An agent can search files, but it does not automatically know:
 
-Most AI coding failures do not start with bad syntax.
+- which module owns a responsibility;
+- where the public seam is;
+- which layers may depend on which other layers;
+- what local rules matter before touching this repo;
+- what shape new files and modules should take;
+- how to tell when it has crossed the fence.
 
-They start with missing context.
+`enclosure` moves that knowledge out of memory, review comments, and scattered docs and puts it in a repo-native operating surface.
 
-The agent does not know which module owns the behavior. It does not know that this folder is legacy, that this layer must stay inward-facing, that a public package seam exists for a reason, or that the team has a very specific way of adding new features.
+## What It Supports
 
-Humans know these things. Usually in meetings, memory, code review scars, and that one message in Slack nobody can find anymore.
+- **Context architecture with rules**: `.enclosure/rules/` gives agents progressive, task-specific reading paths for ownership, boundaries, dependency direction, execution, testing, and refactoring.
+- **Local architectural contract**: `.enclosure/enclosure.yaml` declares roots, exclusions, tags, layer flow, dependency rules, file-shape rules, and report limits.
+- **Boundary validation**: `enclosure architecture boundaries` checks imports against configured ownership and layer rules.
+- **Shape validation**: `enclosure architecture shape` checks configured limits for files, symbols, imports, arguments, and line counts.
+- **Architecture mapping**: `enclosure architecture map` shows modules, layers, unknown files, dependencies, and hotspots.
+- **Dependency pressure views**: `enclosure architecture clusters` highlights coupled areas before broad refactors.
+- **Fast preflight**: `enclosure architecture health` gives an architect-friendly overview before or after a task.
+- **Project-shaped generation**: `.enclosure/recipes/` captures working module scaffolds found by the agent, then lets future tasks generate known-good files instead of hand-creating structure from scratch.
+- **Assistant routing**: generated `AGENTS.md` and `.github/copilot-instructions.md` tell coding assistants to begin in `.enclosure/`.
+- **Human-reviewable governance**: the contract is plain YAML and Markdown, so teams can review it like code.
 
-`enclosure` makes that knowledge sit inside the repository.
+## The Core Loop
 
-Not as a manifesto. As files.
+```text
+1. Agent starts in .enclosure/
+2. Agent reads the relevant rule path and architecture contract
+3. Agent edits inside the declared ownership, seam, and layer flow
+4. Agent runs the relevant enclosure checks
+5. Violations reveal where the task jumped the fence
+6. Agent steers back before review
+```
 
-## What Enclosure Gives You
-
-`enclosure` gives your repo an enclosure for agents: a small, explicit place where cooperation starts.
-
-- `.enclosure/enclosure.yaml` describes architecture tags, layer flow, exclusions, and dependency rules.
-- `.enclosure/rules/` mirrors shared guidance that agents can read before improvising.
-- `.enclosure/rules/local/` keeps repository-specific decisions where humans can review and tune them.
-- `.enclosure/recipes/` holds local recipes for project-shaped scaffolding.
-- `AGENTS.md` and `.github/copilot-instructions.md` point coding assistants toward the contract.
-
-The point is not to make agents obedient little robots. That would be boring, and also fiction.
-
-The point is to make cooperation cheaper. The agent can still reason, explore, and help, but it starts from boundaries the team can see.
-
-## Why It Feels Different
-
-Many tools in this space try to become the new center of gravity.
-
-`enclosure` does the opposite.
-
-It stays small, local, and boring in the best possible way. No platform migration. No ceremony tax. No giant dashboard asking if you are having a productive transformation journey today.
-
-You run it in a repo. It writes a contract. You and your agents use that contract. When the shared baseline changes, you update it. When the local rules need nuance, you edit normal files.
-
-That is the trick: `enclosure` is powerful because it does not try to own your workflow. It gives the workflow a skeleton, then gets out of the way.
-
-## Capabilities
-
-- Bootstrap or refresh a local collaboration contract.
-- Validate architecture boundaries, dependency flow, and file shape.
-- Map modules, layers, hotspots, unknown files, and dependency pressure.
-- Validate local rule documents.
-- Inspect, preview, and render project-shaped recipes.
-
-Command syntax lives in `--help`. Human-facing command guidance lives beside the command implementation and is available with `--docs`.
+That loop is the product. The CLI is intentionally small so the contract stays close to the repository and easy to change.
 
 ## Install
 
@@ -73,7 +60,7 @@ Command syntax lives in `--help`. Human-facing command guidance lives beside the
 pipx install enclosure
 ```
 
-Try it without committing to the relationship:
+Try it without installing:
 
 ```bash
 pipx run enclosure --help
@@ -83,6 +70,26 @@ pipx run enclosure --help
 
 ## Quick Start
 
+The simplest setup is to let a coding agent do the first pass.
+
+### Kickstarting Prompt
+
+Copy this into your coding agent from the repository root:
+
+```text
+Install or run enclosure if needed, then set up this repository for agentic coding.
+
+Start by inspecting the existing project structure and identifying the main architectural roots, modules, layers, public seams, dependency direction, tests, and one or two working examples of a well-shaped module.
+
+Run `enclosure workspace sync init`, then draft `.enclosure/enclosure.yaml` and local rules so future agents know where to start, what boundaries to respect, and how to verify their work.
+
+If you find a repeatable module scaffold, turn it into an `.enclosure/recipes/` recipe so future agents generate that known-good structure instead of creating files manually.
+
+Finish by running the relevant enclosure checks, report what the contract now covers, and call out anything that still needs human architectural judgment.
+```
+
+Or run the first commands yourself:
+
 ```bash
 cd your-repo
 enclosure workspace sync init
@@ -91,109 +98,77 @@ enclosure architecture health
 enclosure architecture boundaries
 ```
 
-Then tell your coding agent to start in `.enclosure/`.
+After setup, tell every coding agent:
 
-That one instruction changes the conversation. Instead of "look around and guess," the agent gets a doorway into the repo's actual operating model.
-
-For command-level documentation:
-
-```bash
-enclosure --docs
-enclosure architecture --docs
-enclosure workspace recipe --docs
+```text
+Start in the .enclosure/ folder and stay anchored there while discovering project-specific operating guidance.
 ```
 
-## Configuration Sketch
+## Contract Shape
+
+The generated contract has four important surfaces:
+
+```text
+.enclosure/
+  enclosure.yaml        # architecture roots, tags, flow, rules, limits
+  rules/                # shared and local guidance for agents
+  recipes/              # known-good scaffolds generated from working examples
+AGENTS.md               # assistant entry instruction
+.github/
+  copilot-instructions.md
+```
+
+A typical architecture contract describes:
 
 ```yaml
 architecture:
-  language: python
   root: src/enclosure/features
-  exclusions: [.venv/**, .enclosure/**, tests/**, libraries/**]
-  shape:
-    max_classes_per_file: -1
-    max_interfaces_per_file: -1
-    max_types_per_file: -1
-    max_abstract_classes_per_file: -1
-    max_functions_per_file: -1
-    max_methods_per_class: -1
-    max_declared_args_per_function: -1
-    max_declared_args_per_method: -1
-    max_lines_count_per_function: -1
-    max_lines_count_per_method: -1
-    max_lines_count_per_class: -1
-    allow_optional_function_args: true
-    allow_optional_method_args: true
-    allow_optional_class_properties: true
-    allow_imports_aliases: true
-    enforce_joined_imports: false
-    allowed_imports_crossing_types: [module, symbol]
+  exclusions: [.venv/**, .enclosure/**, tests/**]
   boundaries:
     tags:
-      - { name: feature, match: &feature "*", except: [], exclude: [] }
-      - { name: module, match: &module "*/*", except: ["*/__init__"], exclude: [] }
-      - { name: module_api, match: &module_api "*/*/__init__", except: [], exclude: [] }
-      - { name: domain, match: &domain "*/*/domain", except: [], exclude: [] }
-      - { name: application, match: &application "*/*/application", except: [], exclude: [] }
-      - { name: infrastructure, match: &infrastructure "*/*/infrastructure", except: [], exclude: [] }
-      - { name: ui, match: &ui "*/*/ui", except: [], exclude: [] }
-    rules:
-      - { source: *feature, disallow: [*feature], allow: [*module_api], allow_same_match: true }
-      - { source: *module, disallow: [*module], allow: [*module_api], allow_same_match: true }
-      - { source: "*/config/domain", disallow: [*module], allow: [*domain], allow_same_match: true }
-      - { source: *domain, disallow: [*application, *infrastructure, *ui], allow: [], allow_same_match: false }
-      - { source: *infrastructure, disallow: [*application, *ui], allow: [], allow_same_match: false }
-      - { source: *application, disallow: [*ui], allow: [], allow_same_match: false }
-      - { source: *ui, disallow: [*infrastructure], allow: [], allow_same_match: false }
+      - { name: feature, match: "*" }
+      - { name: domain, match: "*/*/domain" }
+      - { name: application, match: "*/*/application" }
+      - { name: infrastructure, match: "*/*/infrastructure" }
+      - { name: ui, match: "*/*/ui" }
     flow:
       layers: [ui, application, infrastructure, domain]
-      module_tag: feature
       analyzers: [backward-flow, no-cycles]
-  map:
-    top: 20
-  clusters:
-    group_depth: 5
-    top: 20
-    files_top: 5
-  health:
-    top: 5
-
-workspace:
-  recipe:
-    skip: []
-  rules:
-    local:
-      max_content_chars: 2400
-  sync: {}
 ```
 
-For report-size limits such as `top` and `files_top`, `-1` means unlimited,
-`0` means show none, and any positive value caps the result.
+The full syntax is available in the generated `.enclosure/enclosure.yaml` and command docs.
 
-The syntax is intentionally small. It describes seams, not the meaning of life.
+Recipes are deliberately modest: they are not a framework. They are the reusable shape of code the repository already accepts. An agent can find a good module, convert that scaffold into a recipe, preview it with `--dry-run`, and then generate files that start inside the enclosure.
 
-## Who It Is For
+## Useful Commands
 
-Use `enclosure` if:
+```bash
+enclosure --docs
+enclosure --llm
 
-- you work with coding agents and want them to understand repo boundaries before editing;
-- your team has architecture rules that live mostly in people's heads;
-- you want generated files to follow local recipes instead of generic templates;
-- you like tools that are small enough to understand and useful enough to keep.
+enclosure architecture health
+enclosure architecture map
+enclosure architecture boundaries
+enclosure architecture shape
+enclosure architecture clusters
 
-Skip it if you want an all-seeing platform that manages every decision for you. `enclosure` is not trying to become your boss. It already has plans this weekend.
+enclosure workspace rules
+enclosure workspace recipe --list
+enclosure workspace recipe <name> --show
+enclosure workspace recipe <name> --dry-run
+```
 
-## The Human Part
+## When To Use It
 
-Good agent collaboration is not about replacing human judgment.
+Use `enclosure` when:
 
-It is about reducing the amount of judgment wasted on preventable mess.
+- coding agents contribute to a repository with meaningful architectural boundaries;
+- the team wants local rules to shape agent behavior before code review;
+- module ownership, public seams, and dependency direction matter;
+- generated code should follow project recipes;
+- architects want a lightweight feedback loop instead of a new platform.
 
-Humans decide the architecture. Humans review the contract. Humans tune the local rules. Agents get a better starting point, a smaller blast radius, and a way to explain their work in the language of the repository.
-
-That is why `enclosure` is small but powerful: it does not make the agent smarter by magic. It makes the room clearer.
-
-And clear rooms produce better work.
+Skip it if the repository has no stable architecture yet or if you want a hosted workflow manager. `enclosure` is a repo-local contract and checker, not a platform.
 
 ## Release Notes
 
