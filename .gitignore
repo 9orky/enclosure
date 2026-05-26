@@ -12,3 +12,4 @@ libraries/code_map/src/code_map/_version.py
 # Bootstrapped project-local enclosure folder
 /enclosure/
 .enclosure/.cache
+.enclosure/plans

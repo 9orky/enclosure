@@ -212,6 +212,7 @@ class Workspace:
             target_dir=self.layout.target_dir(self.project_root),
             required_dirs=_sort_paths(
                 (
+                    self.layout.plans_dir(self.project_root),
                     self.layout.recipes_dir(self.project_root),
                     self.layout.local_rules_dir(self.project_root),
                 )

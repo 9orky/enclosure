@@ -1,0 +1,6 @@
+{% set target_path = result.document.target_path|present_path(project_root) %}
+{% if result.created %}Created plan {{ target_path }}.
+{% elif result.overwritten %}Overwrote plan {{ target_path }}.
+{% else %}Preserved existing plan {{ target_path }}.
+Use --force to overwrite it.
+{% endif %}

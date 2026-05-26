@@ -57,6 +57,9 @@ class EnclosureProjectLayout:
     def recipes_dir(self, project_root: Path) -> Path:
         return self.target_dir(project_root) / "recipes"
 
+    def plans_dir(self, project_root: Path) -> Path:
+        return self.target_dir(project_root) / "plans"
+
     def cache_dir(self, project_root: Path) -> Path:
         return self.target_dir(project_root) / ".cache"
 

@@ -28,6 +28,10 @@ class EnclosureProjectLayoutTest(unittest.TestCase):
                 project_layout.cache_dir(project_root),
             )
             self.assertEqual(
+                contract_root / "plans",
+                project_layout.plans_dir(project_root),
+            )
+            self.assertEqual(
                 (contract_root / "enclosure.yaml", contract_root / "enclosure.yml"),
                 project_layout.config_candidate_paths(project_root),
             )

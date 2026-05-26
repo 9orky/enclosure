@@ -23,6 +23,7 @@ def test_workspace_sync_init_creates_contract_for_supported_language_fixture(
     assert result.exit_code == 0, result.output
     assert project.enclosure_dir.is_dir()
     assert project.config_path.is_file()
+    assert project.plans_dir.is_dir()
     assert project.recipes_dir.is_dir()
     assert project.local_rules_dir.is_dir()
     assert project.shared_rules_dir.is_dir()
@@ -44,6 +45,7 @@ def test_workspace_sync_update_refreshes_shared_assets_and_preserves_local_rules
     result = cli_runner.invoke(app, ["workspace", "sync", "update"])
 
     assert result.exit_code == 0, result.output
+    assert project.plans_dir.is_dir()
     assert local_rule_path.read_text(encoding="utf-8") == local_rule_content
     assert (
         project.shared_rules_dir / "structure" / "MODULE.md"

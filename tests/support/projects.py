@@ -38,6 +38,10 @@ class FixtureProject:
         return self.enclosure_dir / "recipes"
 
     @property
+    def plans_dir(self) -> Path:
+        return self.enclosure_dir / "plans"
+
+    @property
     def copilot_instructions_path(self) -> Path:
         return self.root / ".github" / "copilot-instructions.md"
 

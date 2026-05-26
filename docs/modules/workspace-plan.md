@@ -1,0 +1,24 @@
+<!-- Generated from feature ui/templates/docs.tmpl files. Do not edit by hand. -->
+
+# Workspace Plan Docs
+
+Use `enclosure workspace plan <name>` to create a user-owned planning document in `.enclosure/plans/`.
+
+## When To Use It
+
+- Before creating a new module.
+- Before changing a module boundary or public seam.
+- Before asking an agent to implement a feature that needs architecture decisions.
+
+## How To Respond
+
+- Fill in the plan before implementation begins.
+- Keep plans in `.enclosure/plans/` as local project context.
+- Use `--show` to preview the scaffold without writing.
+- Use `--force` only when replacing an existing draft intentionally.
+
+## Related Commands
+
+- `enclosure workspace recipe --docs`
+- `enclosure workspace sync --docs`
+- `enclosure architecture health --docs`

@@ -1,0 +1,23 @@
+# Workspace Plan LLM Guide
+
+## Purpose
+
+Use this command to create a repo-local planning document for a human to fill before module implementation.
+
+## When To Run
+
+- Before adding a new module.
+- Before changing ownership, public seams, or layer responsibilities.
+- When the next coding task needs human architecture choices captured first.
+
+## How To Read The Result
+
+- Created means a new draft exists in `.enclosure/plans/`.
+- Preserved means a draft already exists and was not overwritten.
+- `--show` prints the scaffold without writing files.
+
+## Agent Tips
+
+- Treat plan documents as user-owned local artifacts.
+- Do not overwrite an existing plan unless explicitly asked to use `--force`.
+- Read a completed plan before editing application code.
