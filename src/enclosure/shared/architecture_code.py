@@ -51,21 +51,23 @@ def extract_architecture_code() -> ArchitectureCodeMap:
         config_path,
     )
     architecture_root = _architecture_root(project_root, architecture_config)
-    source_prefix = _source_prefix(project_root, architecture_root)
     code_map = architecture_code_cache.extract_with_cache(
         language=architecture_config.language,
-        project_root=project_root,
-        exclusions=_extraction_exclusions(architecture_config),
+        project_root=architecture_root,
+        exclusions=_extraction_exclusions(
+            project_root,
+            architecture_root,
+            architecture_config,
+        ),
         extract_code=extract_code,
         cache_root=project_root,
-        source_prefix=source_prefix,
     )
     return ArchitectureCodeMap(
         project_root=project_root,
         config_path=config_path,
         config=architecture_config,
         matching_config=_matching_config(architecture_config),
-        code_map=_scoped_code_map(code_map, source_prefix),
+        code_map=code_map,
     )
 
 
@@ -91,11 +93,48 @@ def _architecture_root(project_root: Path, architecture_config: object) -> Path:
     return root_path.resolve(strict=False)
 
 
-def _extraction_exclusions(architecture_config: object) -> tuple[str, ...]:
+def _extraction_exclusions(
+    project_root: Path,
+    architecture_root: Path,
+    architecture_config: object,
+) -> tuple[str, ...]:
     exclusions = tuple(getattr(architecture_config, "exclusions", ()))
     if not getattr(architecture_config, "architecture_root", ""):
         return exclusions
-    return tuple(dict.fromkeys((*exclusions, *DEFAULT_ARCHITECTURE_EXCLUSIONS)))
+
+    source_prefix = _source_prefix(project_root, architecture_root)
+    return _rooted_exclusions(
+        tuple(dict.fromkeys((*exclusions, *DEFAULT_ARCHITECTURE_EXCLUSIONS))),
+        source_prefix,
+    )
+
+
+def _rooted_exclusions(
+    exclusions: tuple[str, ...],
+    source_prefix: str,
+) -> tuple[str, ...]:
+    normalized_prefix = source_prefix.strip("/")
+    rooted_exclusions: list[str] = []
+    for exclusion in exclusions:
+        normalized = exclusion.strip().strip("/")
+        if not normalized:
+            continue
+        rooted_exclusions.append(normalized)
+        stripped = _strip_source_prefix(normalized, normalized_prefix)
+        if stripped and stripped != normalized:
+            rooted_exclusions.append(stripped)
+    return tuple(dict.fromkeys(rooted_exclusions))
+
+
+def _strip_source_prefix(exclusion: str, source_prefix: str) -> str:
+    if not source_prefix:
+        return exclusion
+    if exclusion == source_prefix:
+        return "**"
+    if exclusion.startswith(f"{source_prefix}/"):
+        stripped = exclusion[len(source_prefix) + 1 :].strip("/")
+        return stripped or "**"
+    return exclusion
 
 
 def _source_prefix(project_root: Path, architecture_root: Path) -> str:

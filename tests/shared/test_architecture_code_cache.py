@@ -138,7 +138,7 @@ class ArchitectureCodeCacheTest(unittest.TestCase):
             source_root = project_root / "src"
             source_root.mkdir()
             (source_root / "app.py").write_text("VALUE = 1\n", encoding="utf-8")
-            extract_code = _extract_code_mock(_fake_code_map(prefix="src"))
+            extract_code = _extract_code_mock(_fake_code_map())
             config = SimpleNamespace(
                 language="python",
                 exclusions=[],
@@ -154,7 +154,7 @@ class ArchitectureCodeCacheTest(unittest.TestCase):
 
             extract_code.assert_called_once_with(
                 "python",
-                project_root,
+                source_root.resolve(),
                 architecture_code.DEFAULT_ARCHITECTURE_EXCLUSIONS,
             )
             self.assertEqual(1, len(_cache_files(project_root)))
@@ -175,7 +175,7 @@ class ArchitectureCodeCacheTest(unittest.TestCase):
             source_root.mkdir()
             (source_root / "app.py").write_text("VALUE = 1\n", encoding="utf-8")
             (project_root / "outside.py").write_text("VALUE = 1\n", encoding="utf-8")
-            extract_code = _extract_code_mock(_fake_code_map(prefix="src"))
+            extract_code = _extract_code_mock(_fake_code_map())
             config = SimpleNamespace(
                 language="python",
                 exclusions=[],
@@ -199,6 +199,77 @@ class ArchitectureCodeCacheTest(unittest.TestCase):
                 ("app", "dep"),
                 tuple(cached.code_map.graph.node_ids()),
             )
+
+    def test_out_of_scope_added_and_deleted_files_do_not_invalidate_scoped_cache(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_root = _project_root(temporary_directory)
+            source_root = project_root / "src"
+            source_root.mkdir()
+            (source_root / "app.py").write_text("VALUE = 1\n", encoding="utf-8")
+            extract_code = _extract_code_mock(_fake_code_map())
+            config = SimpleNamespace(
+                language="python",
+                exclusions=[],
+                architecture_root="src",
+            )
+
+            with _architecture_config(project_root, configs=(config,)), patch.object(
+                architecture_code,
+                "extract_code",
+                extract_code,
+            ):
+                architecture_code.extract_architecture_code()
+                outside_path = project_root / "outside.py"
+                outside_path.write_text("VALUE = 1\n", encoding="utf-8")
+                architecture_code.extract_architecture_code()
+                outside_path.unlink()
+                architecture_code.extract_architecture_code()
+
+            extract_code.assert_called_once()
+
+    def test_project_relative_exclusions_are_normalized_for_architecture_root(
+        self,
+    ) -> None:
+        project_root = Path("/project")
+        architecture_root = project_root / "src"
+        config = SimpleNamespace(
+            exclusions=["src/generated/**", "ignored/**"],
+            architecture_root="src",
+        )
+
+        exclusions = architecture_code._extraction_exclusions(
+            project_root,
+            architecture_root,
+            config,
+        )
+
+        self.assertIn("src/generated/**", exclusions)
+        self.assertIn("generated/**", exclusions)
+        self.assertIn("ignored/**", exclusions)
+
+    def test_source_target_collection_prunes_excluded_directories(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_root = Path(temporary_directory)
+            (project_root / "src").mkdir()
+            (project_root / "src" / "app.py").write_text("VALUE = 1\n")
+            ignored_root = project_root / "src" / "ignored"
+            ignored_root.mkdir()
+            (ignored_root / "generated.py").write_text("VALUE = 1\n")
+
+            targets, files_found, files_excluded = (
+                architecture_code_cache._collect_source_targets(
+                    project_root / "src",
+                    (".py",),
+                    ("ignored/**",),
+                    source_prefix="",
+                )
+            )
+
+        self.assertEqual(("app.py",), tuple(target.source_id for target in targets))
+        self.assertEqual(1, files_found)
+        self.assertEqual(0, files_excluded)
 
     def test_changing_non_extraction_config_reuses_cache(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

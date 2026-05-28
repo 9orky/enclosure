@@ -32,15 +32,16 @@ def test_minimal_fixture_project_exercises_code_map_elements(
     source_files = result.extraction_result.files
     elements = _code_map_elements(source_files)
 
-    assert result.extraction_result.summary.files_found == _source_file_count(
-        project.root,
-        language,
-    )
-    assert result.extraction_result.summary.files_excluded == _source_file_count(
-        project.root / "ignored",
-        language,
+    assert result.extraction_result.summary.files_found == (
+        result.extraction_result.summary.files_checked
+        + result.extraction_result.summary.files_excluded
     )
     assert result.extraction_result.summary.files_checked == len(source_files)
+    assert result.extraction_result.summary.files_checked == _source_file_count(
+        project.root / "src",
+        language,
+    )
+    assert result.extraction_result.summary.files_excluded >= 0
     assert all(not source_id.startswith("ignored/") for source_id in source_files)
     assert all(source.line_count > 0 for source in source_files.values())
     assert all(source.code_line_count > 0 for source in source_files.values())

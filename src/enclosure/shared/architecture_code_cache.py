@@ -293,22 +293,43 @@ def _collect_source_targets(
     targets = []
     files_found = 0
     files_excluded = 0
-    for path in sorted(sources_root.rglob("*")):
-        if path.suffix not in file_extensions:
-            continue
+    walk_root = sources_root / source_prefix if source_prefix else sources_root
+    if not walk_root.is_dir():
+        return (), files_found, files_excluded
 
-        source_id = path.relative_to(sources_root).as_posix()
-        if source_prefix and not _is_in_source_prefix(source_id, source_prefix):
-            continue
+    for root, dirnames, filenames in os.walk(walk_root):
+        root_path = Path(root)
+        relative_root = root_path.relative_to(sources_root).as_posix()
+        if relative_root == ".":
+            relative_root = ""
 
-        files_found += 1
-        if any(_matches_exclusion(source_id, exclusion) for exclusion in exclusions):
-            files_excluded += 1
-            continue
+        dirnames[:] = [
+            dirname
+            for dirname in sorted(dirnames)
+            if not _matches_pruneable_directory(
+                _join_source_id(relative_root, dirname),
+                exclusions,
+            )
+        ]
 
-        targets.append(SourceTarget(source_id, path))
+        for filename in sorted(filenames):
+            path = root_path / filename
+            if path.suffix not in file_extensions:
+                continue
+
+            source_id = _join_source_id(relative_root, filename)
+            files_found += 1
+            if any(_matches_exclusion(source_id, exclusion) for exclusion in exclusions):
+                files_excluded += 1
+                continue
+
+            targets.append(SourceTarget(source_id, path))
 
     return tuple(targets), files_found, files_excluded
+
+
+def _join_source_id(parent: str, child: str) -> str:
+    return f"{parent}/{child}" if parent else child
 
 
 def _is_in_source_prefix(source_id: str, source_prefix: str) -> bool:
@@ -330,6 +351,18 @@ def _matches_exclusion(source_id: str, exclusion: str) -> bool:
         return False
 
     return source_id.startswith(f"{normalized}/")
+
+
+def _matches_pruneable_directory(
+    source_id: str,
+    exclusions: tuple[str, ...],
+) -> bool:
+    probe = f"{source_id}/__enclosure_prune_probe__"
+    return any(
+        _matches_exclusion(source_id, exclusion)
+        or _matches_exclusion(probe, exclusion)
+        for exclusion in exclusions
+    )
 
 
 def _implementation_file_stamps(
