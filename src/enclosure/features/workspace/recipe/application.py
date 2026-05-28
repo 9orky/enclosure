@@ -67,7 +67,7 @@ class _RecipeGenerationService:
                     recipe,
                     project_root=project_root,
                     target_path=Path("_enclosure_recipe_check") / recipe.name,
-                    variables=variables,
+                    variables=_check_variables_for(recipe, variables),
                 )
             return domain.RecipeCheckReport(
                 project_root=project_root,
@@ -100,7 +100,7 @@ class _RecipeGenerationService:
             recipe,
             project_root=project_root,
             target_path=target_path or Path("_enclosure_recipe_check") / recipe.name,
-            variables=variables,
+            variables=_check_variables_for(recipe, variables),
         )
 
         return domain.RecipeCheckReport(
@@ -365,6 +365,32 @@ def check_recipes(
 
 def _load_recipe_generation_settings() -> domain.RecipeGenerationConfig:
     return infrastructure.load_recipe_generation_config()
+
+
+def _check_variables_for(
+    recipe: domain.Recipe,
+    variables: Mapping[str, str],
+) -> dict[str, str]:
+    check_variables = dict(variables)
+    for input_spec in recipe.inputs:
+        if input_spec.name in check_variables:
+            continue
+        if not input_spec.required:
+            continue
+        check_variables[input_spec.name] = _sample_value_for(input_spec)
+    return check_variables
+
+
+def _sample_value_for(input_spec: domain.RecipeInputSpec) -> str:
+    if input_spec.choices:
+        return input_spec.choices[0]
+    if input_spec.value_type == "list":
+        return "sample"
+    if input_spec.value_type == "path":
+        return "sample"
+    if input_spec.value_type == "dotted_name":
+        return "sample"
+    return "sample"
 
 
 RecipeGenerationConfig = domain.RecipeGenerationConfig

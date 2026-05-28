@@ -1,0 +1,21 @@
+# Workspace Health Docs
+
+Use `enclosure workspace health` to check the project-local contract before drilling into workspace commands.
+
+## Common Workflows
+
+- Run after editing `.enclosure/enclosure.yaml`, rules, or recipes.
+- Use `enclosure workspace rules` when rule documents have findings.
+- Use `enclosure workspace recipe --check` when recipe templates have findings.
+
+## Reading Results
+
+- Config, rules, and recipe failures are blocking findings.
+- Missing recipes are informational unless recipe manifests exist and fail validation or rendering.
+- Root `enclosure health` includes this report before architecture health.
+
+## Related Commands
+
+- `enclosure health --docs`
+- `enclosure workspace rules --docs`
+- `enclosure workspace recipe --docs`

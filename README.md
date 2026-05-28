@@ -36,7 +36,7 @@ An agent can search files, but it does not automatically know:
 - **Shape validation**: `enclosure architecture shape` checks configured limits for files, symbols, imports, arguments, and line counts.
 - **Architecture mapping**: `enclosure architecture map` shows modules, layers, unknown files, dependencies, and hotspots.
 - **Dependency pressure views**: `enclosure architecture clusters` highlights coupled areas before broad refactors.
-- **Fast preflight**: `enclosure architecture health` gives an architect-friendly overview before or after a task.
+- **Fast preflight**: `enclosure health` gives an architect-friendly workspace and architecture overview before or after a task.
 - **Project-shaped generation**: `.enclosure/recipes/` captures working module scaffolds found by the agent, then lets future tasks generate known-good files instead of hand-creating structure from scratch.
 - **Assistant routing**: generated `AGENTS.md` and `.github/copilot-instructions.md` tell coding assistants to begin in `.enclosure/`.
 - **Human-reviewable governance**: the contract is plain YAML and Markdown, so teams can review it like code.
@@ -94,6 +94,7 @@ Or run the first commands yourself:
 cd your-repo
 enclosure workspace sync init
 $EDITOR .enclosure/enclosure.yaml
+enclosure health
 enclosure architecture health
 enclosure architecture boundaries
 ```
@@ -146,6 +147,9 @@ Recipes are deliberately modest: they are not a framework. They are the reusable
 enclosure --docs
 enclosure --llm
 
+enclosure health
+enclosure workspace health
+
 enclosure architecture health
 enclosure architecture map
 enclosure architecture boundaries
@@ -153,6 +157,7 @@ enclosure architecture shape
 enclosure architecture clusters
 
 enclosure workspace rules
+enclosure workspace recipe --check
 enclosure workspace recipe --list
 enclosure workspace recipe <name> --show
 enclosure workspace recipe <name> --dry-run

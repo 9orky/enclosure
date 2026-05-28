@@ -120,9 +120,11 @@ Which `.enclosure/recipes/` recipe or existing module shape should be used?
 ## Verification Checklist
 
 - [ ] Run relevant unit tests.
+- [ ] Run `enclosure health`.
+- [ ] Run `enclosure workspace health` if workspace files changed.
 - [ ] Run `enclosure architecture boundaries`.
 - [ ] Run `enclosure architecture shape`.
-- [ ] Run `enclosure architecture health`.
+- [ ] Run `enclosure architecture health` if architecture-sensitive code changed.
 
 
 ## Open Questions

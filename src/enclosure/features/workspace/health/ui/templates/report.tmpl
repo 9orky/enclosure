@@ -1,0 +1,31 @@
+Workspace Health:
+- Project root: {{ report.project_root|present_path(project_root) }}
+- Config: {{ report.config_path|present_path(project_root) if report.config_present else "missing or invalid" }}
+- Rules directory: {{ "present" if report.rules_dir_present else "missing" }}
+- Local rules directory: {{ "present" if report.local_rules_dir_present else "missing" }}
+- Shared rules directory: {{ "present" if report.shared_rules_dir_present else "missing" }}
+- Recipes directory: {{ "present" if report.recipes_dir_present else "missing" }}
+{{ "\n" }}
+{% if report.rules_report %}
+Rules:
+- Documents discovered: {{ report.rules_report.documents_discovered }}
+- Documents checked: {{ report.rules_report.documents_checked }}
+- Documents with issues: {{ report.rules_report.documents_with_issues }}
+{{ "\n" }}
+{% endif %}
+{% if report.recipe_report %}
+Recipes:
+- Recipes discovered: {{ report.recipe_report.recipes_discovered }}
+- Recipes checked: {{ report.recipe_report.recipes_checked }}
+- Rendered paths checked: {{ report.recipe_report.rendered_paths_checked }}
+- Violations: {{ report.recipe_report.violations|length }}
+{{ "\n" }}
+{% endif %}
+{% if report.findings %}
+Findings:
+{% for finding in report.findings %}
+- {{ finding.severity }} {{ finding.category }}: {{ finding.subject }} - {{ finding.detail }}
+{% endfor %}
+{% else %}
+Workspace Health Passed! No findings.
+{% endif %}

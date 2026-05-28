@@ -9,6 +9,8 @@ import enclosure.features.architecture.clusters.ui
 import enclosure.features.architecture.health.ui
 import enclosure.features.architecture.map.ui
 import enclosure.features.architecture.shape.ui
+import enclosure.features.health.report.ui
+import enclosure.features.workspace.health.ui
 import enclosure.features.workspace.plan.ui
 import enclosure.features.workspace.recipe.ui
 import enclosure.features.workspace.rules.ui
@@ -91,6 +93,7 @@ def workspace_command(
 
 
 workspace_app.add_typer(enclosure.features.workspace.sync.ui.app, name="sync")
+_add_callback_app(workspace_app, enclosure.features.workspace.health.ui.app, name="health")
 _add_callback_app(workspace_app, enclosure.features.workspace.plan.ui.app, name="plan")
 _add_callback_app(workspace_app, enclosure.features.workspace.recipe.ui.app, name="recipe")
 _add_callback_app(workspace_app, enclosure.features.workspace.rules.ui.app, name="rules")
@@ -156,6 +159,7 @@ _add_callback_app(
 
 app.add_typer(workspace_app, name="workspace")
 app.add_typer(architecture_app, name="architecture")
+_add_callback_app(app, enclosure.features.health.report.ui.app, name="health")
 
 ui.set_command_defaults(root_command, {"llm": False, "docs": False})
 ui.set_command_defaults(workspace_command, {"llm": False, "docs": False})

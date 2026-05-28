@@ -2,7 +2,7 @@
 
 # Architecture Health Docs
 
-Use `enclosure architecture health` for a compact architecture preflight.
+Use `enclosure architecture health` for the architecture drilldown after root `enclosure health`.
 
 ## When To Use It
 

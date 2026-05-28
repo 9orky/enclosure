@@ -19,6 +19,8 @@ python -m pip install -e .
 make test
 enclosure --help
 enclosure --docs
+enclosure health
+enclosure workspace health
 enclosure architecture boundaries
 enclosure architecture shape
 enclosure workspace rules
@@ -31,6 +33,7 @@ python -m twine check dist/*
 - Keep changes narrow and intentional.
 - Prefer the repo's existing feature/module/layer patterns over inventing a new one.
 - If you change the CLI, make `--help` better, not just longer.
+- Run `enclosure health` before summarizing architecture-sensitive work.
 - If you change the architecture feature, run `enclosure architecture boundaries` and `enclosure architecture shape`.
 - If you touch packaged resources, remember they ship to users.
 

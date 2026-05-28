@@ -1,0 +1,16 @@
+# Workspace Health LLM Guide
+
+Use this command to verify that the current workspace contract is readable and internally healthy.
+
+## When To Run
+
+- Before implementing a task in a repository with `.enclosure/`.
+- After changing `.enclosure/enclosure.yaml`, `.enclosure/rules/`, or `.enclosure/recipes/`.
+- When root `enclosure health` points at workspace findings.
+
+## How To Interpret
+
+- Error findings are blocking; report them and use the focused command named by the category.
+- Rule findings usually need `enclosure workspace rules`.
+- Recipe findings usually need `enclosure workspace recipe --check`.
+- Architecture findings are outside this command; use `enclosure architecture health`.

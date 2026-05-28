@@ -83,11 +83,13 @@ class CommandDocsTest(unittest.TestCase):
 def docs_commands() -> tuple[list[str], ...]:
     return (
         ["--docs"],
+        ["health", "--docs"],
         ["workspace", "--docs"],
         ["architecture", "--docs"],
         ["workspace", "sync", "--docs"],
         ["workspace", "sync", "init", "--docs"],
         ["workspace", "sync", "update", "--docs"],
+        ["workspace", "health", "--docs"],
         ["workspace", "plan", "--docs"],
         ["workspace", "recipe", "--docs"],
         ["workspace", "rules", "--docs"],

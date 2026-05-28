@@ -1,0 +1,16 @@
+# Enclosure Health LLM Guide
+
+Use this command as the default preflight and post-change verification for repositories with an enclosure contract.
+
+## When To Run
+
+- Before making changes, after reading `.enclosure/` guidance.
+- After changes, before summarizing results to the user.
+- Whenever you need one command that moves from workspace contract health to architecture health.
+
+## How To Interpret
+
+- Error findings are blocking; name the focused follow-up command in your response.
+- Workspace findings point to `enclosure workspace health`, `enclosure workspace rules`, or `enclosure workspace recipe --check`.
+- Architecture findings point to `enclosure architecture health`, `enclosure architecture boundaries`, `enclosure architecture shape`, `enclosure architecture map`, or `enclosure architecture clusters`.
+- Passing root health does not replace relevant tests; it confirms the enclosure contract and architecture preflight.

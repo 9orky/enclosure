@@ -1,0 +1,36 @@
+Enclosure Health:
+- Project root: {{ report.project_root|present_path(project_root) }}
+{{ "\n" }}
+{% if report.workspace %}
+Workspace:
+- Config: {{ report.workspace.config_path|present_path(project_root) if report.workspace.config_present else "missing or invalid" }}
+- Rule issues: {{ report.workspace.rules_report.documents_with_issues if report.workspace.rules_report else "unknown" }}
+- Recipe violations: {{ report.workspace.recipe_report.violations|length if report.workspace.recipe_report else "unknown" }}
+{{ "\n" }}
+{% endif %}
+{% if report.architecture %}
+Architecture:
+{{ report.architecture|scan_summary }}
+- Boundary violations: {{ report.architecture.boundary_violation_count }}
+- Shape violations: {{ report.architecture.shape_violation_count }}
+- Unknown files: {{ report.architecture.unknown_file_count }}
+{{ "\n" }}
+{% endif %}
+{% if report.findings or (report.workspace and report.workspace.findings) or (report.architecture and report.architecture.findings) %}
+Findings:
+{% for finding in report.findings %}
+- {{ finding.severity }} {{ finding.category }}: {{ finding.subject }} - {{ finding.detail }}
+{% endfor %}
+{% if report.workspace %}
+{% for finding in report.workspace.findings %}
+- {{ finding.severity }} workspace/{{ finding.category }}: {{ finding.subject }} - {{ finding.detail }}
+{% endfor %}
+{% endif %}
+{% if report.architecture %}
+{% for finding in report.architecture.findings %}
+- {{ finding.severity }} architecture/{{ finding.category }}: {{ finding.subject }} - {{ finding.detail }}
+{% endfor %}
+{% endif %}
+{% else %}
+Enclosure Health Passed! No findings.
+{% endif %}

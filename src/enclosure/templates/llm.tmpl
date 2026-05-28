@@ -12,11 +12,12 @@ Standard help explains syntax. LLM help explains how an agent should use and int
 
 1. If `.enclosure/` is missing, run `enclosure workspace sync init`.
 2. Read `.enclosure/enclosure.yaml`, `.enclosure/rules/INDEX.md`, and any referenced local rules before editing code.
-3. Use `enclosure architecture health` for the fastest architecture overview.
-4. Use `enclosure architecture boundaries` to check dependency rules and `enclosure architecture shape` to check file and symbol limits.
-5. Use `enclosure architecture map` and `enclosure architecture clusters` when you need to understand ownership, hotspots, or coupling before making a larger change.
-6. Use `enclosure workspace recipe --list`, `--show`, and `--dry-run` before generating recipe-based code.
-7. After changes, rerun the relevant architecture command and `enclosure workspace rules`.
+3. Use `enclosure health` for the broad workspace and architecture preflight.
+4. Use `enclosure workspace health` or `enclosure architecture health` when the broad report points at a concern.
+5. Use focused commands such as `enclosure workspace rules`, `enclosure workspace recipe --check`, `enclosure architecture boundaries`, and `enclosure architecture shape` for drilldowns.
+6. Use `enclosure architecture map` and `enclosure architecture clusters` when you need to understand ownership, hotspots, or coupling before making a larger change.
+7. Use `enclosure workspace recipe --list`, `--show`, and `--dry-run` before generating recipe-based code.
+8. After changes, rerun `enclosure health` and any focused command relevant to the files changed.
 
 ## Flexibility
 
