@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from importlib import import_module
+from pathlib import Path
 
 from . import domain
 
@@ -20,9 +21,14 @@ def build_rule_schema_report() -> domain.RuleSchemaReport:
     return application.build_rule_schema_report()
 
 
-def build_rule_read_plan(tags: tuple[str, ...]) -> domain.RuleReadPlan:
+def build_rule_read_plan(
+    tags: tuple[str, ...],
+    *,
+    paths: tuple[Path, ...] = (),
+    task: str = "",
+) -> domain.RuleReadPlan:
     application = import_module("enclosure.features.workspace.rules.application")
-    return application.build_rule_read_plan(tags)
+    return application.build_rule_read_plan(tags, paths=paths, task=task)
 
 
 __all__ = [

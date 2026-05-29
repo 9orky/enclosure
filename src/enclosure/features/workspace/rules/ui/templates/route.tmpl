@@ -1,6 +1,12 @@
 Rule read route.
-Requested tags: {{ plan.requested_tags|join(", ") }}.
+Selected tags: {{ plan.requested_tags|join(", ") }}.
 Available tags: {{ plan.available_tags|join(", ") }}.
+{% if plan.tag_selections %}
+Tag selection:
+{% for selection in plan.tag_selections -%}
+- {{ selection.tag }}: {{ selection.reason }}
+{% endfor -%}
+{% endif %}
 {% if plan.found %}
 Read order:
 {% for step in plan.steps -%}

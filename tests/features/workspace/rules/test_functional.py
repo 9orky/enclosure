@@ -20,6 +20,9 @@ def test_workspace_rules_accepts_valid_fixture_workspace(
     assert report.documents_checked == report.documents_discovered
     assert report.documents_checked >= 3
     assert not report.has_findings
+    assert "Route planning:" in result.output
+    assert "Available route tags:" in result.output
+    assert "structure" in result.output
 
 
 def test_workspace_rules_reports_expected_broken_fixture_violations(
@@ -60,6 +63,48 @@ def test_workspace_rules_route_reports_structure_read_receipt(
     assert result.exit_code == 0, result.output
     assert "Read receipt" in result.output
     assert "shared/structure/INDEX.md" in result.output
+
+
+def test_workspace_rules_route_infers_tags_from_path(
+    fixture_project,
+    use_project,
+    cli_runner,
+) -> None:
+    project = fixture_project("enclosure-workspace")
+    use_project(project)
+
+    result = cli_runner.invoke(
+        app,
+        [
+            "workspace",
+            "rules",
+            "route",
+            "--path",
+            "src/enclosure/features/example/domain.py",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Selected tags: structure, python, layers" in result.output
+    assert "Tag selection" in result.output
+
+
+def test_workspace_rules_route_infers_tags_from_task(
+    fixture_project,
+    use_project,
+    cli_runner,
+) -> None:
+    project = fixture_project("enclosure-workspace")
+    use_project(project)
+
+    result = cli_runner.invoke(
+        app,
+        ["workspace", "rules", "route", "--task", "structure"],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Task category `structure` maps to `structure`" in result.output
+    assert "Read receipt" in result.output
 
 
 def test_workspace_rules_route_reports_unknown_tag_choices(

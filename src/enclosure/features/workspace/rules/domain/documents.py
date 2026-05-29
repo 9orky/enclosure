@@ -177,6 +177,7 @@ class RuleSchemaReport(BaseModel):
     local_documents_checked: int
     local_documents_with_issues: int
     local_max_content_chars: int
+    available_route_tags: tuple[str, ...] = ()
     collection_complete: bool
     has_findings: bool
 

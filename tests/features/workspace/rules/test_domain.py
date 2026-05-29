@@ -208,6 +208,36 @@ child_paths:
         self.assertFalse(plan.found)
         self.assertEqual(("structure",), plan.available_tags)
 
+    def test_path_inference_selects_structure_python_and_layers(self) -> None:
+        selections = domain.infer_rule_tag_selections(
+            paths=(
+                Path(
+                    "src/enclosure/features/workspace/rules/domain/graph.py",
+                ),
+            ),
+            task="",
+            project_root=Path("."),
+            architecture_root="src/enclosure/features",
+        )
+
+        self.assertEqual(
+            ("structure", "python", "layers"),
+            domain.selected_tags(selections),
+        )
+
+    def test_task_inference_selects_refactoring_tags(self) -> None:
+        selections = domain.infer_rule_tag_selections(
+            paths=(),
+            task="refactoring",
+            project_root=Path("."),
+            architecture_root="src/enclosure/features",
+        )
+
+        self.assertEqual(
+            ("change", "refactoring"),
+            domain.selected_tags(selections),
+        )
+
     def test_rule_graph_reports_invalid_direct_read_and_unreachable_doc(self) -> None:
         documents = (
             _document(

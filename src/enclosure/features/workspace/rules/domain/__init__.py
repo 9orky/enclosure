@@ -19,8 +19,15 @@ from .graph import (
     RuleGraphFinding,
     RuleReadPlan,
     RuleReadStep,
+    available_rule_tags,
     build_rule_read_plan,
     validate_rule_graph,
+)
+from .inference import (
+    RuleTagSelection,
+    explicit_rule_tag_selections,
+    infer_rule_tag_selections,
+    selected_tags,
 )
 from .policy import RuleSchemaPolicy
 from .schema import RuleDocumentSchema, RuleSectionRequirement
@@ -45,7 +52,12 @@ __all__ = [
     "RuleSchemaViolation",
     "RuleSchemaViolationReport",
     "RuleSectionRequirement",
+    "RuleTagSelection",
     "RulesConfig",
+    "available_rule_tags",
     "build_rule_read_plan",
+    "explicit_rule_tag_selections",
+    "infer_rule_tag_selections",
+    "selected_tags",
     "validate_rule_graph",
 ]

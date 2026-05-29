@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from enclosure.shared import layout
+import enclosure.features.architecture.config
 import enclosure.features.workspace.config
 
 from . import domain, infrastructure
@@ -20,7 +21,8 @@ def build_rule_schema_report() -> domain.RuleSchemaReport:
         _inspect_document(document, policy, known_paths=known_paths)
         for document in document_files
     )
-    graph_violations = _graph_violations_by_path(document_checks)
+    checked_documents = _checked_documents(document_checks)
+    graph_violations = _graph_violations_by_path(checked_documents)
     documents = tuple(
         _map_document_report(
             document_file,
@@ -50,14 +52,23 @@ def build_rule_schema_report() -> domain.RuleSchemaReport:
             if document.is_local and (document.exception or bool(document.violations))
         ),
         local_max_content_chars=policy.local_max_content_chars,
+        available_route_tags=domain.available_rule_tags(checked_documents),
         collection_complete=len(documents) == len(document_files),
         has_findings=documents_with_issues > 0,
     )
 
 
-def build_rule_read_plan(tags: tuple[str, ...]) -> domain.RuleReadPlan:
+def build_rule_read_plan(
+    tags: tuple[str, ...],
+    *,
+    paths: tuple[Path, ...] = (),
+    task: str = "",
+) -> domain.RuleReadPlan:
     project_root, _config_path, _workspace_settings = (
         enclosure.features.workspace.config.load_config()
+    )
+    _architecture_project_root, _architecture_config_path, architecture_settings = (
+        enclosure.features.architecture.config.load_config()
     )
     rules_root = layout.current_layout().rules_dir(project_root)
     document_files = infrastructure.file_repository.find(rules_root)
@@ -76,7 +87,21 @@ def build_rule_read_plan(tags: tuple[str, ...]) -> domain.RuleReadPlan:
             + "; ".join(parse_errors)
         )
 
-    return domain.build_rule_read_plan(tuple(documents), tuple(tags))
+    tag_selections = (
+        domain.explicit_rule_tag_selections(tuple(tags))
+        + domain.infer_rule_tag_selections(
+            paths=tuple(paths),
+            task=task,
+            project_root=project_root,
+            architecture_root=architecture_settings.architecture_root,
+        )
+    )
+    selected_tags = domain.selected_tags(tag_selections)
+    return domain.build_rule_read_plan(
+        tuple(documents),
+        selected_tags,
+        tag_selections,
+    )
 
 
 def _inspect_document(
@@ -135,14 +160,19 @@ def _map_document_report(
     )
 
 
-def _graph_violations_by_path(
+def _checked_documents(
     document_checks: tuple[domain.RuleDocumentCheck | domain.RuleDocumentReport, ...],
-) -> dict[Path, tuple[domain.RuleSchemaViolation, ...]]:
-    documents = tuple(
+) -> tuple[domain.RuleDocument, ...]:
+    return tuple(
         document_check.document
         for document_check in document_checks
         if isinstance(document_check, domain.RuleDocumentCheck)
     )
+
+
+def _graph_violations_by_path(
+    documents: tuple[domain.RuleDocument, ...],
+) -> dict[Path, tuple[domain.RuleSchemaViolation, ...]]:
     values: dict[Path, list[domain.RuleSchemaViolation]] = {}
     for finding in domain.validate_rule_graph(documents):
         values.setdefault(finding.path, []).append(finding.violation)

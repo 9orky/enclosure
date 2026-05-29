@@ -4,7 +4,7 @@
 
 Use this command to validate shared and local rule documents in the current workspace. It checks metadata, section shape, navigation links, reference integrity, deterministic route wiring, and local content-size thresholds.
 
-Use `enclosure workspace rules route --tag TAG` before architecture-sensitive edits to print the smallest deterministic reading path for declared rule tags.
+Use `enclosure workspace rules route --tag TAG`, `--path PATH`, or `--task TASK` before architecture-sensitive edits to print the smallest deterministic reading path for declared rule tags.
 
 ## When To Run
 
@@ -13,6 +13,7 @@ Use `enclosure workspace rules route --tag TAG` before architecture-sensitive ed
 - After adding or removing rule references.
 - Before deciding which local rule documents need optimization.
 - Before an agent needs to confirm which rules it read.
+- When path or task context should infer tags instead of leaving tag choice to the agent.
 
 ## How To Read The Result
 
@@ -23,6 +24,7 @@ Use `enclosure workspace rules route --tag TAG` before architecture-sensitive ed
 - Structural findings mean the document shape does not match the expected rule contract.
 - Local content findings mean a local rule body exceeded `workspace.rules.local.max_content_chars`.
 - Route output is a read checklist plus a short receipt template the agent can echo before editing.
+- Tag selection output explains whether each selected tag came from `--tag`, `--path`, or `--task`.
 
 ## Examples
 
@@ -31,6 +33,7 @@ Use `enclosure workspace rules route --tag TAG` before architecture-sensitive ed
 - If frontmatter is invalid, fix metadata before changing body text.
 - If local and shared guidance overlap, keep reusable guidance shared and project-specific guidance local.
 - If a route is requested for an unknown tag, choose from the reported available tags or add a narrow tag to the right rule document.
+- If no explicit tag is obvious, run route with `--path` for changed files or `--task` for known work categories such as `structure`, `refactoring`, or `verification`.
 
 ## Agent Tips
 
