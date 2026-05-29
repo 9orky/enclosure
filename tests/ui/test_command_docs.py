@@ -97,6 +97,7 @@ def docs_commands() -> tuple[list[str], ...]:
         ["architecture", "shape", "--docs"],
         ["architecture", "map", "--docs"],
         ["architecture", "clusters", "--docs"],
+        ["architecture", "coherence", "--docs"],
         ["architecture", "health", "--docs"],
     )
 

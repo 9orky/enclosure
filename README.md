@@ -36,6 +36,7 @@ An agent can search files, but it does not automatically know:
 - **Shape validation**: `enclosure architecture shape` checks configured limits for files, symbols, imports, arguments, and line counts.
 - **Architecture mapping**: `enclosure architecture map` shows modules, layers, unknown files, dependencies, and hotspots.
 - **Dependency pressure views**: `enclosure architecture clusters` highlights coupled areas before broad refactors.
+- **Coherence review**: `enclosure architecture coherence` scores feature-module naming, abstract tree shape, sibling patterns, flow, seam use, and dependency pressure before streamlining.
 - **Fast preflight**: `enclosure health` gives an architect-friendly workspace and architecture overview before or after a task.
 - **Project-shaped generation**: `.enclosure/recipes/` captures working module scaffolds found by the agent, then lets future tasks generate known-good files instead of hand-creating structure from scratch.
 - **Assistant routing**: generated `AGENTS.md` and `.github/copilot-instructions.md` tell coding assistants to begin in `.enclosure/`.
@@ -155,6 +156,7 @@ enclosure architecture map
 enclosure architecture boundaries
 enclosure architecture shape
 enclosure architecture clusters
+enclosure architecture coherence
 
 enclosure workspace rules
 enclosure workspace recipe --check

@@ -22,3 +22,4 @@ Use `enclosure architecture clusters` to inspect dependency pressure by grouped 
 - `enclosure architecture health --docs`
 - `enclosure architecture map --docs`
 - `enclosure architecture boundaries --docs`
+- `enclosure architecture coherence --docs`

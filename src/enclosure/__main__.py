@@ -6,6 +6,7 @@ import typer
 
 import enclosure.features.architecture.boundaries.ui
 import enclosure.features.architecture.clusters.ui
+import enclosure.features.architecture.coherence.ui
 import enclosure.features.architecture.health.ui
 import enclosure.features.architecture.map.ui
 import enclosure.features.architecture.shape.ui
@@ -140,6 +141,11 @@ _add_callback_app(
     architecture_app,
     enclosure.features.architecture.clusters.ui.app,
     name="clusters",
+)
+_add_callback_app(
+    architecture_app,
+    enclosure.features.architecture.coherence.ui.app,
+    name="coherence",
 )
 _add_callback_app(
     architecture_app,

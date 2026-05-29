@@ -23,6 +23,7 @@ enclosure health
 enclosure workspace health
 enclosure architecture boundaries
 enclosure architecture shape
+enclosure architecture coherence
 enclosure workspace rules
 python -m build
 python -m twine check dist/*
@@ -35,6 +36,7 @@ python -m twine check dist/*
 - If you change the CLI, make `--help` better, not just longer.
 - Run `enclosure health` before summarizing architecture-sensitive work.
 - If you change the architecture feature, run `enclosure architecture boundaries` and `enclosure architecture shape`.
+- If you streamline feature modules, run `enclosure architecture coherence`.
 - If you touch packaged resources, remember they ship to users.
 
 ## Pull requests

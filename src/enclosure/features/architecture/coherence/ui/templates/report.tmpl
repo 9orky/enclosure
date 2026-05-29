@@ -1,0 +1,23 @@
+Architecture Coherence:
+{{ report|scan_summary }}
+- Streams found: {{ report.stream_count }}
+- Findings: {{ report.finding_count }}
+{% if report.streams %}
+
+Streams:
+{% for stream in report.streams %}
+- {{ stream.name }}: {{ stream.source_count }} source node(s), {{ stream.axis_summary }}
+{% endfor %}
+{% elif report.stream_count == 0 %}
+- No feature-module streams matched.
+{% endif %}
+{% if report.findings %}
+
+Findings:
+{% for finding in report.findings %}
+- {{ finding.stream or "architecture" }} {{ finding.axis|replace("_", "-") }}: {{ finding.subject }} - {{ finding.detail }} ({{ finding.evidence }})
+{% endfor %}
+{% elif report.finding_count == 0 %}
+
+Architecture Coherence Passed! No findings.
+{% endif %}

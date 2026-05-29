@@ -25,6 +25,10 @@ class ArchitectureApplicationTest(unittest.TestCase):
                 "build_clusters_report",
             ),
             (
+                "enclosure.features.architecture.coherence.application",
+                "build_coherence_report",
+            ),
+            (
                 "enclosure.features.architecture.health.application",
                 "build_health_report",
             ),
