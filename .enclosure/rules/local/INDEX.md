@@ -13,6 +13,8 @@ tags:
   - routing
   - rules
 read_directly: false
+tightens_paths:
+  - ../shared/INDEX.md
 entrypoint: true
 read_strategy: progressive
 child_paths:

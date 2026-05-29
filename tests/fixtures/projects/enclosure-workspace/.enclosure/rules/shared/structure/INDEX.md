@@ -8,6 +8,7 @@ applies_when:
   - Structure guidance is needed.
 tags:
   - shared
+  - structure
 read_directly: false
 entrypoint: true
 read_strategy: progressive

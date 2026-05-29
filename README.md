@@ -159,6 +159,7 @@ enclosure architecture clusters
 enclosure architecture coherence
 
 enclosure workspace rules
+enclosure workspace rules route --help
 enclosure workspace recipe --check
 enclosure workspace recipe --list
 enclosure workspace recipe <name> --show

@@ -97,7 +97,7 @@ workspace_app.add_typer(enclosure.features.workspace.sync.ui.app, name="sync")
 _add_callback_app(workspace_app, enclosure.features.workspace.health.ui.app, name="health")
 _add_callback_app(workspace_app, enclosure.features.workspace.plan.ui.app, name="plan")
 _add_callback_app(workspace_app, enclosure.features.workspace.recipe.ui.app, name="recipe")
-_add_callback_app(workspace_app, enclosure.features.workspace.rules.ui.app, name="rules")
+workspace_app.add_typer(enclosure.features.workspace.rules.ui.app, name="rules")
 
 architecture_app = typer.Typer(
     help="Inspect a repository's architecture agreement and dependency map.",

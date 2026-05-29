@@ -16,9 +16,22 @@ def build_rule_schema_report() -> domain.RuleSchemaReport:
     rules_root = layout.current_layout().rules_dir(project_root)
     document_files = infrastructure.file_repository.find(rules_root)
     known_paths = {document.path for document in document_files}
-    documents = tuple(
-        _map_document_report(document, policy, known_paths=known_paths)
+    document_checks = tuple(
+        _inspect_document(document, policy, known_paths=known_paths)
         for document in document_files
+    )
+    graph_violations = _graph_violations_by_path(document_checks)
+    documents = tuple(
+        _map_document_report(
+            document_file,
+            document_check,
+            graph_violations=graph_violations,
+        )
+        for document_file, document_check in zip(
+            document_files,
+            document_checks,
+            strict=True,
+        )
     )
     documents_with_issues = sum(
         1
@@ -42,23 +55,45 @@ def build_rule_schema_report() -> domain.RuleSchemaReport:
     )
 
 
-def _map_document_report(
+def build_rule_read_plan(tags: tuple[str, ...]) -> domain.RuleReadPlan:
+    project_root, _config_path, _workspace_settings = (
+        enclosure.features.workspace.config.load_config()
+    )
+    rules_root = layout.current_layout().rules_dir(project_root)
+    document_files = infrastructure.file_repository.find(rules_root)
+    documents: list[domain.RuleDocument] = []
+    parse_errors: list[str] = []
+
+    for document_file in document_files:
+        try:
+            documents.append(domain.RuleDocument.from_file(document_file))
+        except domain.RuleDocumentParseError as exc:
+            parse_errors.append(f"{document_file.path.as_posix()}: {exc}")
+
+    if parse_errors:
+        raise ValueError(
+            "Rule route planning requires parseable rule documents: "
+            + "; ".join(parse_errors)
+        )
+
+    return domain.build_rule_read_plan(tuple(documents), tuple(tags))
+
+
+def _inspect_document(
     document_file: domain.RuleDocumentFile,
     policy: domain.RuleSchemaPolicy,
     *,
     known_paths: set[Path],
-) -> domain.RuleDocumentReport:
+) -> domain.RuleDocumentCheck | domain.RuleDocumentReport:
     try:
         document_check = policy.inspect_document(document_file)
         semantic_violations = policy.validate_references(
             document=document_check.document,
             known_paths=known_paths,
         )
-        return _report_from_check(
-            domain.RuleDocumentCheck(
-                document=document_check.document,
-                violations=document_check.violations + semantic_violations,
-            )
+        return domain.RuleDocumentCheck(
+            document=document_check.document,
+            violations=document_check.violations + semantic_violations,
         )
     except domain.RuleDocumentParseError as exc:
         return domain.RuleDocumentReport(
@@ -79,6 +114,39 @@ def _map_document_report(
             ),
             exception=str(exc),
         )
+
+
+def _map_document_report(
+    document_file: domain.RuleDocumentFile,
+    document_check: domain.RuleDocumentCheck | domain.RuleDocumentReport,
+    *,
+    graph_violations: dict[Path, tuple[domain.RuleSchemaViolation, ...]],
+) -> domain.RuleDocumentReport:
+    if isinstance(document_check, domain.RuleDocumentReport):
+        return document_check
+    return _report_from_check(
+        domain.RuleDocumentCheck(
+            document=document_check.document,
+            violations=(
+                document_check.violations
+                + graph_violations.get(document_file.path, ())
+            ),
+        )
+    )
+
+
+def _graph_violations_by_path(
+    document_checks: tuple[domain.RuleDocumentCheck | domain.RuleDocumentReport, ...],
+) -> dict[Path, tuple[domain.RuleSchemaViolation, ...]]:
+    documents = tuple(
+        document_check.document
+        for document_check in document_checks
+        if isinstance(document_check, domain.RuleDocumentCheck)
+    )
+    values: dict[Path, list[domain.RuleSchemaViolation]] = {}
+    for finding in domain.validate_rule_graph(documents):
+        values.setdefault(finding.path, []).append(finding.violation)
+    return {path: tuple(violations) for path, violations in values.items()}
 
 
 def _report_from_check(
@@ -108,5 +176,6 @@ def _is_local_path(path: Path) -> bool:
 
 
 __all__ = [
+    "build_rule_read_plan",
     "build_rule_schema_report",
 ]

@@ -1,0 +1,20 @@
+Rule read route.
+Requested tags: {{ plan.requested_tags|join(", ") }}.
+Available tags: {{ plan.available_tags|join(", ") }}.
+{% if plan.found %}
+Read order:
+{% for step in plan.steps -%}
+- {{ step.path }} [{{ step.scope }}/{{ step.document_class }}]{% if step.local_supplement %} local supplement{% endif %}: {{ step.reason }}
+  Purpose: {{ step.purpose }}
+{% endfor -%}
+Stop point: {{ plan.stop_point }}.
+
+Read receipt:
+- Rules read: {{ plan.steps|map(attribute="path")|join(", ") }}.
+- Reason: selected tags {{ plan.requested_tags|join(", ") }}.
+- Stop point: {{ plan.stop_point }}.
+- Checks: enclosure workspace rules.
+{% else %}
+No route matched the requested tag set.
+Try one of the available tags listed above.
+{% endif %}

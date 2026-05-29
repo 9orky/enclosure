@@ -42,3 +42,39 @@ def test_workspace_rules_reports_expected_broken_fixture_violations(
     assert report.has_findings
     assert "local-content-too-large" in violation_codes
     assert "missing-section" in violation_codes
+
+
+def test_workspace_rules_route_reports_structure_read_receipt(
+    fixture_project,
+    use_project,
+    cli_runner,
+) -> None:
+    project = fixture_project("enclosure-workspace")
+    use_project(project)
+
+    result = cli_runner.invoke(
+        app,
+        ["workspace", "rules", "route", "--tag", "structure"],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Read receipt" in result.output
+    assert "shared/structure/INDEX.md" in result.output
+
+
+def test_workspace_rules_route_reports_unknown_tag_choices(
+    fixture_project,
+    use_project,
+    cli_runner,
+) -> None:
+    project = fixture_project("enclosure-workspace")
+    use_project(project)
+
+    result = cli_runner.invoke(
+        app,
+        ["workspace", "rules", "route", "--tag", "missing"],
+    )
+
+    assert result.exit_code == 1, result.output
+    assert "No route matched" in result.output
+    assert "structure" in result.output
