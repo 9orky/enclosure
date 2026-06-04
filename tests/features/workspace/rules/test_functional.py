@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from importlib.resources import files
+from pathlib import Path
+
 from enclosure.__main__ import app
-from enclosure.features.workspace.rules import application
+from enclosure.features.workspace.rules import application, domain, infrastructure
 
 
 def test_workspace_rules_accepts_valid_fixture_workspace(
@@ -23,6 +26,45 @@ def test_workspace_rules_accepts_valid_fixture_workspace(
     assert "Route planning:" in result.output
     assert "Available route tags:" in result.output
     assert "structure" in result.output
+
+
+def test_packaged_shared_rule_foundation_is_valid() -> None:
+    rules_root = files("enclosure").joinpath("resources", "rules")
+    document_files = infrastructure.file_repository.find(rules_root)
+    policy = domain.RuleSchemaPolicy.default()
+    known_paths = {document_file.path for document_file in document_files}
+    documents: list[domain.RuleDocument] = []
+    issues: list[str] = []
+
+    assert len(document_files) >= 18
+    assert Path("INDEX.md") in known_paths
+    assert all(not document_file.is_local for document_file in document_files)
+
+    for document_file in document_files:
+        try:
+            document_check = policy.inspect_document(document_file)
+        except domain.RuleDocumentParseError as exc:
+            issues.append(f"{document_file.path.as_posix()}: {exc}")
+            continue
+
+        documents.append(document_check.document)
+        violations = document_check.violations + policy.validate_references(
+            document=document_check.document,
+            known_paths=known_paths,
+        )
+        issues.extend(
+            f"{document_file.path.as_posix()}: "
+            f"{violation.code}: {violation.message}"
+            for violation in violations
+        )
+
+    issues.extend(
+        f"{finding.path.as_posix()}: "
+        f"{finding.violation.code}: {finding.violation.message}"
+        for finding in domain.validate_rule_graph(tuple(documents))
+    )
+
+    assert not issues, "\n".join(issues)
 
 
 def test_workspace_rules_reports_expected_broken_fixture_violations(
