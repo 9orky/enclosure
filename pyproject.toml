@@ -67,6 +67,9 @@ dev = [
     "twine>=5.1",
 ]
 
+[tool.uv]
+cache-dir = ".dev/uv_cache"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 cache_dir = ".dev/pytest_cache"

@@ -7,6 +7,7 @@ import typer
 import enclosure.features.architecture.boundaries.ui
 import enclosure.features.architecture.clusters.ui
 import enclosure.features.architecture.coherence.ui
+import enclosure.features.architecture.gui.ui
 import enclosure.features.architecture.health.ui
 import enclosure.features.architecture.map.ui
 import enclosure.features.architecture.shape.ui
@@ -165,6 +166,7 @@ _add_callback_app(
 
 app.add_typer(workspace_app, name="workspace")
 app.add_typer(architecture_app, name="architecture")
+_add_callback_app(app, enclosure.features.architecture.gui.ui.app, name="gui")
 _add_callback_app(app, enclosure.features.health.report.ui.app, name="health")
 
 ui.set_command_defaults(root_command, {"llm": False, "docs": False})
