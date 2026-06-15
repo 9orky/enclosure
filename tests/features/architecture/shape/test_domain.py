@@ -3,12 +3,68 @@ from __future__ import annotations
 import unittest
 from types import SimpleNamespace
 
-from modwire.definitions import SourceFile
+from modwire.definitions import SourceFile, SourceImport
 
 from enclosure.features.architecture.shape import domain
 
 
 class ShapeEvaluationTest(unittest.TestCase):
+    def test_import_shape_rules_only_apply_to_file_barrier_crossing_imports(
+        self,
+    ) -> None:
+        violations = domain.evaluate_shape(
+            _code_map(
+                SourceFile(
+                    imports=[
+                        SourceImport(
+                            path="external",
+                            is_relative=False,
+                            normalized_path="external",
+                            imported_name="Symbol",
+                            is_aliased=True,
+                            crossing_type="symbol",
+                            file_barrier_crossed=False,
+                            statement_id=1,
+                            join_key="external",
+                            uses_joined_import=False,
+                        ),
+                        SourceImport(
+                            path="internal",
+                            is_relative=False,
+                            normalized_path="internal",
+                            imported_name="Symbol",
+                            is_aliased=True,
+                            crossing_type="symbol",
+                            file_barrier_crossed=True,
+                            statement_id=2,
+                            join_key="internal",
+                            uses_joined_import=False,
+                        ),
+                    ],
+                    classes=[],
+                    functions=[],
+                    line_count=1,
+                    code_line_count=1,
+                    public_symbol_count=0,
+                )
+            ),
+            _config(
+                allow_imports_aliases=False,
+                allowed_imports_crossing_types=["module"],
+            ),
+        )
+
+        self.assertEqual(
+            {
+                (violation.rule, violation.symbol_name)
+                for violation in violations
+            },
+            {
+                ("allow_imports_aliases", "internal"),
+                ("allowed_imports_crossing_types", "internal (symbol)"),
+            },
+        )
+
     def test_new_source_item_file_limits_are_evaluated(self) -> None:
         violations = domain.evaluate_shape(
             _code_map(

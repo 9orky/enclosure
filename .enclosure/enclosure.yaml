@@ -54,7 +54,7 @@ architecture:
       analyzers: [backward-flow, no-cycles]
 
   map:
-    top: 20
+    top: -1
   clusters:
     group_depth: 5
     top: 20

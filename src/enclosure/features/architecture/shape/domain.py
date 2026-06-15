@@ -7,6 +7,7 @@ from typing import Literal
 from modwire import CodeMap
 from modwire import ShapeConfig as ModwireShapeConfig
 from modwire import evaluate_shape as evaluate_modwire_shape
+from modwire.shape.rules import FileCountRule, SymbolShapeRule
 from pydantic import field_validator
 
 from enclosure.shared import architecture, config
@@ -137,9 +138,14 @@ def evaluate_shape(
     owners = _symbol_owners(code_map)
     violations = [
         normalized
-        for violation in evaluate_modwire_shape(code_map, shape.to_modwire_config())
+        for violation in evaluate_modwire_shape(
+            code_map,
+            shape.to_modwire_config(),
+            rules=(FileCountRule(), SymbolShapeRule()),
+        )
         if (normalized := _normalize_violation(violation, shape, owners)) is not None
     ]
+    violations.extend(_import_violations(code_map, shape))
     if shape.enforce_joined_imports:
         violations.extend(_joined_import_violations(code_map))
     return tuple(violations)
@@ -239,6 +245,58 @@ def _add_abstract_class_owners(
             "abstract_class",
             abstract_class.name,
         )
+
+
+def _import_violations(
+    code_map: CodeMap,
+    shape: ShapeConfig,
+) -> tuple[ShapeViolation, ...]:
+    violations: list[ShapeViolation] = []
+    allowed_import_crossing_types = set(shape.allowed_imports_crossing_types)
+    for source_id, source_file in code_map.extraction_result.files.items():
+        reported_aliased_imports: set[tuple[str, str]] = set()
+        reported_imports: set[tuple[str, str, str]] = set()
+        for source_import in source_file.imports:
+            if not source_import.file_barrier_crossed:
+                continue
+            if source_import.is_aliased and not shape.allow_imports_aliases:
+                violation_key = (source_id, source_import.normalized_path)
+                if violation_key not in reported_aliased_imports:
+                    reported_aliased_imports.add(violation_key)
+                    violations.append(
+                        ShapeViolation(
+                            source_id=source_id,
+                            rule="allow_imports_aliases",
+                            actual=1,
+                            limit=0,
+                            symbol_kind="import",
+                            symbol_name=source_import.normalized_path,
+                        )
+                    )
+            if source_import.crossing_type in allowed_import_crossing_types:
+                continue
+            violation_key = (
+                source_id,
+                source_import.normalized_path,
+                source_import.crossing_type,
+            )
+            if violation_key in reported_imports:
+                continue
+            reported_imports.add(violation_key)
+            violations.append(
+                ShapeViolation(
+                    source_id=source_id,
+                    rule="allowed_imports_crossing_types",
+                    actual=1,
+                    limit=0,
+                    symbol_kind="import",
+                    symbol_name=(
+                        f"{source_import.normalized_path} "
+                        f"({source_import.crossing_type})"
+                    ),
+                )
+            )
+    return tuple(violations)
 
 
 def _joined_import_violations(code_map: CodeMap) -> tuple[ShapeViolation, ...]:
