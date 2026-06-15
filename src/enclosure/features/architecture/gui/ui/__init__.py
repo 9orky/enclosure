@@ -1,7 +1,0 @@
-from __future__ import annotations
-
-from . import cli
-
-app = cli.app
-
-__all__ = ["app"]
