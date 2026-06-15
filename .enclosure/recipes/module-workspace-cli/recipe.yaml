@@ -1,19 +1,27 @@
 schema_version: 1
 role: archetype
-description: Workspace command module with compact domain/application/infrastructure files, UI package, and docs/llm templates.
+description: Workspace command module with command/query application package, compact domain/infrastructure files, UI package, and docs/llm templates.
 ladder:
   family: module
   rung: compact-workspace-cli
   slots:
-    application: file
+    application:
+      state: split-files
+      files:
+        - commands.py
+        - queries.py
     domain: file
     infrastructure: file
     ui: package
 files:
   - source: templates/__init__.py.tmpl
     target: "{{ target.path }}/__init__.py"
-  - source: templates/application.py.tmpl
-    target: "{{ target.path }}/application.py"
+  - source: templates/application/__init__.py.tmpl
+    target: "{{ target.path }}/application/__init__.py"
+  - source: templates/application/commands.py.tmpl
+    target: "{{ target.path }}/application/commands.py"
+  - source: templates/application/queries.py.tmpl
+    target: "{{ target.path }}/application/queries.py"
   - source: templates/domain.py.tmpl
     target: "{{ target.path }}/domain.py"
   - source: templates/infrastructure.py.tmpl

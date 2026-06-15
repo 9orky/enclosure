@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from . import domain, infrastructure
+from .. import domain, infrastructure
 
 
 def describe_{{ target.snake }}() -> domain.{{ target.class }}Summary:
@@ -11,4 +11,6 @@ def describe_{{ target.snake }}() -> domain.{{ target.class }}Summary:
     )
 
 
-__all__ = ["describe_{{ target.snake }}"]
+__all__ = [
+    "describe_{{ target.snake }}",
+]
