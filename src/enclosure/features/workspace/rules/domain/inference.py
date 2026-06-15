@@ -4,6 +4,23 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 
+_SOURCE_LANGUAGE_BY_SUFFIX = {
+    ".js": ("javascript", "JavaScript"),
+    ".jsx": ("javascript", "JavaScript"),
+    ".php": ("php", "PHP"),
+    ".py": ("python", "Python"),
+    ".ts": ("typescript", "TypeScript"),
+    ".tsx": ("typescript", "TypeScript"),
+}
+_PACKAGE_SEAM_NAMES = {
+    "__init__.py",
+    "index.js",
+    "index.jsx",
+    "index.php",
+    "index.ts",
+    "index.tsx",
+}
+
 
 class RuleTagSelection(BaseModel):
     model_config = ConfigDict(frozen=True)
@@ -118,23 +135,25 @@ def _architecture_path_selections(
             reason=f"`{label}` is under architecture.root `{architecture_root}`.",
         )
     ]
-    if path.suffix == ".py":
+    language = _SOURCE_LANGUAGE_BY_SUFFIX.get(path.suffix)
+    if language is not None:
+        tag, label_name = language
         selections.append(
             RuleTagSelection(
-                tag="python",
-                reason=f"`{label}` is a Python source file.",
+                tag=tag,
+                reason=f"`{label}` is a {label_name} source file.",
             )
         )
-    if "__init__.py" in architecture_relative_path.parts:
+    if any(part in _PACKAGE_SEAM_NAMES for part in architecture_relative_path.parts):
         selections.append(
             RuleTagSelection(
                 tag="module",
                 reason=f"`{label}` touches a package seam.",
             )
-        )
+    )
     layer_names = {"domain", "infrastructure", "application", "ui"}
     if any(part in layer_names for part in architecture_relative_path.parts) or (
-        path.suffix == ".py" and path.stem in layer_names
+        path.suffix in _SOURCE_LANGUAGE_BY_SUFFIX and path.stem in layer_names
     ):
         selections.append(
             RuleTagSelection(

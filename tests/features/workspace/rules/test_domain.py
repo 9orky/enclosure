@@ -225,6 +225,19 @@ child_paths:
             domain.selected_tags(selections),
         )
 
+    def test_path_inference_selects_typescript_module_and_layers(self) -> None:
+        selections = domain.infer_rule_tag_selections(
+            paths=(Path("src/features/orders/application/index.ts"),),
+            task="",
+            project_root=Path("."),
+            architecture_root="src/features",
+        )
+
+        self.assertEqual(
+            ("structure", "typescript", "module", "layers"),
+            domain.selected_tags(selections),
+        )
+
     def test_task_inference_selects_refactoring_tags(self) -> None:
         selections = domain.infer_rule_tag_selections(
             paths=(),

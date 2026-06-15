@@ -7,7 +7,7 @@ Use this command to find callable and public API pressure points in the configur
 ## When To Run
 
 - Before simplifying a feature module.
-- Before changing public module seams or `__init__.py` exports.
+- Before changing public module seams or re-export files.
 - When a workflow feels like it is forwarding too many values through too many functions.
 
 ## How To Read The Result
@@ -15,7 +15,7 @@ Use this command to find callable and public API pressure points in the configur
 - Most Calling highlights callables with the highest direct fan-out.
 - Most Called highlights resolved internal call targets with the most callers.
 - Wide Signatures highlights callables most likely to carry prop-drilled values.
-- Re-export Hubs highlights `__init__.py` files that forward symbols from implementation modules.
+- Re-export Hubs highlights files that forward symbols from implementation modules.
 - Public API Hubs highlights broad package seams, even when modwire does not classify them as re-exports.
 
 ## Agent Tips

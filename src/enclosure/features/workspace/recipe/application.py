@@ -417,7 +417,11 @@ class _RecipeGenerationService:
                 )
                 continue
 
-            actual_files = _actual_files_for(module_path)
+            actual_files = _actual_files_for(
+                module_path,
+                project_root=project_root,
+                config=self._config,
+            )
             ladder = _composed_ladder_for(role_recipe, recipes_by_name)
             missing_files, extra_files = _drift_files_for(
                 role_recipe,
@@ -436,13 +440,21 @@ class _RecipeGenerationService:
                 )
             )
 
-        for module_name in _actual_module_names(architecture_root):
+        for module_name in _actual_module_names(
+            architecture_root,
+            project_root=project_root,
+            config=self._config,
+        ):
             if module_name not in roles_map:
                 drifts.append(
                     domain.RecipeDrift(
                         module_name=module_name,
                         role_name="",
-                        extra_files=_actual_files_for(architecture_root / module_name),
+                        extra_files=_actual_files_for(
+                            architecture_root / module_name,
+                            project_root=project_root,
+                            config=self._config,
+                        ),
                     )
                 )
 
@@ -911,34 +923,28 @@ def _drift_files_for(
     required_files = set(expected_files)
     allowed_files = set(expected_files)
     allowed_prefixes: set[str] = set()
-    forbidden_files: set[str] = set()
+    forbidden_file_stems: set[str] = set()
     forbidden_prefixes: set[str] = set()
 
     for slot in ladder.slots:
         slot_path = slot.name.value
         if slot.state is domain.RecipeSlotState.ABSENT:
-            forbidden_files.add(f"{slot_path}.py")
+            forbidden_file_stems.add(slot_path)
             forbidden_prefixes.add(f"{slot_path}/")
             continue
 
         if slot.state is domain.RecipeSlotState.FILE:
-            required_files.add(f"{slot_path}.py")
-            allowed_files.add(f"{slot_path}.py")
             forbidden_prefixes.add(f"{slot_path}/")
             continue
 
         if slot.state is domain.RecipeSlotState.PACKAGE:
-            required_files.add(f"{slot_path}/__init__.py")
-            allowed_files.add(f"{slot_path}/__init__.py")
             allowed_prefixes.add(f"{slot_path}/")
-            forbidden_files.add(f"{slot_path}.py")
+            forbidden_file_stems.add(slot_path)
             continue
 
         if slot.state is domain.RecipeSlotState.SPLIT_FILES:
-            required_files.add(f"{slot_path}/__init__.py")
-            allowed_files.add(f"{slot_path}/__init__.py")
             allowed_prefixes.add(f"{slot_path}/")
-            forbidden_files.add(f"{slot_path}.py")
+            forbidden_file_stems.add(slot_path)
             for slot_file in slot.files:
                 slot_file_path = f"{slot_path}/{slot_file}"
                 required_files.add(slot_file_path)
@@ -950,16 +956,12 @@ def _drift_files_for(
             continue
 
         if slot.state is domain.RecipeSlotState.SPLIT_PACKAGES:
-            required_files.add(f"{slot_path}/__init__.py")
-            allowed_files.add(f"{slot_path}/__init__.py")
             allowed_prefixes.add(f"{slot_path}/")
-            forbidden_files.add(f"{slot_path}.py")
+            forbidden_file_stems.add(slot_path)
             for slot_package in slot.packages:
                 slot_package_path = f"{slot_path}/{slot_package}"
-                required_files.add(f"{slot_package_path}/__init__.py")
-                allowed_files.add(f"{slot_package_path}/__init__.py")
                 allowed_prefixes.add(f"{slot_package_path}/")
-                forbidden_files.add(f"{slot_package_path}.py")
+                forbidden_file_stems.add(slot_package_path)
 
     missing_files = tuple(sorted(required_files - actual_files))
     extra_files = tuple(
@@ -970,7 +972,7 @@ def _drift_files_for(
                 actual_file,
                 allowed_files=allowed_files,
                 allowed_prefixes=allowed_prefixes,
-                forbidden_files=forbidden_files,
+                forbidden_file_stems=forbidden_file_stems,
                 forbidden_prefixes=forbidden_prefixes,
             )
         )
@@ -983,10 +985,10 @@ def _is_extra_ladder_file(
     *,
     allowed_files: set[str],
     allowed_prefixes: set[str],
-    forbidden_files: set[str],
+    forbidden_file_stems: set[str],
     forbidden_prefixes: set[str],
 ) -> bool:
-    if actual_file in forbidden_files:
+    if _matches_file_stem(actual_file, forbidden_file_stems):
         return True
     if any(actual_file.startswith(prefix) for prefix in forbidden_prefixes):
         return True
@@ -995,19 +997,71 @@ def _is_extra_ladder_file(
     return not any(actual_file.startswith(prefix) for prefix in allowed_prefixes)
 
 
-def _actual_files_for(module_path: Path) -> set[str]:
+def _matches_file_stem(actual_file: str, forbidden_file_stems: set[str]) -> bool:
+    if not forbidden_file_stems:
+        return False
+    actual_path = Path(actual_file)
+    if not actual_path.suffix:
+        return False
+    return actual_path.with_suffix("").as_posix() in forbidden_file_stems
+
+
+def _actual_files_for(
+    module_path: Path,
+    *,
+    project_root: Path | None = None,
+    config: domain.RecipeGenerationConfig | None = None,
+) -> set[str]:
     return {
         path.relative_to(module_path).as_posix()
         for path in module_path.rglob("*")
-        if path.is_file() and "__pycache__" not in path.parts
+        if path.is_file()
+        and not _should_skip_actual_file(
+            path,
+            module_path=module_path,
+            project_root=project_root,
+            config=config,
+        )
     }
 
 
-def _actual_module_names(architecture_root: Path) -> tuple[str, ...]:
+def _should_skip_actual_file(
+    path: Path,
+    *,
+    module_path: Path,
+    project_root: Path | None,
+    config: domain.RecipeGenerationConfig | None,
+) -> bool:
+    if config is None:
+        return False
+
+    relative_candidates = [
+        path.relative_to(module_path),
+    ]
+    if project_root is not None:
+        relative_candidates.append(path.relative_to(project_root))
+
+    return any(
+        config.should_skip(domain.RelativePath(relative_path))
+        for relative_path in relative_candidates
+    )
+
+
+def _actual_module_names(
+    architecture_root: Path,
+    *,
+    project_root: Path,
+    config: domain.RecipeGenerationConfig,
+) -> tuple[str, ...]:
     return tuple(
         module_path.relative_to(architecture_root).as_posix()
         for module_path in sorted(architecture_root.glob("*/*"))
-        if module_path.is_dir() and (module_path / "__init__.py").is_file()
+        if module_path.is_dir()
+        and _actual_files_for(
+            module_path,
+            project_root=project_root,
+            config=config,
+        )
     )
 
 

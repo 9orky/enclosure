@@ -34,7 +34,10 @@ class NestedConfigTest(unittest.TestCase):
         self.assertEqual(20, architecture_settings.clusters.top)
         self.assertEqual(5, architecture_settings.clusters.files_top)
         self.assertEqual(5, architecture_settings.health.top)
-        self.assertEqual((), workspace_settings.recipe.skip)
+        self.assertEqual(
+            ("**/__pycache__/**", "__pycache__/**"),
+            workspace_settings.recipe.skip,
+        )
         self.assertEqual(
             "module-workspace-cli",
             workspace_settings.recipe.roles_map["workspace/recipe"],
@@ -124,7 +127,10 @@ class NestedConfigTest(unittest.TestCase):
         self.assertEqual(20, architecture_settings.clusters.top)
         self.assertEqual(5, architecture_settings.clusters.files_top)
         self.assertEqual(5, architecture_settings.health.top)
-        self.assertEqual((), workspace_settings.recipe.skip)
+        self.assertEqual(
+            ("**/__pycache__/**", "__pycache__/**"),
+            workspace_settings.recipe.skip,
+        )
         self.assertEqual(
             "module-report-cli",
             workspace_settings.recipe.roles_map["architecture/boundaries"],

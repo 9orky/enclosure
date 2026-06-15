@@ -33,7 +33,7 @@ class CallablePressure:
 
     @property
     def location(self) -> str:
-        return f"{self.source_id}.py:{self.line_start}"
+        return f"{self.source_id}:{self.line_start}"
 
     def to_json_dict(self) -> dict[str, object]:
         return {
@@ -61,7 +61,7 @@ class ExportPressure:
 
     @property
     def location(self) -> str:
-        return f"{self.source_id}.py"
+        return self.source_id
 
     def to_json_dict(self) -> dict[str, object]:
         return {
@@ -242,8 +242,6 @@ def _callable_pressure(code_map: CodeMap, callable_id: str) -> CallablePressure:
 def _export_pressures(code_map: CodeMap) -> tuple[ExportPressure, ...]:
     pressures = []
     for source_id, source_file in code_map.extraction_result.files.items():
-        if not source_id.endswith("__init__"):
-            continue
         exports = tuple(
             source_export
             for source_export in source_file.exports

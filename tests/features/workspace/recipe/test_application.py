@@ -352,6 +352,55 @@ class WorkspaceRecipeCheckTest(unittest.TestCase):
         self.assertEqual(("sample/__init__.py",), report.drifts[0].missing_files)
         self.assertEqual((), report.drifts[0].extra_files)
 
+    def test_recipe_drifts_use_rendered_file_extension_for_file_slots(self) -> None:
+        report = _check_ladder_drift(
+            manifest=_slot_manifest(
+                slot_lines=("    sample: file",),
+                root_target="{{ target.path }}/index.ts",
+                targets=("{{ target.path }}/sample.ts",),
+            ),
+            actual_files=("index.ts", "sample.ts"),
+        )
+
+        self.assertEqual((), report.drifts[0].missing_files)
+        self.assertEqual((), report.drifts[0].extra_files)
+
+    def test_recipe_drifts_use_rendered_package_seam_for_package_slots(self) -> None:
+        report = _check_ladder_drift(
+            manifest=_slot_manifest(
+                slot_lines=("    sample: package",),
+                root_target="{{ target.path }}/index.ts",
+                targets=("{{ target.path }}/sample/index.ts",),
+            ),
+            actual_files=(
+                "index.ts",
+                "sample.ts",
+                "sample/index.ts",
+                "sample/private.ts",
+            ),
+        )
+
+        self.assertEqual((), report.drifts[0].missing_files)
+        self.assertEqual(("sample.ts",), report.drifts[0].extra_files)
+
+    def test_recipe_drifts_use_configured_skip_for_actual_files(self) -> None:
+        report = _check_ladder_drift(
+            manifest=_slot_manifest(
+                slot_lines=("    sample: file",),
+                root_target="{{ target.path }}/index.ts",
+                targets=("{{ target.path }}/sample.ts",),
+            ),
+            actual_files=(
+                "index.ts",
+                "sample.ts",
+                "cache/generated.tmp",
+            ),
+            skip=("cache/**",),
+        )
+
+        self.assertEqual((), report.drifts[0].missing_files)
+        self.assertEqual((), report.drifts[0].extra_files)
+
     def test_recipe_drifts_report_root_extra_outside_slots(self) -> None:
         report = _check_ladder_drift(
             manifest=_slot_manifest(
@@ -557,6 +606,7 @@ def _slot_manifest(
     role: str = "archetype",
     slot_lines: tuple[str, ...],
     targets: tuple[str, ...],
+    root_target: str = "{{ target.path }}/__init__.py",
 ) -> tuple[str, str]:
     manifest_lines = [
         "schema_version: 1",
@@ -571,7 +621,7 @@ def _slot_manifest(
     manifest_lines.extend(
         (
             "  - source: template.py.tmpl",
-            '    target: "{{ target.path }}/__init__.py"',
+            f'    target: "{root_target}"',
         )
     )
     for target in targets:
@@ -588,6 +638,7 @@ def _check_ladder_drift(
     *,
     manifest: tuple[str, str],
     actual_files: tuple[str, ...],
+    skip: tuple[str, ...] = (),
 ) -> application.RecipeDriftReport:
     with tempfile.TemporaryDirectory() as temporary_directory:
         project_root = Path(temporary_directory) / "project"
@@ -606,7 +657,7 @@ def _check_ladder_drift(
                 "role": manifest,
             },
         )
-        _write_config(project_root, roles_map={"feature/module": "role"})
+        _write_config(project_root, roles_map={"feature/module": "role"}, skip=skip)
 
         with patch.object(
             application.layout,
@@ -661,6 +712,7 @@ def _write_config(
     project_root: Path,
     *,
     roles_map: dict[str, str] | None = None,
+    skip: tuple[str, ...] = (),
 ) -> None:
     config_dir = project_root / ".enclosure"
     config_dir.mkdir(parents=True, exist_ok=True)
@@ -669,8 +721,12 @@ def _write_config(
         "  root: src/features",
         "workspace:",
         "  recipe:",
-        "    skip: []",
     ]
+    if skip:
+        lines.append("    skip:")
+        lines.extend(f"      - {skip_glob}" for skip_glob in skip)
+    else:
+        lines.append("    skip: []")
     if roles_map:
         lines.append("    roles_map:")
         lines.extend(

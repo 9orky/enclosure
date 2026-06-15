@@ -47,9 +47,27 @@ def test_describe_architecture_pressure_honors_zero_limit() -> None:
     assert report.public_api_hubs == ()
 
 
-def _code_map() -> CodeMap:
+def test_pressure_locations_do_not_invent_python_extensions() -> None:
+    report = domain.describe_architecture_pressure(_code_map(), top=2)
+
+    assert report.most_calling[0].location == "feature/api/application:10"
+    assert report.reexport_hubs[0].location == "feature/api/__init__"
+
+
+def test_reexport_hubs_are_not_limited_to_python_init_modules() -> None:
+    report = domain.describe_architecture_pressure(
+        _code_map(public_source_id="feature/api/index"),
+        top=2,
+    )
+
+    assert [pressure.source_id for pressure in report.reexport_hubs] == [
+        "feature/api/index"
+    ]
+
+
+def _code_map(public_source_id: str = "feature/api/__init__") -> CodeMap:
     files = {
-        "feature/api/__init__": SourceFile(
+        public_source_id: SourceFile(
             imports=[],
             exports=[
                 SourceExport(
