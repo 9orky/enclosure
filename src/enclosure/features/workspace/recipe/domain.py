@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any, TypedDict
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 
 from enclosure.shared import config, naming
 
@@ -45,6 +45,7 @@ class RelativePath:
 
 class RecipeConfig(config.StrictConfigModel):
     skip: tuple[str, ...]
+    roles_map: dict[str, str] = Field(default_factory=dict)
 
     @property
     def skip_globs(self) -> tuple[str, ...]:
@@ -58,6 +59,15 @@ class RecipeConfig(config.StrictConfigModel):
             for value in values
             if value.strip()
         )
+
+    @field_validator("roles_map")
+    @classmethod
+    def normalize_roles_map(cls, values: dict[str, str]) -> dict[str, str]:
+        return {
+            module_name.strip().replace("\\", "/"): role_name.strip()
+            for module_name, role_name in values.items()
+            if module_name.strip() and role_name.strip()
+        }
 
     def should_skip(self, relative_path: RelativePath) -> bool:
         relative_path_text = relative_path.as_posix()
@@ -174,7 +184,7 @@ class Recipe:
     root_path: Path
     role: RecipeRole
     description: str = ""
-    archetypes: tuple[str, ...] = ()
+    roles_map: dict[str, str] = field(default_factory=dict)
     inputs: tuple[RecipeInputSpec, ...] = ()
     files: tuple[RecipeFile, ...] = ()
 
@@ -193,7 +203,6 @@ class Recipe:
 
         object.__setattr__(self, "name", normalized_name)
         object.__setattr__(self, "root_path", Path(self.root_path))
-        object.__setattr__(self, "archetypes", tuple(self.archetypes))
         object.__setattr__(self, "inputs", tuple(self.inputs))
         object.__setattr__(self, "files", tuple(self.files))
 
@@ -230,9 +239,36 @@ class RecipeSummary(TypedDict):
     name: str
     description: str
     role: str
-    archetypes: tuple[str, ...]
+    roles_map: dict[str, str]
     inputs: tuple[str, ...]
     files: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class RecipeDrift:
+    module_name: str
+    role_name: str
+    missing_files: tuple[str, ...] = ()
+    extra_files: tuple[str, ...] = ()
+
+    def has_drift(self) -> bool:
+        return bool(self.missing_files or self.extra_files)
+
+
+@dataclass(frozen=True)
+class RecipeDriftReport:
+    project_root: Path
+    recipe_root: Path
+    architecture_root: Path
+    modules_checked: int
+    drifts: tuple[RecipeDrift, ...] = ()
+    violations: tuple[RecipeCheckViolation, ...] = ()
+
+    def passed(self) -> bool:
+        return not self.violations and not self.has_drifts()
+
+    def has_drifts(self) -> bool:
+        return any(drift.has_drift() for drift in self.drifts)
 
 
 def variable_context_for(name: str, value: Any) -> Any:

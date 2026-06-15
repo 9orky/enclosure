@@ -52,6 +52,13 @@ def recipe_command(
             ),
         ),
     ],
+    drifts_requested: Annotated[
+        bool,
+        typer.Option(
+            "--drifts",
+            help="Compare mapped feature modules with their recipe role file trees.",
+        ),
+    ],
     llm: Annotated[
         bool,
         typer.Option("--llm", help="Print LLM-focused guidance for this command."),
@@ -96,8 +103,15 @@ def recipe_command(
             ui.exit_with_error()
         return
 
+    if drifts_requested:
+        report = application.check_recipe_drifts(recipe_root=recipe_root)
+        ui.render(report, template_name="drift_report.tmpl", context={})
+        if not report.passed():
+            ui.exit_with_error()
+        return
+
     if not recipe_name:
-        raise ValueError("Recipe name is required unless --list is used")
+        raise ValueError("Recipe name is required unless --list or --drifts is used")
 
     if show_requested:
         recipe = application.show_recipe(
@@ -169,6 +183,7 @@ ui.set_command_defaults(
         "list_requested": False,
         "show_requested": False,
         "check_requested": False,
+        "drifts_requested": False,
         "llm": False,
         "docs": False,
     },

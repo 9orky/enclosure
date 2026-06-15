@@ -7,8 +7,11 @@ RecipeGenerationConfig = domain.RecipeGenerationConfig
 GenerateRecipeResult = domain.GenerateRecipeResult
 RecipeCheckReport = domain.RecipeCheckReport
 RecipeCheckViolation = domain.RecipeCheckViolation
+RecipeDrift = domain.RecipeDrift
+RecipeDriftReport = domain.RecipeDriftReport
 RecipeGenerationReport = domain.RecipeGenerationReport
 RecipeSummary = domain.RecipeSummary
+check_recipe_drifts = application.check_recipe_drifts
 check_recipes = application.check_recipes
 describe_recipe_generation = application.describe_recipe_generation
 generate_recipe = application.generate_recipe
@@ -22,8 +25,11 @@ __all__ = [
     "GenerateRecipeResult",
     "RecipeCheckReport",
     "RecipeCheckViolation",
+    "RecipeDrift",
+    "RecipeDriftReport",
     "RecipeGenerationReport",
     "RecipeSummary",
+    "check_recipe_drifts",
     "check_recipes",
     "describe_recipe_generation",
     "generate_recipe",

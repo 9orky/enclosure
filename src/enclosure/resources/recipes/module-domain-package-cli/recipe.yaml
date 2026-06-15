@@ -1,0 +1,20 @@
+schema_version: 1
+role: archetype
+description: Module tree for command modules with a packaged domain.
+files:
+  - source: templates/placeholder.tmpl
+    target: "{{ target.path }}/__init__.py"
+  - source: templates/placeholder.tmpl
+    target: "{{ target.path }}/application.py"
+  - source: templates/placeholder.tmpl
+    target: "{{ target.path }}/domain/__init__.py"
+  - source: templates/placeholder.tmpl
+    target: "{{ target.path }}/ui/__init__.py"
+  - source: templates/placeholder.tmpl
+    target: "{{ target.path }}/ui/cli.py"
+  - source: templates/placeholder.tmpl
+    target: "{{ target.path }}/ui/templates/docs.tmpl"
+  - source: templates/placeholder.tmpl
+    target: "{{ target.path }}/ui/templates/llm.tmpl"
+  - source: templates/placeholder.tmpl
+    target: "{{ target.path }}/ui/templates/report.tmpl"

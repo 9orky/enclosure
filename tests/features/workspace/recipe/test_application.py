@@ -126,83 +126,45 @@ class WorkspaceRecipeCheckTest(unittest.TestCase):
         ))
         self.assertIn("Input should be", report.violations[0].message)
 
-    def test_container_reports_missing_archetype(self) -> None:
+    def test_container_reports_missing_role_recipe(self) -> None:
         report = _check_recipe_root(
             {
                 "container": _recipe_manifest(
                     role="container",
-                    archetypes=("missing",),
+                    roles_map={"feature/module": "missing"},
                     content="ok\n",
                 )
             }
         )
 
-        self.assertEqual(("missing_archetype",), tuple(
+        self.assertEqual(("missing_role_recipe",), tuple(
             violation.code for violation in report.violations
         ))
 
-    def test_container_reports_non_archetype_reference(self) -> None:
+    def test_container_reports_non_archetype_role(self) -> None:
         report = _check_recipe_root(
             {
                 "container": _recipe_manifest(
                     role="container",
-                    archetypes=("other",),
+                    roles_map={"feature/module": "other"},
                     content="ok\n",
                 ),
-                "other": _recipe_manifest(
-                    role="container",
-                    archetypes=("part",),
-                    content="ok\n",
-                ),
-                "part": _recipe_manifest(role="archetype", content="ok\n"),
+                "other": _recipe_manifest(role="container", content="ok\n"),
             }
         )
 
-        self.assertEqual(("non_archetype_reference",), tuple(
+        self.assertEqual(("non_archetype_role",), tuple(
             violation.code
             for violation in report.violations
             if violation.recipe_name == "container"
         ))
 
-    def test_container_reports_duplicate_archetype_target(self) -> None:
+    def test_container_passes_when_roles_map_references_archetype(self) -> None:
         report = _check_recipe_root(
             {
                 "container": _recipe_manifest(
                     role="container",
-                    archetypes=("one", "two"),
-                    content="ok\n",
-                ),
-                "one": _recipe_manifest(role="archetype", content="one\n"),
-                "two": _recipe_manifest(role="archetype", content="two\n"),
-            }
-        )
-
-        self.assertIn("duplicate_archetype_target", tuple(
-            violation.code for violation in report.violations
-        ))
-
-    def test_container_reports_composition_mismatch(self) -> None:
-        report = _check_recipe_root(
-            {
-                "container": _recipe_manifest(
-                    role="container",
-                    archetypes=("part",),
-                    content="container\n",
-                ),
-                "part": _recipe_manifest(role="archetype", content="part\n"),
-            }
-        )
-
-        self.assertIn("composition_mismatch", tuple(
-            violation.code for violation in report.violations
-        ))
-
-    def test_container_passes_when_archetypes_match_exactly(self) -> None:
-        report = _check_recipe_root(
-            {
-                "container": _recipe_manifest(
-                    role="container",
-                    archetypes=("part",),
+                    roles_map={"feature/module": "part"},
                     content="same\n",
                 ),
                 "part": _recipe_manifest(role="archetype", content="same\n"),
@@ -210,6 +172,39 @@ class WorkspaceRecipeCheckTest(unittest.TestCase):
         )
 
         self.assertTrue(report.passed())
+
+    def test_recipe_drifts_compare_mapped_module_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_root = Path(temporary_directory) / "project"
+            recipe_root = project_root / ".enclosure" / "recipes"
+            module_path = project_root / "src" / "features" / "feature" / "module"
+            module_path.mkdir(parents=True)
+            recipe_root.mkdir(parents=True)
+            (module_path / "__init__.py").write_text("", encoding="utf-8")
+            (module_path / "extra.py").write_text("", encoding="utf-8")
+            _write_recipe_files(
+                recipe_root,
+                {
+                    "container": _recipe_manifest(
+                        role="container",
+                        roles_map={"other/module": "role"},
+                        content="",
+                    ),
+                    "role": _recipe_manifest(role="archetype", content=""),
+                },
+            )
+            _write_config(project_root, roles_map={"feature/module": "role"})
+
+            with patch.object(
+                application.layout,
+                "current_project_root",
+                return_value=project_root,
+            ):
+                report = application.check_recipe_drifts(recipe_root=recipe_root)
+
+        self.assertEqual(1, report.modules_checked)
+        self.assertEqual(("sample.py",), report.drifts[0].missing_files)
+        self.assertEqual(("__init__.py", "extra.py"), report.drifts[0].extra_files)
 
 
 def _write_recipe(
@@ -242,17 +237,7 @@ def _check_recipe_root(
         recipe_root = Path(temporary_directory) / "recipes"
         project_root.mkdir()
         recipe_root.mkdir()
-        for recipe_name, (manifest_text, template_text) in recipe_specs.items():
-            recipe_path = recipe_root / recipe_name
-            recipe_path.mkdir()
-            (recipe_path / "recipe.yaml").write_text(
-                manifest_text,
-                encoding="utf-8",
-            )
-            (recipe_path / "template.py.tmpl").write_text(
-                template_text,
-                encoding="utf-8",
-            )
+        _write_recipe_files(recipe_root, recipe_specs)
 
         with patch.object(
             application.layout,
@@ -271,15 +256,18 @@ def _recipe_manifest(
     *,
     role: str,
     content: str,
-    archetypes: tuple[str, ...] = (),
+    roles_map: dict[str, str] | None = None,
 ) -> tuple[str, str]:
     manifest_lines = [
         "schema_version: 1",
         f"role: {role}",
     ]
-    if archetypes:
-        manifest_lines.append("archetypes:")
-        manifest_lines.extend(f"  - {archetype}" for archetype in archetypes)
+    if roles_map:
+        manifest_lines.append("roles_map:")
+        manifest_lines.extend(
+            f"  {module_name}: {role_name}"
+            for module_name, role_name in roles_map.items()
+        )
     manifest_lines.extend(
         (
             "files:",
@@ -290,6 +278,49 @@ def _recipe_manifest(
     return (
         "\n".join(manifest_lines),
         content,
+    )
+
+
+def _write_recipe_files(
+    recipe_root: Path,
+    recipe_specs: dict[str, tuple[str, str]],
+) -> None:
+    for recipe_name, (manifest_text, template_text) in recipe_specs.items():
+        recipe_path = recipe_root / recipe_name
+        recipe_path.mkdir()
+        (recipe_path / "recipe.yaml").write_text(
+            manifest_text,
+            encoding="utf-8",
+        )
+        (recipe_path / "template.py.tmpl").write_text(
+            template_text,
+            encoding="utf-8",
+        )
+
+
+def _write_config(
+    project_root: Path,
+    *,
+    roles_map: dict[str, str] | None = None,
+) -> None:
+    config_dir = project_root / ".enclosure"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    lines = [
+        "architecture:",
+        "  root: src/features",
+        "workspace:",
+        "  recipe:",
+        "    skip: []",
+    ]
+    if roles_map:
+        lines.append("    roles_map:")
+        lines.extend(
+            f"      {module_name}: {role_name}"
+            for module_name, role_name in roles_map.items()
+        )
+    (config_dir / "enclosure.yaml").write_text(
+        "\n".join(lines),
+        encoding="utf-8",
     )
 
 

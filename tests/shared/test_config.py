@@ -34,6 +34,10 @@ class NestedConfigTest(unittest.TestCase):
         self.assertEqual(5, architecture_settings.clusters.files_top)
         self.assertEqual(5, architecture_settings.health.top)
         self.assertEqual((), workspace_settings.recipe.skip)
+        self.assertEqual(
+            "module-workspace-cli",
+            workspace_settings.recipe.roles_map["workspace/recipe"],
+        )
         self.assertEqual(2400, workspace_settings.rules.local.max_content_chars)
 
     def test_missing_required_module_section_fails(self) -> None:
@@ -119,6 +123,10 @@ class NestedConfigTest(unittest.TestCase):
         self.assertEqual(5, architecture_settings.clusters.files_top)
         self.assertEqual(5, architecture_settings.health.top)
         self.assertEqual((), workspace_settings.recipe.skip)
+        self.assertEqual(
+            "module-report-cli",
+            workspace_settings.recipe.roles_map["architecture/boundaries"],
+        )
         self.assertEqual(2400, workspace_settings.rules.local.max_content_chars)
 
     def test_architecture_report_limits_allow_zero_and_unlimited(self) -> None:

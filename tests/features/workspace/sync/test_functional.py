@@ -48,8 +48,10 @@ def test_workspace_sync_migrate_creates_packaged_recipes_and_preserves_local_rec
 
     assert result.exit_code == 0, result.output
     assert local_recipe_path.read_text(encoding="utf-8") == local_recipe_content
-    assert (project.recipes_dir / "module-root" / "recipe.yaml").is_file()
-    assert (project.recipes_dir / "module-ui" / "templates" / "ui" / "cli.py.tmpl").is_file()
+    assert (project.recipes_dir / "module-report-cli" / "recipe.yaml").is_file()
+    assert (
+        project.recipes_dir / "module-workspace-cli" / "templates" / "placeholder.tmpl"
+    ).is_file()
 
 
 def test_workspace_sync_migrate_safe_merges_config_and_warns_about_unknown_keys(

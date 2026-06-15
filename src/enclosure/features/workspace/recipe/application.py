@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from enclosure.shared import config
 from enclosure.shared import layout
 
 from . import domain, infrastructure
@@ -144,16 +145,6 @@ class _RecipeGenerationService:
             return 0
 
         create_paths, skipped_paths = self._plan_paths(rendered_files)
-        if recipe.role is domain.RecipeRole.CONTAINER:
-            self._validate_container_composition(
-                violations,
-                recipe,
-                recipes_by_name,
-                project_root=project_root,
-                target_path=target_path,
-                variables=variables,
-                container_files=rendered_files,
-            )
         return len(create_paths) + len(skipped_paths)
 
     def _validate_recipe_contract(
@@ -162,123 +153,30 @@ class _RecipeGenerationService:
         recipe: domain.Recipe,
         recipes_by_name: Mapping[str, domain.Recipe],
     ) -> None:
-        if recipe.role is domain.RecipeRole.ARCHETYPE and recipe.archetypes:
+        if recipe.role is domain.RecipeRole.ARCHETYPE and recipe.roles_map:
             violations.append(
                 domain.RecipeCheckViolation(
-                    code="unexpected_archetypes",
-                    message="Only container recipes may declare archetypes",
+                    code="unexpected_roles_map",
+                    message="Only container recipes may declare roles_map",
                     recipe_name=recipe.name,
                 )
             )
             return
-        if recipe.role is domain.RecipeRole.CONTAINER and not recipe.archetypes:
+        if recipe.role is domain.RecipeRole.CONTAINER and not recipe.roles_map:
             violations.append(
                 domain.RecipeCheckViolation(
-                    code="missing_archetypes",
-                    message="Container recipes must declare archetypes",
+                    code="missing_roles_map",
+                    message="Container recipes must declare roles_map",
                     recipe_name=recipe.name,
                 )
             )
             return
         if recipe.role is domain.RecipeRole.CONTAINER:
-            for archetype_name in recipe.archetypes:
-                archetype = recipes_by_name.get(archetype_name)
-                if archetype is None:
-                    violations.append(
-                        domain.RecipeCheckViolation(
-                            code="missing_archetype",
-                            message=f"Container references missing archetype: {archetype_name}",
-                            recipe_name=recipe.name,
-                        )
-                    )
-                    continue
-                if archetype.role is not domain.RecipeRole.ARCHETYPE:
-                    violations.append(
-                        domain.RecipeCheckViolation(
-                            code="non_archetype_reference",
-                            message=(
-                                "Container archetypes must reference role: archetype "
-                                f"recipes: {archetype_name}"
-                            ),
-                            recipe_name=recipe.name,
-                        )
-                    )
-
-    def _validate_container_composition(
-        self,
-        violations: list[domain.RecipeCheckViolation],
-        recipe: domain.Recipe,
-        recipes_by_name: Mapping[str, domain.Recipe],
-        *,
-        project_root: Path,
-        target_path: Path | str,
-        variables: Mapping[str, str],
-        container_files: tuple[domain.RenderedFile, ...],
-    ) -> None:
-        if _has_contract_violations(violations, recipe.name):
-            return
-
-        archetype_files: list[domain.RenderedFile] = []
-        for archetype_name in recipe.archetypes:
-            archetype = recipes_by_name[archetype_name]
-            try:
-                archetype_files.extend(
-                    self._render_files(
-                        archetype,
-                        project_root=project_root,
-                        target_path=target_path,
-                        variables=variables,
-                    )
-                )
-            except ValueError as exc:
-                violations.append(
-                    domain.RecipeCheckViolation(
-                        code="archetype_render_failed",
-                        message=f"{archetype_name}: {exc}",
-                        recipe_name=recipe.name,
-                    )
-                )
-                return
-
-        container_map = _rendered_file_map(container_files)
-        archetype_map: dict[str, str] = {}
-        for rendered_file in archetype_files:
-            key = rendered_file["relative_path"].as_posix()
-            existing_content = archetype_map.get(key)
-            if existing_content is not None and existing_content != rendered_file["content"]:
-                violations.append(
-                    domain.RecipeCheckViolation(
-                        code="duplicate_archetype_target",
-                        message=f"Archetypes render conflicting content for {key}",
-                        recipe_name=recipe.name,
-                    )
-                )
-                return
-            archetype_map[key] = rendered_file["content"]
-
-        missing_paths = tuple(sorted(set(container_map) - set(archetype_map)))
-        extra_paths = tuple(sorted(set(archetype_map) - set(container_map)))
-        mismatched_paths = tuple(
-            sorted(
-                path
-                for path in set(container_map) & set(archetype_map)
-                if container_map[path] != archetype_map[path]
-            )
-        )
-        if missing_paths or extra_paths or mismatched_paths:
-            details = []
-            if missing_paths:
-                details.append("missing: " + ", ".join(missing_paths))
-            if extra_paths:
-                details.append("extra: " + ", ".join(extra_paths))
-            if mismatched_paths:
-                details.append("mismatch: " + ", ".join(mismatched_paths))
-            violations.append(
-                domain.RecipeCheckViolation(
-                    code="composition_mismatch",
-                    message="Container does not match archetype union; " + "; ".join(details),
-                    recipe_name=recipe.name,
-                )
+            _validate_roles_map(
+                violations,
+                recipe_name=recipe.name,
+                roles_map=recipe.roles_map,
+                recipes_by_name=recipes_by_name,
             )
 
     def describe(
@@ -426,12 +324,121 @@ class _RecipeGenerationService:
 
         return tuple(create_paths), tuple(skipped_paths)
 
+    def drifts(self, project_root: Path) -> domain.RecipeDriftReport:
+        project_root = Path(project_root).resolve()
+        violations: list[domain.RecipeCheckViolation] = []
+        try:
+            recipes = self._repository.find_all()
+        except ValueError as exc:
+            return domain.RecipeDriftReport(
+                project_root=project_root,
+                recipe_root=self._repository.root_path,
+                architecture_root=Path(),
+                modules_checked=0,
+                violations=(
+                    domain.RecipeCheckViolation(
+                        code="invalid_manifest",
+                        message=str(exc),
+                    ),
+                ),
+            )
+
+        recipes_by_name = _recipes_by_name(recipes)
+        containers = tuple(
+            recipe for recipe in recipes if recipe.role is domain.RecipeRole.CONTAINER
+        )
+        if not containers:
+            return domain.RecipeDriftReport(
+                project_root=project_root,
+                recipe_root=self._repository.root_path,
+                architecture_root=Path(),
+                modules_checked=0,
+                violations=(
+                    domain.RecipeCheckViolation(
+                        code="missing_container",
+                        message="No role: container recipe found",
+                    ),
+                ),
+            )
+
+        container = containers[0]
+        self._validate_recipe_contract(violations, container, recipes_by_name)
+        architecture_root = _architecture_root(project_root)
+        roles_map = self._config.roles_map or container.roles_map
+        _validate_roles_map(
+            violations,
+            recipe_name="workspace.recipe.roles_map",
+            roles_map=roles_map,
+            recipes_by_name=recipes_by_name,
+        )
+        drifts: list[domain.RecipeDrift] = []
+        for module_name, role_name in sorted(roles_map.items()):
+            role_recipe = recipes_by_name.get(role_name)
+            module_path = architecture_root / module_name
+            if role_recipe is None or role_recipe.role is not domain.RecipeRole.ARCHETYPE:
+                continue
+            if not module_path.is_dir():
+                violations.append(
+                    domain.RecipeCheckViolation(
+                        code="mapped_module_missing",
+                        message=f"Mapped module does not exist: {module_name}",
+                        recipe_name=container.name,
+                    )
+                )
+                continue
+
+            try:
+                expected_files = _expected_files_for(
+                    self,
+                    role_recipe,
+                    project_root=project_root,
+                    target_path=architecture_root.relative_to(project_root) / module_name,
+                )
+            except ValueError as exc:
+                violations.append(
+                    domain.RecipeCheckViolation(
+                        code="role_render_failed",
+                        message=f"{role_name}: {exc}",
+                        recipe_name=container.name,
+                    )
+                )
+                continue
+
+            actual_files = _actual_files_for(module_path)
+            drifts.append(
+                domain.RecipeDrift(
+                    module_name=module_name,
+                    role_name=role_name,
+                    missing_files=tuple(sorted(expected_files - actual_files)),
+                    extra_files=tuple(sorted(actual_files - expected_files)),
+                )
+            )
+
+        for module_name in _actual_module_names(architecture_root):
+            if module_name not in roles_map:
+                drifts.append(
+                    domain.RecipeDrift(
+                        module_name=module_name,
+                        role_name="",
+                        extra_files=_actual_files_for(architecture_root / module_name),
+                    )
+                )
+
+        return domain.RecipeDriftReport(
+            project_root=project_root,
+            recipe_root=self._repository.root_path,
+            architecture_root=architecture_root,
+            modules_checked=len(drifts),
+            drifts=tuple(drifts),
+            violations=tuple(violations),
+        )
+
     def _summarize_recipe(self, recipe: domain.Recipe) -> domain.RecipeSummary:
         return {
             "name": recipe.name,
             "description": recipe.description,
             "role": recipe.role.value,
-            "archetypes": recipe.archetypes,
+            "roles_map": recipe.roles_map,
             "inputs": tuple(input_spec.name for input_spec in recipe.inputs),
             "files": tuple(recipe_file.target for recipe_file in recipe.files),
         }
@@ -505,6 +512,17 @@ def check_recipes(
     )
 
 
+def check_recipe_drifts(
+    *,
+    recipe_root: Path,
+) -> domain.RecipeDriftReport:
+    project_root = layout.current_project_root()
+    return _RecipeGenerationService(
+        recipe_root=recipe_root,
+        config=_load_recipe_generation_settings(),
+    ).drifts(project_root)
+
+
 def _load_recipe_generation_settings() -> domain.RecipeGenerationConfig:
     return infrastructure.load_recipe_generation_config()
 
@@ -539,28 +557,90 @@ def _recipes_by_name(recipes: tuple[domain.Recipe, ...]) -> dict[str, domain.Rec
     return {recipe.name: recipe for recipe in recipes}
 
 
-def _rendered_file_map(
-    rendered_files: tuple[domain.RenderedFile, ...],
-) -> dict[str, str]:
+def _validate_roles_map(
+    violations: list[domain.RecipeCheckViolation],
+    *,
+    recipe_name: str,
+    roles_map: Mapping[str, str],
+    recipes_by_name: Mapping[str, domain.Recipe],
+) -> None:
+    for module_name, role_name in roles_map.items():
+        role_recipe = recipes_by_name.get(role_name)
+        if role_recipe is None:
+            violations.append(
+                domain.RecipeCheckViolation(
+                    code="missing_role_recipe",
+                    message=(
+                        f"roles_map references missing recipe {role_name} "
+                        f"for {module_name}"
+                    ),
+                    recipe_name=recipe_name,
+                )
+            )
+            continue
+        if role_recipe.role is not domain.RecipeRole.ARCHETYPE:
+            violations.append(
+                domain.RecipeCheckViolation(
+                    code="non_archetype_role",
+                    message=(
+                        "roles_map values must reference role: archetype "
+                        f"recipes: {role_name}"
+                    ),
+                    recipe_name=recipe_name,
+                )
+            )
+
+
+def _architecture_root(project_root: Path) -> Path:
+    config_path = project_root / ".enclosure" / "enclosure.yaml"
+    raw_data = config.load_yaml_mapping(
+        config_path,
+        label="Config file",
+        error_type=RuntimeError,
+    )
+    architecture = raw_data.get("architecture")
+    if not isinstance(architecture, dict):
+        raise RuntimeError(f"Missing architecture config section in {config_path}")
+    root = architecture.get("root")
+    if not isinstance(root, str) or not root.strip():
+        raise RuntimeError(f"Missing architecture.root in {config_path}")
+    return project_root / root
+
+
+def _expected_files_for(
+    service: _RecipeGenerationService,
+    recipe: domain.Recipe,
+    *,
+    project_root: Path,
+    target_path: Path,
+) -> set[str]:
+    target_relative_path = domain.normalize_target_path(project_root, target_path)
+    rendered_files = service._render_files(
+        recipe,
+        project_root=project_root,
+        target_path=target_relative_path.value,
+        variables={},
+    )
+    prefix = target_relative_path.as_posix() + "/"
     return {
-        rendered_file["relative_path"].as_posix(): rendered_file["content"]
+        rendered_file["relative_path"].as_posix().removeprefix(prefix)
         for rendered_file in rendered_files
     }
 
 
-def _has_contract_violations(
-    violations: list[domain.RecipeCheckViolation],
-    recipe_name: str,
-) -> bool:
-    contract_codes = {
-        "unexpected_archetypes",
-        "missing_archetypes",
-        "missing_archetype",
-        "non_archetype_reference",
+def _actual_files_for(module_path: Path) -> set[str]:
+    return {
+        path.relative_to(module_path).as_posix()
+        for path in module_path.rglob("*")
+        if path.is_file() and "__pycache__" not in path.parts
     }
-    return any(
-        violation.recipe_name == recipe_name and violation.code in contract_codes
-        for violation in violations
+
+
+def _actual_module_names(architecture_root: Path) -> tuple[str, ...]:
+    return tuple(
+        module_path.relative_to(architecture_root).as_posix()
+        for module_path in sorted(architecture_root.glob("*/*"))
+        if module_path.is_dir() and (module_path / "__init__.py").is_file()
     )
 
 
@@ -568,6 +648,8 @@ RecipeGenerationConfig = domain.RecipeGenerationConfig
 GenerateRecipeResult = domain.GenerateRecipeResult
 RecipeCheckReport = domain.RecipeCheckReport
 RecipeCheckViolation = domain.RecipeCheckViolation
+RecipeDrift = domain.RecipeDrift
+RecipeDriftReport = domain.RecipeDriftReport
 RecipeGenerationReport = domain.RecipeGenerationReport
 RecipeSummary = domain.RecipeSummary
 parse_variables = domain.parse_variables

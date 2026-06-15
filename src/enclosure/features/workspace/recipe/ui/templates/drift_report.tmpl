@@ -1,0 +1,34 @@
+Recipe drift report.
+Modules checked: {{ report.modules_checked }}
+{% if report.violations %}
+Violations:
+{% for violation in report.violations %}
+- {{ violation.code }}: {{ violation.message }}
+{% endfor %}
+{% endif %}
+{% if report.has_drifts() %}
+Drifts:
+{% for drift in report.drifts %}
+{% if drift.has_drift() %}
+{% if drift.role_name %}
+- {{ drift.module_name }} ({{ drift.role_name }})
+{% else %}
+- {{ drift.module_name }}
+{% endif %}
+{% if drift.missing_files %}
+  missing:
+{% for path in drift.missing_files %}
+  - {{ path }}
+{% endfor %}
+{% endif %}
+{% if drift.extra_files %}
+  extra:
+{% for path in drift.extra_files %}
+  - {{ path }}
+{% endfor %}
+{% endif %}
+{% endif %}
+{% endfor %}
+{% elif not report.violations %}
+No recipe drifts found.
+{% endif %}

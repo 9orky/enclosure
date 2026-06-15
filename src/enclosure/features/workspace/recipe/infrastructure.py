@@ -14,7 +14,7 @@ class _RecipeManifest(config.StrictConfigModel):
     schema_version: int
     role: domain.RecipeRole
     description: str = ""
-    archetypes: tuple[str, ...] = ()
+    roles_map: dict[str, str] = Field(default_factory=dict)
     inputs: dict[str, Any] = Field(default_factory=dict)
     files: list[dict[str, Any]] = Field(default_factory=list)
 
@@ -141,7 +141,7 @@ def _recipe_from_manifest(recipe_root: Path, raw_data: dict[str, Any]) -> domain
         root_path=recipe_root,
         description=manifest.description,
         role=manifest.role,
-        archetypes=manifest.archetypes,
+        roles_map=manifest.roles_map,
         inputs=inputs,
         files=files,
     )

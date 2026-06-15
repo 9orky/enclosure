@@ -1,12 +1,6 @@
 schema_version: 1
-role: container
-archetypes:
-  - module-root
-  - module-domain
-  - module-infrastructure
-  - module-application
-  - module-ui
-description: Feature-module recipe for modules that need package-per-layer internals.
+role: archetype
+description: Compatibility alias for packaged-domain command modules.
 inputs:
   module:
     type: string
@@ -17,6 +11,10 @@ inputs:
 files:
   - source: templates/__init__.py.tmpl
     target: "{{ target.path }}/__init__.py"
+  - source: templates/application/__init__.py.tmpl
+    target: "{{ target.path }}/application/__init__.py"
+  - source: templates/application/service.py.tmpl
+    target: "{{ target.path }}/application/service.py"
   - source: templates/domain/__init__.py.tmpl
     target: "{{ target.path }}/domain/__init__.py"
   - source: templates/domain/errors.py.tmpl
@@ -33,10 +31,6 @@ files:
     target: "{{ target.path }}/infrastructure/loader.py"
   - source: templates/infrastructure/repository.py.tmpl
     target: "{{ target.path }}/infrastructure/repository.py"
-  - source: templates/application/__init__.py.tmpl
-    target: "{{ target.path }}/application/__init__.py"
-  - source: templates/application/service.py.tmpl
-    target: "{{ target.path }}/application/service.py"
   - source: templates/ui/__init__.py.tmpl
     target: "{{ target.path }}/ui/__init__.py"
   - source: templates/ui/cli.py.tmpl

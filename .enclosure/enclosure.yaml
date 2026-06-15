@@ -65,6 +65,21 @@ architecture:
 workspace:
   recipe:
     skip: []
+    roles_map:
+      architecture/boundaries: module-report-cli
+      architecture/clusters: module-report-cli
+      architecture/coherence: module-domain-package-cli
+      architecture/config: module-config-support
+      architecture/health: module-report-cli
+      architecture/map: module-report-cli
+      architecture/shape: module-report-cli
+      health/report: module-report-cli
+      workspace/config: module-config-support
+      workspace/health: module-report-cli
+      workspace/plan: module-workspace-cli
+      workspace/recipe: module-workspace-cli
+      workspace/rules: module-domain-package-cli
+      workspace/sync: module-workspace-cli
   rules:
     local:
       max_content_chars: 2400
