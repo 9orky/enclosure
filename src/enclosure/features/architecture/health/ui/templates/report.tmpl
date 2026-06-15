@@ -1,8 +1,11 @@
-Architecture Health:
+Architecture Health{% if verbosity != "standard" %} ({{ verbosity }}){% endif %}:
 {{ report|scan_summary }}
 - Boundary violations: {{ report.boundary_violation_count }}
 - Shape violations: {{ report.shape_violation_count }}
 - Unknown files: {{ report.unknown_file_count }}
+{% if verbosity == "summary" %}
+- Findings: {{ report.findings|length }}
+{% else %}
 {% if report.findings %}
 
 Findings:
@@ -11,6 +14,15 @@ Findings:
 {% endfor %}
 {% else %}
 Architecture Health Passed! No findings.
+{% endif %}
+{% if verbosity == "detailed" %}
+
+Report:
+- Config: {{ report.config_path|present_path(project_root) }}
+- Config format: {{ report.config_format }}
+- Language: {{ report.language }}
+- Runtime command: {{ report.runtime_command if report.runtime_command else "none" }}
+- Health item limit: {% if report.top < 0 %}all{% elif report.top == 0 %}none{% else %}{{ report.top }}{% endif %}
 {% endif %}
 {% if report.hotspots %}
 
@@ -25,4 +37,5 @@ Pressure Clusters:
 {% for cluster in report.pressure_clusters %}
 - {{ cluster.name }}: score {{ cluster.pressure_score }}, files {{ cluster.file_count }}, in {{ cluster.incoming_edges }}, out {{ cluster.outgoing_edges }}
 {% endfor %}
+{% endif %}
 {% endif %}

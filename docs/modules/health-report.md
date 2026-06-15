@@ -13,6 +13,7 @@ Use `enclosure health` as the broad preflight for the current repository.
 
 ## Reading Results
 
+- Use `--v` for compact status, `--vv` for the standard report, and `--vvv` for expanded lower-level detail.
 - Workspace and architecture sections summarize their own health reports.
 - Error findings are blocking and make the command exit nonzero.
 - Attention findings provide context but do not block by themselves.

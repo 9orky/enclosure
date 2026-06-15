@@ -1,5 +1,11 @@
-Workspace Health:
+Workspace Health{% if verbosity != "standard" %} ({{ verbosity }}){% endif %}:
 - Project root: {{ report.project_root|present_path(project_root) }}
+{% if verbosity == "summary" %}
+- Config: {{ "present" if report.config_present else "missing or invalid" }}
+- Rule issues: {{ report.rules_report.documents_with_issues if report.rules_report else "unknown" }}
+- Recipe violations: {{ report.recipe_report.violations|length if report.recipe_report else "unknown" }}
+- Findings: {{ report.findings|length }}
+{% else %}
 - Config: {{ report.config_path|present_path(project_root) if report.config_present else "missing or invalid" }}
 - Rules directory: {{ "present" if report.rules_dir_present else "missing" }}
 - Local rules directory: {{ "present" if report.local_rules_dir_present else "missing" }}
@@ -20,6 +26,21 @@ Recipes:
 - Rendered paths checked: {{ report.recipe_report.rendered_paths_checked }}
 - Violations: {{ report.recipe_report.violations|length }}
 {{ "\n" }}
+{% endif %}
+{% if verbosity == "detailed" and report.rules_report %}
+Rule Documents:
+{% for document in report.rules_report.documents -%}
+- {{ document.path }}{% if document.scope %} [{{ document.scope }}]{% endif %}: {{ document|rule_document_status }}{% if document.is_local %} (content {{ document.content_char_count }} chars){% endif %}
+{{ "\n" }}{% endfor -%}
+{{ "\n" }}
+{% endif %}
+{% if verbosity == "detailed" and report.recipe_report and report.recipe_report.violations %}
+Recipe Violations:
+{% for violation in report.recipe_report.violations -%}
+- {{ violation.code }}{% if violation.recipe_name %} {{ violation.recipe_name }}{% endif %}: {{ violation.message }}
+{{ "\n" }}{% endfor -%}
+{{ "\n" }}
+{% endif %}
 {% endif %}
 {% if report.findings %}
 Findings:

@@ -12,6 +12,7 @@ Use `enclosure architecture health` for the architecture drilldown after root `e
 
 ## How To Respond
 
+- Use `--v` for compact status, `--vv` for the standard report, and `--vvv` for expanded report metadata.
 - Fix boundary and shape findings first.
 - Treat unknown files as classification signals.
 - Treat hotspots and pressure clusters as planning signals.

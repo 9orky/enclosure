@@ -21,6 +21,43 @@ def test_workspace_health_accepts_valid_fixture_workspace(
     assert "Workspace Health Passed" in result.output
 
 
+def test_workspace_health_supports_three_verbosity_levels(
+    fixture_project,
+    use_project,
+    cli_runner,
+) -> None:
+    project = fixture_project("enclosure-workspace")
+    use_project(project)
+
+    summary = cli_runner.invoke(app, ["workspace", "health", "--v"])
+    standard = cli_runner.invoke(app, ["workspace", "health", "--vv"])
+    detailed = cli_runner.invoke(app, ["workspace", "health", "--vvv"])
+
+    assert summary.exit_code == 0, summary.output
+    assert standard.exit_code == 0, standard.output
+    assert detailed.exit_code == 0, detailed.output
+    assert "Workspace Health (summary):" in summary.output
+    assert "Rules directory:" not in summary.output
+    assert "Workspace Health:" in standard.output
+    assert "Rules directory:" in standard.output
+    assert "Workspace Health (detailed):" in detailed.output
+    assert "Rule Documents:" in detailed.output
+
+
+def test_workspace_health_rejects_multiple_verbosity_flags(
+    fixture_project,
+    use_project,
+    cli_runner,
+) -> None:
+    project = fixture_project("enclosure-workspace")
+    use_project(project)
+
+    result = cli_runner.invoke(app, ["workspace", "health", "--v", "--vv"])
+
+    assert result.exit_code == 1, result.output
+    assert "Choose only one verbosity flag" in result.output
+
+
 def test_workspace_health_reports_broken_fixture_workspace(
     fixture_project,
     use_project,

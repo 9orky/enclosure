@@ -22,6 +22,30 @@ def test_root_health_renders_workspace_and_architecture_sections(
     assert "Architecture:" in result.output
 
 
+def test_root_health_supports_three_verbosity_levels(
+    fixture_project,
+    use_project,
+    cli_runner,
+) -> None:
+    project = fixture_project("enclosure-workspace")
+    use_project(project)
+
+    summary = cli_runner.invoke(app, ["health", "--v"])
+    standard = cli_runner.invoke(app, ["health", "--vv"])
+    detailed = cli_runner.invoke(app, ["health", "--vvv"])
+
+    assert summary.exit_code == 0, summary.output
+    assert standard.exit_code == 0, standard.output
+    assert detailed.exit_code == 0, detailed.output
+    assert "Enclosure Health (summary):" in summary.output
+    assert "Config:" not in summary.output
+    assert "Enclosure Health:" in standard.output
+    assert "Config:" in standard.output
+    assert "Enclosure Health (detailed):" in detailed.output
+    assert "Workspace Rule Documents:" in detailed.output
+    assert "Architecture Details:" in detailed.output
+
+
 def test_root_health_fails_when_workspace_health_has_blocking_findings(
     fixture_project,
     use_project,

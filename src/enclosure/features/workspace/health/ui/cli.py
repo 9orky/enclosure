@@ -5,6 +5,7 @@ from typing import Annotated
 import typer
 
 from enclosure.shared import ui
+from enclosure.shared import verbosity as report_verbosity
 
 from .. import application
 
@@ -28,6 +29,18 @@ def health_command(
             help="Print human-focused documentation for this command.",
         ),
     ],
+    v: Annotated[
+        bool,
+        typer.Option("--v", help="Summary health report."),
+    ],
+    vv: Annotated[
+        bool,
+        typer.Option("--vv", help="Standard health report."),
+    ],
+    vvv: Annotated[
+        bool,
+        typer.Option("--vvv", help="Detailed health report."),
+    ],
 ) -> None:
     if llm:
         ui.render_llm("llm.tmpl")
@@ -37,11 +50,15 @@ def health_command(
         return
 
     report = application.build_workspace_health_report()
-    ui.render(report, template_name="report.tmpl", context={})
+    verbosity = report_verbosity.report_verbosity_from_flags(v=v, vv=vv, vvv=vvv)
+    ui.render(report, template_name="report.tmpl", context={"verbosity": verbosity.value})
     ui.exit_if_findings(report.blocking_findings)
 
 
-ui.set_command_defaults(health_command, {"llm": False, "docs": False})
+ui.set_command_defaults(
+    health_command,
+    {"llm": False, "docs": False, "v": False, "vv": False, "vvv": False},
+)
 
 
 __all__ = ["app"]
