@@ -137,6 +137,8 @@ architecture:
       analyzers: []
   map:
     top: 20
+  pressure:
+    top: 10
   clusters:
     group_depth: 5
     top: 20

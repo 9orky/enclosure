@@ -25,6 +25,11 @@ tightens_paths:
 
 # Local Module Ladder
 
+## Rules
+
+Use these repository recipe slots and rungs when shared module-ladder rules are
+already in scope.
+
 ## Local Slots
 
 This repository commonly uses these recipe slots:

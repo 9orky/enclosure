@@ -9,6 +9,7 @@ import enclosure.features.architecture.clusters.ui
 import enclosure.features.architecture.coherence.ui
 import enclosure.features.architecture.health.ui
 import enclosure.features.architecture.map.ui
+import enclosure.features.architecture.pressure.ui
 import enclosure.features.architecture.shape.ui
 import enclosure.features.health.report.ui
 import enclosure.features.workspace.health.ui
@@ -151,6 +152,11 @@ _add_callback_app(
     architecture_app,
     enclosure.features.architecture.map.ui.app,
     name="map",
+)
+_add_callback_app(
+    architecture_app,
+    enclosure.features.architecture.pressure.ui.app,
+    name="pressure",
 )
 _add_callback_app(
     architecture_app,

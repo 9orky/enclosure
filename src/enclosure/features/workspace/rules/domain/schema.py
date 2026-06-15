@@ -106,6 +106,21 @@ class RuleDocumentSchema(BaseModel):
         )
 
     @classmethod
+    def execution_calibration(cls) -> RuleDocumentSchema:
+        return cls(
+            document_class=RuleDocumentClass.EXECUTION,
+            section_requirements=(
+                RuleSectionRequirement(headings=("Protocol Position",)),
+                RuleSectionRequirement(headings=("Required Activities",)),
+                RuleSectionRequirement(headings=("Human Gates",)),
+                RuleSectionRequirement(headings=("Drift Controls",)),
+                RuleSectionRequirement(headings=("Codification Rules",)),
+                RuleSectionRequirement(headings=("Review Checks",)),
+                RuleSectionRequirement(headings=("Handoff Checks",)),
+            ),
+        )
+
+    @classmethod
     def execution_step(cls) -> RuleDocumentSchema:
         return cls(
             document_class=RuleDocumentClass.EXECUTION,

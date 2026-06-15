@@ -29,6 +29,7 @@ class NestedConfigTest(unittest.TestCase):
         self.assertEqual("python", architecture_settings.language)
         self.assertEqual("src/enclosure/features", architecture_settings.root)
         self.assertEqual(20, architecture_settings.map.top)
+        self.assertEqual(10, architecture_settings.pressure.top)
         self.assertEqual(5, architecture_settings.clusters.group_depth)
         self.assertEqual(20, architecture_settings.clusters.top)
         self.assertEqual(5, architecture_settings.clusters.files_top)
@@ -118,6 +119,7 @@ class NestedConfigTest(unittest.TestCase):
             architecture_settings.shape.allowed_imports_crossing_types
         ))
         self.assertEqual(20, architecture_settings.map.top)
+        self.assertEqual(10, architecture_settings.pressure.top)
         self.assertEqual(5, architecture_settings.clusters.group_depth)
         self.assertEqual(20, architecture_settings.clusters.top)
         self.assertEqual(5, architecture_settings.clusters.files_top)
@@ -132,6 +134,7 @@ class NestedConfigTest(unittest.TestCase):
     def test_architecture_report_limits_allow_zero_and_unlimited(self) -> None:
         raw_data = _packaged_config()
         raw_data["architecture"]["map"]["top"] = -1
+        raw_data["architecture"]["pressure"]["top"] = -1
         raw_data["architecture"]["clusters"]["top"] = 0
         raw_data["architecture"]["clusters"]["files_top"] = -1
         raw_data["architecture"]["health"]["top"] = 0
@@ -142,6 +145,7 @@ class NestedConfigTest(unittest.TestCase):
         )
 
         self.assertEqual(-1, architecture_settings.map.top)
+        self.assertEqual(-1, architecture_settings.pressure.top)
         self.assertEqual(0, architecture_settings.clusters.top)
         self.assertEqual(-1, architecture_settings.clusters.files_top)
         self.assertEqual(0, architecture_settings.health.top)

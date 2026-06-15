@@ -22,6 +22,7 @@ class RuleSchemaPolicy:
         navigational_schema: RuleDocumentSchema,
         policy_schema: RuleDocumentSchema,
         local_policy_schema: RuleDocumentSchema,
+        execution_calibration_schema: RuleDocumentSchema,
         execution_big_picture_schema: RuleDocumentSchema,
         execution_step_schema: RuleDocumentSchema,
         local_execution_schema: RuleDocumentSchema,
@@ -30,6 +31,7 @@ class RuleSchemaPolicy:
         self._navigational_schema = navigational_schema
         self._policy_schema = policy_schema
         self._local_policy_schema = local_policy_schema
+        self._execution_calibration_schema = execution_calibration_schema
         self._execution_big_picture_schema = execution_big_picture_schema
         self._execution_step_schema = execution_step_schema
         self._local_execution_schema = local_execution_schema
@@ -45,6 +47,7 @@ class RuleSchemaPolicy:
             navigational_schema=RuleDocumentSchema.navigational(),
             policy_schema=RuleDocumentSchema.policy(),
             local_policy_schema=RuleDocumentSchema.local_policy(),
+            execution_calibration_schema=RuleDocumentSchema.execution_calibration(),
             execution_big_picture_schema=RuleDocumentSchema.execution_big_picture(),
             execution_step_schema=RuleDocumentSchema.execution_step(),
             local_execution_schema=RuleDocumentSchema.local_execution(),
@@ -66,6 +69,8 @@ class RuleSchemaPolicy:
             return self._policy_schema
         if scope is RuleDocumentScope.LOCAL:
             return self._local_execution_schema
+        if stage == "calibration":
+            return self._execution_calibration_schema
         if stage == "big_picture":
             return self._execution_big_picture_schema
         return self._execution_step_schema

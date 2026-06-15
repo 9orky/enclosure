@@ -11,6 +11,7 @@ import enclosure.features.architecture.boundaries.domain
 import enclosure.features.architecture.clusters.domain
 import enclosure.features.architecture.health.domain
 import enclosure.features.architecture.map.domain
+import enclosure.features.architecture.pressure.domain
 import enclosure.features.architecture.shape.domain
 
 
@@ -22,6 +23,7 @@ class ArchitectureConfig(config.StrictConfigModel):
     clusters: enclosure.features.architecture.clusters.domain.ClustersConfig
     health: enclosure.features.architecture.health.domain.HealthConfig
     map: enclosure.features.architecture.map.domain.MapConfig
+    pressure: enclosure.features.architecture.pressure.domain.PressureConfig
     shape: enclosure.features.architecture.shape.domain.ShapeConfig
 
     @property

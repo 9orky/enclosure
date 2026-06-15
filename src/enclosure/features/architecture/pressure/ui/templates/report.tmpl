@@ -1,0 +1,50 @@
+Architecture Pressure:
+{{ report|scan_summary }}
+- Callable symbols: {{ report.callable_count }}
+- Direct calls: {{ report.call_count }}
+- Resolved internal calls: {{ report.resolved_call_count }}
+- Unresolved calls: {{ report.unresolved_call_count }}
+- Top limit: {{ report.top }}
+{% if report.most_calling %}
+
+Most Calling:
+Calls  Resolved  Args  Called by  Callable
+{% for pressure in report.most_calling %}
+{{ "%5d"|format(pressure.calls_count) }}  {{ "%8d"|format(pressure.resolved_calls_count) }}  {{ "%4d"|format(pressure.declared_args) }}  {{ "%9d"|format(pressure.called_by_count) }}  {{ pressure.qualified_name }} ({{ pressure.location }})
+{% endfor %}
+{% endif %}
+{% if report.most_called %}
+
+Most Called:
+Called by  Calls  Args  Callable
+{% for pressure in report.most_called %}
+{{ "%9d"|format(pressure.called_by_count) }}  {{ "%5d"|format(pressure.calls_count) }}  {{ "%4d"|format(pressure.declared_args) }}  {{ pressure.qualified_name }} ({{ pressure.location }})
+{% endfor %}
+{% endif %}
+{% if report.wide_signatures %}
+
+Wide Signatures:
+Args  Called by  Calls  Callable
+{% for pressure in report.wide_signatures %}
+{{ "%4d"|format(pressure.declared_args) }}  {{ "%9d"|format(pressure.called_by_count) }}  {{ "%5d"|format(pressure.calls_count) }}  {{ pressure.qualified_name }} ({{ pressure.location }})
+{% endfor %}
+{% endif %}
+{% if report.reexport_hubs %}
+
+Re-export Hubs:
+Re-exports  Exports  File
+{% for pressure in report.reexport_hubs %}
+{{ "%10d"|format(pressure.reexported_count) }}  {{ "%7d"|format(pressure.exported_count) }}  {{ pressure.location }}
+{% if pressure.source_modules %}
+  - Sources: {{ pressure.source_modules|join(", ") }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if report.public_api_hubs %}
+
+Public API Hubs:
+Exports  Re-exports  File
+{% for pressure in report.public_api_hubs %}
+{{ "%7d"|format(pressure.exported_count) }}  {{ "%10d"|format(pressure.reexported_count) }}  {{ pressure.location }}
+{% endfor %}
+{% endif %}

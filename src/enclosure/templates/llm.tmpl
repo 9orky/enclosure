@@ -15,7 +15,7 @@ Standard help explains syntax. LLM help explains how an agent should use and int
 3. Use `enclosure health` for the broad workspace and architecture preflight.
 4. Use `enclosure workspace health` or `enclosure architecture health` when the broad report points at a concern.
 5. Use focused commands such as `enclosure workspace rules`, `enclosure workspace recipe --check`, `enclosure architecture boundaries`, and `enclosure architecture shape` for drilldowns.
-6. Use `enclosure architecture map` and `enclosure architecture clusters` when you need to understand ownership, hotspots, or coupling before making a larger change.
+6. Use `enclosure architecture map`, `enclosure architecture clusters`, and `enclosure architecture pressure` when you need to understand ownership, hotspots, coupling, or callable/API pressure before making a larger change.
 7. Use `enclosure workspace recipe --list`, `--show`, and `--dry-run` before generating recipe-based code.
 8. After changes, rerun `enclosure health` and any focused command relevant to the files changed.
 
@@ -29,7 +29,7 @@ Standard help explains syntax. LLM help explains how an agent should use and int
 - `allow_same_match` lets a rule permit dependencies inside the same matched area.
 - `architecture.boundaries.flow.layers` adapts the expected dependency direction to the project's layer model.
 - `architecture.boundaries.flow.analyzers` enables higher-level checks such as backward flow and cycles.
-- `architecture.map`, `architecture.clusters`, and `workspace.rules.local` tune report size and local rule strictness.
+- `architecture.map`, `architecture.clusters`, `architecture.pressure`, and `workspace.rules.local` tune report size and local rule strictness.
 - `workspace.recipe.skip` lets a project opt out of specific generated recipe paths.
 
 ## Configuration

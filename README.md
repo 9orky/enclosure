@@ -35,6 +35,7 @@ An agent can search files, but it does not automatically know:
 - **Boundary validation**: `enclosure architecture boundaries` checks imports against configured ownership and layer rules.
 - **Shape validation**: `enclosure architecture shape` checks configured limits for files, symbols, imports, arguments, and line counts.
 - **Architecture mapping**: `enclosure architecture map` shows modules, layers, unknown files, dependencies, and hotspots.
+- **Callable pressure**: `enclosure architecture pressure` ranks high fan-out callables, high fan-in callables, wide signatures, and re-export hubs.
 - **Dependency pressure views**: `enclosure architecture clusters` highlights coupled areas before broad refactors.
 - **Coherence review**: `enclosure architecture coherence` scores feature-module naming, abstract tree shape, sibling patterns, flow, seam use, and dependency pressure before streamlining.
 - **Fast preflight**: `enclosure health` gives an architect-friendly workspace and architecture overview before or after a task.
@@ -153,6 +154,7 @@ enclosure workspace health
 
 enclosure architecture health
 enclosure architecture map
+enclosure architecture pressure
 enclosure architecture boundaries
 enclosure architecture shape
 enclosure architecture clusters

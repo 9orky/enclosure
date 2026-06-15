@@ -238,6 +238,19 @@ child_paths:
             domain.selected_tags(selections),
         )
 
+    def test_task_inference_selects_calibration_tags(self) -> None:
+        selections = domain.infer_rule_tag_selections(
+            paths=(),
+            task="calibration",
+            project_root=Path("."),
+            architecture_root="src/enclosure/features",
+        )
+
+        self.assertEqual(
+            ("execution", "calibration"),
+            domain.selected_tags(selections),
+        )
+
     def test_rule_graph_reports_invalid_direct_read_and_unreachable_doc(self) -> None:
         documents = (
             _document(

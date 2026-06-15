@@ -8,13 +8,14 @@ Architecture commands inspect the contract between code structure and `.enclosur
 - Use `enclosure architecture boundaries` after changing imports or module ownership.
 - Use `enclosure architecture shape` after changing imports, functions, classes, or file shape.
 - Use `enclosure architecture map` before deciding where behavior belongs.
+- Use `enclosure architecture pressure` before reducing prop drilling or public API surface.
 - Use `enclosure architecture clusters` before broad refactors or risky dependency work.
 - Use `enclosure architecture coherence` before streamlining related feature modules.
 
 ## Reading Results
 
 - Boundary and shape findings are blocking checks.
-- Map, cluster, hotspot, and unknown-file output are orientation signals.
+- Map, pressure, cluster, hotspot, and unknown-file output are orientation signals.
 - Coherence scores are streamlining signals, not blocking checks.
 - Policy comes from `.enclosure/enclosure.yaml`; command output explains how current code matches it.
 
@@ -25,5 +26,6 @@ Architecture commands inspect the contract between code structure and `.enclosur
 - `enclosure architecture boundaries --docs`
 - `enclosure architecture shape --docs`
 - `enclosure architecture map --docs`
+- `enclosure architecture pressure --docs`
 - `enclosure architecture clusters --docs`
 - `enclosure architecture coherence --docs`

@@ -55,6 +55,8 @@ architecture:
 
   map:
     top: -1
+  pressure:
+    top: 10
   clusters:
     group_depth: 5
     top: 20
@@ -72,6 +74,7 @@ workspace:
       architecture/config: module-config-support
       architecture/health: module-report-cli
       architecture/map: module-report-cli
+      architecture/pressure: module-report-cli
       architecture/shape: module-report-cli
       health/report: module-report-cli
       workspace/config: module-config-support

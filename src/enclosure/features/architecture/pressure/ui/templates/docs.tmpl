@@ -1,0 +1,24 @@
+# Architecture Pressure Docs
+
+Use `enclosure architecture pressure` to inspect callable fan-out, callable fan-in, wide signatures, and public API export pressure.
+
+## When To Use It
+
+- Before refactoring an orchestration-heavy module.
+- When looking for prop drilling or repeated parameter forwarding.
+- When reviewing `__init__.py` seams and possible unnecessary re-exports.
+- After a modwire upgrade that improves callable graph extraction.
+
+## How To Respond
+
+- Treat high fan-out callables as orchestration or algorithm-density review targets.
+- Treat high fan-in callables as shared seam candidates.
+- Treat wide signatures with call pressure as prop-drilling candidates.
+- Treat re-export hubs as API review targets before broadening module seams.
+
+## Related Commands
+
+- `enclosure architecture map --docs`
+- `enclosure architecture clusters --docs`
+- `enclosure architecture coherence --docs`
+- `enclosure architecture shape --docs`

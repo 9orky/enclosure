@@ -50,7 +50,7 @@ class PolicyRuleDocumentMetadata(RuleDocumentMetadataBase):
 class ExecutionRuleDocumentMetadata(RuleDocumentMetadataBase):
     doc_class: Literal["execution"]
     rule_kind: Literal["execution"]
-    stage: Literal["big_picture", "step"]
+    stage: Literal["big_picture", "calibration", "step"]
     same_artifact_family: str
 
 

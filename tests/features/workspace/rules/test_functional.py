@@ -149,6 +149,24 @@ def test_workspace_rules_route_infers_tags_from_task(
     assert "Read receipt" in result.output
 
 
+def test_workspace_rules_route_infers_calibration_from_task(
+    fixture_project,
+    use_project,
+    cli_runner,
+) -> None:
+    project = fixture_project("enclosure-workspace")
+    use_project(project)
+
+    result = cli_runner.invoke(
+        app,
+        ["workspace", "rules", "route", "--task", "calibration"],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Task category `calibration` maps to `calibration`" in result.output
+    assert "shared/execution/CALIBRATION.md" in result.output
+
+
 def test_workspace_rules_route_reports_unknown_tag_choices(
     fixture_project,
     use_project,

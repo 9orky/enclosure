@@ -22,5 +22,6 @@ Use `enclosure architecture health` for the architecture drilldown after root `e
 - `enclosure architecture boundaries --docs`
 - `enclosure architecture shape --docs`
 - `enclosure architecture map --docs`
+- `enclosure architecture pressure --docs`
 - `enclosure architecture clusters --docs`
 - `enclosure architecture coherence --docs`

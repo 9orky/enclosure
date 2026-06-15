@@ -152,6 +152,7 @@ def _task_tag_selections(task: str) -> tuple[RuleTagSelection, ...]:
     tags_by_task = {
         "architecture": ("architecture",),
         "boundaries": ("architecture", "boundaries"),
+        "calibration": ("execution", "calibration"),
         "change": ("change",),
         "execution": ("execution",),
         "implementation": ("execution",),

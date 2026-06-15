@@ -17,6 +17,13 @@ escalation_paths:
 
 # Module Ladder
 
+## Required Decisions
+
+- Slot names and whether each slot is a file, package, or split slot.
+- Required seams for package slots.
+- Included fragments and their composition order.
+- Drift findings that should block the current recipe shape.
+
 ## Core Rules
 
 - A module ladder is a recipe shape contract, not an architecture style.
@@ -30,7 +37,7 @@ escalation_paths:
 - Drift checks report missing required seams and forbidden shapes; they do not
   report private files under an allowed package slot.
 
-## Checks
+## Review Checks
 
 - Required files exist.
 - Included fragments resolve without cycles.

@@ -1,0 +1,26 @@
+# Architecture Pressure LLM Guide
+
+## Purpose
+
+Use this command to find callable and public API pressure points in the configured architecture root.
+
+## When To Run
+
+- Before simplifying a feature module.
+- Before changing public module seams or `__init__.py` exports.
+- When a workflow feels like it is forwarding too many values through too many functions.
+
+## How To Read The Result
+
+- Most Calling highlights callables with the highest direct fan-out.
+- Most Called highlights resolved internal call targets with the most callers.
+- Wide Signatures highlights callables most likely to carry prop-drilled values.
+- Re-export Hubs highlights `__init__.py` files that forward symbols from implementation modules.
+- Public API Hubs highlights broad package seams, even when modwire does not classify them as re-exports.
+
+## Agent Tips
+
+- Confirm high-pressure targets by reading the code before refactoring.
+- Prefer removing unused public exports before introducing new abstraction.
+- Do not treat unresolved calls as proof; use them as a signal that static resolution needs human review.
+- Pair this with `architecture shape` after changing imports, signatures, or package seams.
