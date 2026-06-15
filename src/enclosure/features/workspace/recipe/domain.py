@@ -344,6 +344,8 @@ class RecipeSummary(TypedDict):
 class RecipeDrift:
     module_name: str
     role_name: str
+    ladder_family: str = ""
+    ladder_rung: str = ""
     missing_files: tuple[str, ...] = ()
     extra_files: tuple[str, ...] = ()
 

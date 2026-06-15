@@ -418,6 +418,7 @@ class _RecipeGenerationService:
                 continue
 
             actual_files = _actual_files_for(module_path)
+            ladder = _composed_ladder_for(role_recipe, recipes_by_name)
             missing_files, extra_files = _drift_files_for(
                 role_recipe,
                 recipes_by_name=recipes_by_name,
@@ -428,6 +429,8 @@ class _RecipeGenerationService:
                 domain.RecipeDrift(
                     module_name=module_name,
                     role_name=role_name,
+                    ladder_family=ladder.family,
+                    ladder_rung=ladder.rung,
                     missing_files=missing_files,
                     extra_files=extra_files,
                 )

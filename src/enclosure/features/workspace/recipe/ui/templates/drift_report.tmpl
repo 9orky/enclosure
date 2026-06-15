@@ -1,5 +1,19 @@
 Recipe drift report.
 Modules checked: {{ report.modules_checked }}
+{% if report.drifts %}
+Ladders:
+{% for drift in report.drifts %}
+{% if drift.role_name %}
+{% if drift.ladder_family and drift.ladder_rung %}
+- {{ drift.module_name }}: {{ drift.role_name }} ({{ drift.ladder_family }}/{{ drift.ladder_rung }})
+{% else %}
+- {{ drift.module_name }}: {{ drift.role_name }}
+{% endif %}
+{% else %}
+- {{ drift.module_name }}: unmapped
+{% endif %}
+{% endfor %}
+{% endif %}
 {% if report.violations %}
 Violations:
 {% for violation in report.violations %}

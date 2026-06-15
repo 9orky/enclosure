@@ -254,6 +254,8 @@ class WorkspaceRecipeCheckTest(unittest.TestCase):
                 report = application.check_recipe_drifts(recipe_root=recipe_root)
 
         self.assertEqual(1, report.modules_checked)
+        self.assertEqual("module", report.drifts[0].ladder_family)
+        self.assertEqual("sample", report.drifts[0].ladder_rung)
         self.assertEqual(("sample.py",), report.drifts[0].missing_files)
         self.assertEqual(("__init__.py", "extra.py"), report.drifts[0].extra_files)
 
@@ -317,6 +319,8 @@ class WorkspaceRecipeCheckTest(unittest.TestCase):
 
         self.assertEqual(1, report.modules_checked)
         self.assertEqual((), report.violations)
+        self.assertEqual("composed", report.drifts[0].ladder_family)
+        self.assertEqual("base+support", report.drifts[0].ladder_rung)
         self.assertEqual((), report.drifts[0].missing_files)
         self.assertEqual((), report.drifts[0].extra_files)
 
