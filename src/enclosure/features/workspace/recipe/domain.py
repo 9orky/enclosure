@@ -17,9 +17,102 @@ _IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _RECIPE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 
 
+def _normalize_relative_path(value: Path | str, label: str) -> Path:
+    normalized_value = Path(str(value).strip().replace("\\", "/"))
+    if normalized_value.is_absolute():
+        raise ValueError(f"{label} must be relative")
+    if not normalized_value.parts:
+        raise ValueError(f"{label} must not be empty")
+    if any(part in {".", ".."} for part in normalized_value.parts):
+        raise ValueError(f"{label} must not traverse outside the target root")
+    return normalized_value
+
+
 class RecipeRole(StrEnum):
     CONTAINER = "container"
     ARCHETYPE = "archetype"
+
+
+class RecipeSlotState(StrEnum):
+    ABSENT = "absent"
+    FILE = "file"
+    PACKAGE = "package"
+    SPLIT_FILES = "split-files"
+    SPLIT_PACKAGES = "split-packages"
+
+
+@dataclass(frozen=True)
+class RecipeSlotName:
+    value: str
+
+    def __post_init__(self) -> None:
+        normalized_value = _normalize_relative_path(self.value, "Recipe slot name")
+        object.__setattr__(self, "value", normalized_value.as_posix())
+
+
+@dataclass(frozen=True)
+class RecipeSlot:
+    name: RecipeSlotName
+    state: RecipeSlotState
+    files: tuple[str, ...] = ()
+    packages: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        files = tuple(
+            _normalize_relative_path(file_path, "Recipe slot file").as_posix()
+            for file_path in self.files
+        )
+        packages = tuple(
+            _normalize_relative_path(package_path, "Recipe slot package").as_posix()
+            for package_path in self.packages
+        )
+        if self.state is RecipeSlotState.SPLIT_FILES and not files:
+            raise ValueError(f"Recipe slot {self.name.value} must declare files")
+        if self.state is RecipeSlotState.SPLIT_PACKAGES and not packages:
+            raise ValueError(f"Recipe slot {self.name.value} must declare packages")
+        object.__setattr__(self, "files", files)
+        object.__setattr__(self, "packages", packages)
+
+    def summary(self) -> dict[str, Any]:
+        return {
+            "state": self.state.value,
+            "files": self.files,
+            "packages": self.packages,
+        }
+
+
+@dataclass(frozen=True)
+class RecipeLadder:
+    family: str = ""
+    rung: str = ""
+    slots: tuple[RecipeSlot, ...] = ()
+    declared: bool = False
+
+    def __post_init__(self) -> None:
+        normalized_family = self.family.strip()
+        normalized_rung = self.rung.strip()
+        if self.declared and not normalized_family:
+            raise ValueError("Recipe ladder family must not be empty")
+        if self.declared and not normalized_rung:
+            raise ValueError("Recipe ladder rung must not be empty")
+        object.__setattr__(self, "family", normalized_family)
+        object.__setattr__(self, "rung", normalized_rung)
+        object.__setattr__(self, "slots", tuple(self.slots))
+
+    def is_declared(self) -> bool:
+        return self.declared
+
+    def summary(self) -> dict[str, Any]:
+        if not self.declared:
+            return {}
+        return {
+            "family": self.family,
+            "rung": self.rung,
+            "slots": {
+                slot.name.value: slot.summary()
+                for slot in self.slots
+            },
+        }
 
 
 @dataclass(frozen=True)
@@ -27,13 +120,7 @@ class RelativePath:
     value: Path
 
     def __post_init__(self) -> None:
-        normalized_value = Path(str(self.value).replace("\\", "/"))
-        if normalized_value.is_absolute():
-            raise ValueError("Recipe paths must be relative")
-        if not normalized_value.parts:
-            raise ValueError("Recipe paths must not be empty")
-        if any(part in {".", ".."} for part in normalized_value.parts):
-            raise ValueError("Recipe paths must not traverse outside the target root")
+        normalized_value = _normalize_relative_path(self.value, "Recipe paths")
         object.__setattr__(self, "value", normalized_value)
 
     def as_posix(self) -> str:
@@ -184,6 +271,7 @@ class Recipe:
     root_path: Path
     role: RecipeRole
     description: str = ""
+    ladder: RecipeLadder = field(default_factory=RecipeLadder)
     archetypes: tuple[str, ...] = ()
     roles_map: dict[str, str] = field(default_factory=dict)
     inputs: tuple[RecipeInputSpec, ...] = ()
@@ -241,6 +329,7 @@ class RecipeSummary(TypedDict):
     name: str
     description: str
     role: str
+    ladder: dict[str, Any]
     archetypes: tuple[str, ...]
     roles_map: dict[str, str]
     inputs: tuple[str, ...]

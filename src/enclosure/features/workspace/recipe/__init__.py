@@ -4,6 +4,10 @@ from . import application, domain
 
 RecipeConfig = domain.RecipeConfig
 RecipeGenerationConfig = domain.RecipeGenerationConfig
+RecipeLadder = domain.RecipeLadder
+RecipeSlot = domain.RecipeSlot
+RecipeSlotName = domain.RecipeSlotName
+RecipeSlotState = domain.RecipeSlotState
 GenerateRecipeResult = domain.GenerateRecipeResult
 RecipeCheckReport = domain.RecipeCheckReport
 RecipeCheckViolation = domain.RecipeCheckViolation
@@ -22,6 +26,10 @@ show_recipe = application.show_recipe
 __all__ = [
     "RecipeConfig",
     "RecipeGenerationConfig",
+    "RecipeLadder",
+    "RecipeSlot",
+    "RecipeSlotName",
+    "RecipeSlotState",
     "GenerateRecipeResult",
     "RecipeCheckReport",
     "RecipeCheckViolation",

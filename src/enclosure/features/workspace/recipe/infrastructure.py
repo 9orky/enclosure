@@ -14,6 +14,7 @@ class _RecipeManifest(config.StrictConfigModel):
     schema_version: int
     role: domain.RecipeRole
     description: str = ""
+    ladder: dict[str, Any] = Field(default_factory=dict)
     archetypes: list[str] = Field(default_factory=list)
     roles_map: dict[str, str] = Field(default_factory=dict)
     inputs: dict[str, Any] = Field(default_factory=dict)
@@ -142,6 +143,7 @@ def _recipe_from_manifest(recipe_root: Path, raw_data: dict[str, Any]) -> domain
         root_path=recipe_root,
         description=manifest.description,
         role=manifest.role,
+        ladder=_recipe_ladder_from(manifest.ladder),
         archetypes=_recipe_archetypes_from(manifest.archetypes),
         roles_map=manifest.roles_map,
         inputs=inputs,
@@ -198,6 +200,67 @@ def _recipe_files_from(raw_files: Any) -> tuple[domain.RecipeFile, ...]:
 
 def _recipe_archetypes_from(raw_archetypes: Any) -> tuple[str, ...]:
     return _string_list(raw_archetypes, "Recipe archetypes must be strings")
+
+
+def _recipe_ladder_from(raw_ladder: Any) -> domain.RecipeLadder:
+    if raw_ladder == {}:
+        return domain.RecipeLadder()
+    if not isinstance(raw_ladder, dict):
+        raise ValueError("Recipe ladder must be a mapping")
+
+    family = raw_ladder.get("family")
+    rung = raw_ladder.get("rung")
+    raw_slots = raw_ladder.get("slots", {})
+    if not isinstance(family, str) or not isinstance(rung, str):
+        raise ValueError("Recipe ladder requires family and rung")
+    if not isinstance(raw_slots, dict):
+        raise ValueError("Recipe ladder slots must be a mapping")
+
+    slots = tuple(_recipe_slot_from(name, value) for name, value in raw_slots.items())
+    return domain.RecipeLadder(
+        family=family,
+        rung=rung,
+        slots=slots,
+        declared=True,
+    )
+
+
+def _recipe_slot_from(raw_name: Any, raw_slot: Any) -> domain.RecipeSlot:
+    if not isinstance(raw_name, str):
+        raise ValueError("Recipe ladder slot names must be strings")
+
+    files: tuple[str, ...] = ()
+    packages: tuple[str, ...] = ()
+    if isinstance(raw_slot, str):
+        raw_state = raw_slot
+    elif isinstance(raw_slot, dict):
+        raw_state = raw_slot.get("state")
+        files = _string_list(
+            raw_slot.get("files", []),
+            f"Recipe ladder slot files must be strings: {raw_name}",
+        )
+        packages = _string_list(
+            raw_slot.get("packages", []),
+            f"Recipe ladder slot packages must be strings: {raw_name}",
+        )
+    else:
+        raise ValueError("Recipe ladder slot values must be strings or mappings")
+
+    if not isinstance(raw_state, str):
+        raise ValueError(f"Recipe ladder slot requires state: {raw_name}")
+    try:
+        state = domain.RecipeSlotState(raw_state)
+    except ValueError as exc:
+        raise ValueError(
+            f"Unsupported recipe ladder state for {raw_name}: {raw_state}"
+        ) from exc
+
+    return domain.RecipeSlot(
+        name=domain.RecipeSlotName(raw_name),
+        state=state,
+        files=files,
+        packages=packages,
+    )
 
 
 def _optional_string(value: Any) -> str | None:

@@ -1,6 +1,14 @@
 schema_version: 1
 role: archetype
 description: Workspace command module with compact domain/application/infrastructure files, UI package, and docs/llm templates.
+ladder:
+  family: module
+  rung: compact-workspace-cli
+  slots:
+    application: file
+    domain: file
+    infrastructure: file
+    ui: package
 files:
   - source: templates/__init__.py.tmpl
     target: "{{ target.path }}/__init__.py"

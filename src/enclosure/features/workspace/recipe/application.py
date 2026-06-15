@@ -175,6 +175,18 @@ class _RecipeGenerationService:
                 )
             )
             return
+        if (
+            recipe.role is domain.RecipeRole.ARCHETYPE
+            and not recipe.ladder.is_declared()
+        ):
+            violations.append(
+                domain.RecipeCheckViolation(
+                    code="missing_ladder",
+                    message="Archetype recipes must declare ladder metadata",
+                    recipe_name=recipe.name,
+                )
+            )
+            return
         if recipe.role is domain.RecipeRole.ARCHETYPE and recipe.archetypes:
             violations.append(
                 domain.RecipeCheckViolation(
@@ -392,12 +404,17 @@ class _RecipeGenerationService:
                 continue
 
             actual_files = _actual_files_for(module_path)
+            missing_files, extra_files = _drift_files_for(
+                role_recipe,
+                expected_files=expected_files,
+                actual_files=set(actual_files),
+            )
             drifts.append(
                 domain.RecipeDrift(
                     module_name=module_name,
                     role_name=role_name,
-                    missing_files=tuple(sorted(expected_files - actual_files)),
-                    extra_files=tuple(sorted(actual_files - expected_files)),
+                    missing_files=missing_files,
+                    extra_files=extra_files,
                 )
             )
 
@@ -425,6 +442,7 @@ class _RecipeGenerationService:
             "name": recipe.name,
             "description": recipe.description,
             "role": recipe.role.value,
+            "ladder": recipe.ladder.summary(),
             "archetypes": recipe.archetypes,
             "roles_map": recipe.roles_map,
             "inputs": tuple(input_spec.name for input_spec in recipe.inputs),
@@ -752,6 +770,105 @@ def _expected_files_for(
         rendered_file["relative_path"].as_posix().removeprefix(prefix)
         for rendered_file in rendered_files
     }
+
+
+def _drift_files_for(
+    recipe: domain.Recipe,
+    *,
+    expected_files: set[str],
+    actual_files: set[str],
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    if not recipe.ladder.is_declared():
+        return (
+            tuple(sorted(expected_files - actual_files)),
+            tuple(sorted(actual_files - expected_files)),
+        )
+
+    required_files = set(expected_files)
+    allowed_files = set(expected_files)
+    allowed_prefixes: set[str] = set()
+    forbidden_files: set[str] = set()
+    forbidden_prefixes: set[str] = set()
+
+    for slot in recipe.ladder.slots:
+        slot_path = slot.name.value
+        if slot.state is domain.RecipeSlotState.ABSENT:
+            forbidden_files.add(f"{slot_path}.py")
+            forbidden_prefixes.add(f"{slot_path}/")
+            continue
+
+        if slot.state is domain.RecipeSlotState.FILE:
+            required_files.add(f"{slot_path}.py")
+            allowed_files.add(f"{slot_path}.py")
+            forbidden_prefixes.add(f"{slot_path}/")
+            continue
+
+        if slot.state is domain.RecipeSlotState.PACKAGE:
+            required_files.add(f"{slot_path}/__init__.py")
+            allowed_files.add(f"{slot_path}/__init__.py")
+            allowed_prefixes.add(f"{slot_path}/")
+            forbidden_files.add(f"{slot_path}.py")
+            continue
+
+        if slot.state is domain.RecipeSlotState.SPLIT_FILES:
+            required_files.add(f"{slot_path}/__init__.py")
+            allowed_files.add(f"{slot_path}/__init__.py")
+            allowed_prefixes.add(f"{slot_path}/")
+            forbidden_files.add(f"{slot_path}.py")
+            for slot_file in slot.files:
+                slot_file_path = f"{slot_path}/{slot_file}"
+                required_files.add(slot_file_path)
+                allowed_files.add(slot_file_path)
+                if Path(slot_file).suffix:
+                    forbidden_prefixes.add(
+                        f"{slot_path}/{Path(slot_file).with_suffix('').as_posix()}/"
+                    )
+            continue
+
+        if slot.state is domain.RecipeSlotState.SPLIT_PACKAGES:
+            required_files.add(f"{slot_path}/__init__.py")
+            allowed_files.add(f"{slot_path}/__init__.py")
+            allowed_prefixes.add(f"{slot_path}/")
+            forbidden_files.add(f"{slot_path}.py")
+            for slot_package in slot.packages:
+                slot_package_path = f"{slot_path}/{slot_package}"
+                required_files.add(f"{slot_package_path}/__init__.py")
+                allowed_files.add(f"{slot_package_path}/__init__.py")
+                allowed_prefixes.add(f"{slot_package_path}/")
+                forbidden_files.add(f"{slot_package_path}.py")
+
+    missing_files = tuple(sorted(required_files - actual_files))
+    extra_files = tuple(
+        sorted(
+            actual_file
+            for actual_file in actual_files
+            if _is_extra_ladder_file(
+                actual_file,
+                allowed_files=allowed_files,
+                allowed_prefixes=allowed_prefixes,
+                forbidden_files=forbidden_files,
+                forbidden_prefixes=forbidden_prefixes,
+            )
+        )
+    )
+    return missing_files, extra_files
+
+
+def _is_extra_ladder_file(
+    actual_file: str,
+    *,
+    allowed_files: set[str],
+    allowed_prefixes: set[str],
+    forbidden_files: set[str],
+    forbidden_prefixes: set[str],
+) -> bool:
+    if actual_file in forbidden_files:
+        return True
+    if any(actual_file.startswith(prefix) for prefix in forbidden_prefixes):
+        return True
+    if actual_file in allowed_files:
+        return False
+    return not any(actual_file.startswith(prefix) for prefix in allowed_prefixes)
 
 
 def _actual_files_for(module_path: Path) -> set[str]:

@@ -1,6 +1,14 @@
 schema_version: 1
 role: archetype
 description: Command module with application file, packaged domain, UI package, and docs/llm/report templates.
+ladder:
+  family: module
+  rung: domain-package-cli
+  slots:
+    application: file
+    domain: package
+    infrastructure: absent
+    ui: package
 files:
   - source: templates/__init__.py.tmpl
     target: "{{ target.path }}/__init__.py"

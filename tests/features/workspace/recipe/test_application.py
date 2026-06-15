@@ -187,6 +187,47 @@ class WorkspaceRecipeCheckTest(unittest.TestCase):
             violation.code for violation in report.violations
         ))
 
+    def test_archetype_reports_missing_ladder_metadata(self) -> None:
+        report = _check_recipe_root(
+            {
+                "module": _container_manifest({"role": "role"}),
+                "role": _recipe_manifest(
+                    role="archetype",
+                    content="ok\n",
+                    include_ladder=False,
+                ),
+            },
+            roles_map={"feature/module": "role"},
+        )
+
+        self.assertEqual(("missing_ladder",), tuple(
+            violation.code for violation in report.violations
+        ))
+
+    def test_recipe_check_reports_invalid_ladder_state(self) -> None:
+        report = _check_recipe_root(
+            {
+                "module": _container_manifest({"role": "role"}),
+                "role": _recipe_manifest(
+                    role="archetype",
+                    content="ok\n",
+                    ladder_lines=(
+                        "ladder:",
+                        "  family: module",
+                        "  rung: broken",
+                        "  slots:",
+                        "    sample: directory",
+                    ),
+                ),
+            },
+            roles_map={"feature/module": "role"},
+        )
+
+        self.assertEqual(("invalid_manifest",), tuple(
+            violation.code for violation in report.violations
+        ))
+        self.assertIn("Unsupported recipe ladder state", report.violations[0].message)
+
     def test_recipe_drifts_compare_mapped_module_tree(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_root = Path(temporary_directory) / "project"
@@ -215,6 +256,130 @@ class WorkspaceRecipeCheckTest(unittest.TestCase):
         self.assertEqual(1, report.modules_checked)
         self.assertEqual(("sample.py",), report.drifts[0].missing_files)
         self.assertEqual(("__init__.py", "extra.py"), report.drifts[0].extra_files)
+
+    def test_recipe_drifts_allow_package_slot_internals(self) -> None:
+        report = _check_ladder_drift(
+            manifest=_slot_manifest(
+                slot_lines=(
+                    "    sample: package",
+                    "    ui: package",
+                ),
+                targets=(
+                    "{{ target.path }}/sample/__init__.py",
+                    "{{ target.path }}/ui/__init__.py",
+                ),
+            ),
+            actual_files=(
+                "__init__.py",
+                "sample/__init__.py",
+                "sample/private.py",
+                "ui/__init__.py",
+                "ui/templates/report.tmpl",
+            ),
+        )
+
+        self.assertEqual((), report.drifts[0].missing_files)
+        self.assertEqual((), report.drifts[0].extra_files)
+
+    def test_recipe_drifts_report_file_and_package_conflict(self) -> None:
+        report = _check_ladder_drift(
+            manifest=_slot_manifest(
+                slot_lines=("    sample: file",),
+                targets=("{{ target.path }}/sample.py",),
+            ),
+            actual_files=(
+                "__init__.py",
+                "sample.py",
+                "sample/__init__.py",
+            ),
+        )
+
+        self.assertEqual((), report.drifts[0].missing_files)
+        self.assertEqual(("sample/__init__.py",), report.drifts[0].extra_files)
+
+    def test_recipe_drifts_report_missing_package_seam(self) -> None:
+        report = _check_ladder_drift(
+            manifest=_slot_manifest(
+                slot_lines=("    sample: package",),
+                targets=("{{ target.path }}/sample/__init__.py",),
+            ),
+            actual_files=("__init__.py", "sample/private.py"),
+        )
+
+        self.assertEqual(("sample/__init__.py",), report.drifts[0].missing_files)
+        self.assertEqual((), report.drifts[0].extra_files)
+
+    def test_recipe_drifts_report_root_extra_outside_slots(self) -> None:
+        report = _check_ladder_drift(
+            manifest=_slot_manifest(
+                slot_lines=("    sample: package",),
+                targets=("{{ target.path }}/sample/__init__.py",),
+            ),
+            actual_files=(
+                "__init__.py",
+                "sample/__init__.py",
+                "other.py",
+            ),
+        )
+
+        self.assertEqual((), report.drifts[0].missing_files)
+        self.assertEqual(("other.py",), report.drifts[0].extra_files)
+
+    def test_recipe_drifts_check_split_file_slots(self) -> None:
+        report = _check_ladder_drift(
+            manifest=_slot_manifest(
+                slot_lines=(
+                    "    application:",
+                    "      state: split-files",
+                    "      files:",
+                    "        - commands.py",
+                    "        - queries.py",
+                ),
+                targets=(
+                    "{{ target.path }}/application/__init__.py",
+                    "{{ target.path }}/application/commands.py",
+                    "{{ target.path }}/application/queries.py",
+                ),
+            ),
+            actual_files=(
+                "__init__.py",
+                "application/__init__.py",
+                "application/commands.py",
+                "application/queries.py",
+                "application/commands/__init__.py",
+            ),
+        )
+
+        self.assertEqual((), report.drifts[0].missing_files)
+        self.assertEqual(("application/commands/__init__.py",), report.drifts[0].extra_files)
+
+    def test_recipe_drifts_check_split_package_slots(self) -> None:
+        report = _check_ladder_drift(
+            manifest=_slot_manifest(
+                slot_lines=(
+                    "    application:",
+                    "      state: split-packages",
+                    "      packages:",
+                    "        - commands",
+                    "        - queries",
+                ),
+                targets=(
+                    "{{ target.path }}/application/__init__.py",
+                    "{{ target.path }}/application/commands/__init__.py",
+                    "{{ target.path }}/application/queries/__init__.py",
+                ),
+            ),
+            actual_files=(
+                "__init__.py",
+                "application/__init__.py",
+                "application/commands.py",
+                "application/commands/__init__.py",
+                "application/queries/__init__.py",
+            ),
+        )
+
+        self.assertEqual((), report.drifts[0].missing_files)
+        self.assertEqual(("application/commands.py",), report.drifts[0].extra_files)
 
     def test_recipe_drifts_report_missing_config_roles_map(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -255,6 +420,11 @@ def _write_recipe(
             f"""
             schema_version: 1
             {role_line}
+            ladder:
+              family: module
+              rung: sample
+              slots:
+                sample: file
             files:
               - source: template.py.tmpl
                 target: "{{{{ target.path }}}}/sample.py"
@@ -301,11 +471,25 @@ def _recipe_manifest(
     role: str,
     content: str,
     roles_map: dict[str, str] | None = None,
+    include_ladder: bool = True,
+    ladder_lines: tuple[str, ...] = (),
 ) -> tuple[str, str]:
     manifest_lines = [
         "schema_version: 1",
         f"role: {role}",
     ]
+    if include_ladder:
+        manifest_lines.extend(
+            ladder_lines
+            if ladder_lines
+            else (
+                "ladder:",
+                "  family: module",
+                "  rung: sample",
+                "  slots:",
+                "    sample: file",
+            )
+        )
     if roles_map:
         manifest_lines.append("roles_map:")
         manifest_lines.extend(
@@ -323,6 +507,69 @@ def _recipe_manifest(
         "\n".join(manifest_lines),
         content,
     )
+
+
+def _slot_manifest(
+    *,
+    slot_lines: tuple[str, ...],
+    targets: tuple[str, ...],
+) -> tuple[str, str]:
+    manifest_lines = [
+        "schema_version: 1",
+        "role: archetype",
+        "ladder:",
+        "  family: module",
+        "  rung: sample",
+        "  slots:",
+    ]
+    manifest_lines.extend(slot_lines)
+    manifest_lines.append("files:")
+    manifest_lines.extend(
+        (
+            "  - source: template.py.tmpl",
+            '    target: "{{ target.path }}/__init__.py"',
+        )
+    )
+    for target in targets:
+        manifest_lines.extend(
+            (
+                "  - source: template.py.tmpl",
+                f'    target: "{target}"',
+            )
+        )
+    return ("\n".join(manifest_lines), "")
+
+
+def _check_ladder_drift(
+    *,
+    manifest: tuple[str, str],
+    actual_files: tuple[str, ...],
+) -> application.RecipeDriftReport:
+    with tempfile.TemporaryDirectory() as temporary_directory:
+        project_root = Path(temporary_directory) / "project"
+        recipe_root = project_root / ".enclosure" / "recipes"
+        module_path = project_root / "src" / "features" / "feature" / "module"
+        module_path.mkdir(parents=True)
+        recipe_root.mkdir(parents=True)
+        for actual_file in actual_files:
+            actual_path = module_path / actual_file
+            actual_path.parent.mkdir(parents=True, exist_ok=True)
+            actual_path.write_text("", encoding="utf-8")
+        _write_recipe_files(
+            recipe_root,
+            {
+                "module": _container_manifest({"role": "role"}),
+                "role": manifest,
+            },
+        )
+        _write_config(project_root, roles_map={"feature/module": "role"})
+
+        with patch.object(
+            application.layout,
+            "current_project_root",
+            return_value=project_root,
+        ):
+            return application.check_recipe_drifts(recipe_root=recipe_root)
 
 
 def _container_manifest(roles_map: dict[str, str] | None = None) -> tuple[str, str]:

@@ -1,6 +1,14 @@
 schema_version: 1
 role: archetype
 description: Report command module with compact domain/application files, UI package, and docs/llm/report templates.
+ladder:
+  family: module
+  rung: compact-cli
+  slots:
+    application: file
+    domain: file
+    infrastructure: absent
+    ui: package
 files:
   - source: templates/__init__.py.tmpl
     target: "{{ target.path }}/__init__.py"

@@ -23,6 +23,7 @@ tightens_paths:
   - ../../shared/structure/FEATURE_FILE_TREE.md
 escalation_paths:
   - FEATURE_LAYERS.md
+  - MODULE_LADDER.md
 ---
 
 # Local File Tree
@@ -35,6 +36,7 @@ Reference shape: `architecture/boundaries`.
 - Add only the files whose responsibilities exist.
 - `__init__.py` is the public module seam.
 - Keep file shape aligned with [SHAPE.md](SHAPE.md).
+- Use [MODULE_LADDER.md](MODULE_LADDER.md) when a recipe shape grows from a file slot into a package slot.
 - Leave legacy layer folders in place until that module is intentionally refactored.
 
 ## Checks

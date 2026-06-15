@@ -1,6 +1,14 @@
 schema_version: 1
 role: archetype
 description: Config/support module with compact domain and infrastructure files and no command UI.
+ladder:
+  family: module
+  rung: compact-support
+  slots:
+    application: absent
+    domain: file
+    infrastructure: file
+    ui: absent
 files:
   - source: templates/__init__.py.tmpl
     target: "{{ target.path }}/__init__.py"

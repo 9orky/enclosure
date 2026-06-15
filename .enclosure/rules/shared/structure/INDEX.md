@@ -18,6 +18,7 @@ child_paths:
   - FEATURE.md
   - FEATURE_LAYERS.md
   - FEATURE_FILE_TREE.md
+  - MODULE_LADDER.md
 ---
 
 # Structure
@@ -32,6 +33,7 @@ child_paths:
 - Then read [FEATURE.md](FEATURE.md) only for capability-owned modules.
 - Then read [FEATURE_LAYERS.md](FEATURE_LAYERS.md) only when layer direction matters.
 - Then read [FEATURE_FILE_TREE.md](FEATURE_FILE_TREE.md) only when file placement is constrained.
+- Then read [MODULE_LADDER.md](MODULE_LADDER.md) only when recipe shape growth or drift checking matters.
 
 ## Review Checks
 

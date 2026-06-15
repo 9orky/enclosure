@@ -1,0 +1,14 @@
+from __future__ import annotations
+
+from .. import domain
+
+
+def build_{{ target.snake }}_report() -> domain.{{ target.class }}Report:
+    return domain.{{ target.class }}Report(
+        title="{{ target.class }} Report",
+        module_path="{{ target.path }}",
+        workspace_name="",
+    )
+
+
+__all__ = ["build_{{ target.snake }}_report"]
