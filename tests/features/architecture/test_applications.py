@@ -6,6 +6,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from modwire import ExtractionCache, SourceRoots
+
 from enclosure.shared import architecture_code
 
 
@@ -72,7 +74,23 @@ class ArchitectureApplicationTest(unittest.TestCase):
                     load_config_patch.stop()
 
                 self.assertIs(code_map_error, raised.exception)
-                extract_code.assert_called_once_with("python", project_root, ())
+                extract_code.assert_called_once()
+                self.assertEqual(
+                    {
+                        "language": "python",
+                        "sources_root": project_root,
+                        "exclusions": (),
+                        "source_roots": SourceRoots(workspace_root=project_root),
+                        "cache": ExtractionCache(
+                            root=project_root
+                            / ".enclosure"
+                            / ".cache"
+                            / "modwire",
+                            max_entries=3,
+                        ),
+                    },
+                    extract_code.call_args.kwargs,
+                )
 
 
 if __name__ == "__main__":

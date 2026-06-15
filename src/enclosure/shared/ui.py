@@ -159,7 +159,7 @@ def _relative_label(path: Path | None, root: Path) -> str:
 
 _TEMPLATE_ENVIRONMENT.filters.update(
     {
-        "architecture_violations": modwire.architecture.render.violations,
+        "architecture_violations": modwire.architecture.render.render_violations,
         "layer_summary": _layer_summary,
         "limit_items": limits.apply_limit,
         "present_path": _relative_label,

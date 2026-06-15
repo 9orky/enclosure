@@ -13,7 +13,7 @@ def build_boundaries_report() -> domain.BoundariesReport:
         **code_analysis.report_fields(),
         violations=tuple(
             ArchitecturePolicyEvaluator().evaluate(
-                architecture_code.tracked_dependency_graph(code_analysis.code_map),
+                code_analysis.code_map.tracked_only().graph,
                 code_analysis.matching_config,
             )
         ),

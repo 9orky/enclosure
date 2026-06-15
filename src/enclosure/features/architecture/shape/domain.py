@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Protocol
+from typing import Literal
 
 from modwire import CodeMap
+from modwire import ShapeConfig as ModwireShapeConfig
+from modwire import evaluate_shape as evaluate_modwire_shape
 from pydantic import field_validator
 
 from enclosure.shared import architecture, config
@@ -33,9 +35,28 @@ class ShapeConfig(config.StrictConfigModel):
     enforce_joined_imports: bool
     allowed_imports_crossing_types: list[ImportCrossingType]
 
-    @property
-    def effective_allowed_imports_crossing_types(self) -> tuple[ImportCrossingType, ...]:
-        return tuple(self.allowed_imports_crossing_types)
+    def to_modwire_config(self) -> ModwireShapeConfig:
+        return ModwireShapeConfig(
+            max_classes_per_file=self.max_classes_per_file,
+            max_interfaces_per_file=self.max_interfaces_per_file,
+            max_types_per_file=self.max_types_per_file,
+            max_abstract_classes_per_file=self.max_abstract_classes_per_file,
+            max_functions_per_file=self.max_functions_per_file,
+            max_methods_per_class=self.max_methods_per_class,
+            max_declared_args=_combined_limit(
+                self.max_declared_args_per_function,
+                self.max_declared_args_per_method,
+            ),
+            max_function_lines=self.max_lines_count_per_function,
+            max_method_lines=self.max_lines_count_per_method,
+            max_class_lines=self.max_lines_count_per_class,
+            allow_optional_function_args=self.allow_optional_function_args,
+            allow_optional_method_args=self.allow_optional_method_args,
+            allow_optional_class_properties=self.allow_optional_class_properties,
+            allow_import_aliases=self.allow_imports_aliases,
+            allowed_import_crossing_types=tuple(self.allowed_imports_crossing_types),
+            require_joined_imports=False,
+        )
 
     @field_validator(
         "max_classes_per_file",
@@ -67,16 +88,12 @@ class ShapeConfig(config.StrictConfigModel):
         return value
 
 
-class ShapeConfigOwner(Protocol):
-    shape: ShapeConfig
-
-
 @dataclass(frozen=True)
 class ShapeViolation:
     source_id: str
     rule: str
-    actual: int
-    limit: int
+    actual: int | str | bool
+    limit: int | str | bool
     symbol_kind: str = "file"
     symbol_name: str = ""
 
@@ -114,317 +131,161 @@ class ShapeReport:
 
 def evaluate_shape(
     code_map: CodeMap,
-    config: ShapeConfigOwner,
+    config: object,
 ) -> tuple[ShapeViolation, ...]:
     shape = config.shape
-    violations: list[ShapeViolation] = []
-    for source_id, source_file in sorted(code_map.extraction_result.files.items()):
-        _add_limited_violation(
-            violations,
-            source_id=source_id,
-            rule="max_classes_per_file",
-            actual=len(source_file.classes),
-            limit=shape.max_classes_per_file,
-            symbol_kind="file",
-            symbol_name="",
-        )
-        _add_limited_violation(
-            violations,
-            source_id=source_id,
-            rule="max_interfaces_per_file",
-            actual=len(source_file.interfaces),
-            limit=shape.max_interfaces_per_file,
-            symbol_kind="file",
-            symbol_name="",
-        )
-        _add_limited_violation(
-            violations,
-            source_id=source_id,
-            rule="max_types_per_file",
-            actual=len(source_file.types),
-            limit=shape.max_types_per_file,
-            symbol_kind="file",
-            symbol_name="",
-        )
-        _add_limited_violation(
-            violations,
-            source_id=source_id,
-            rule="max_abstract_classes_per_file",
-            actual=len(source_file.abstract_classes),
-            limit=shape.max_abstract_classes_per_file,
-            symbol_kind="file",
-            symbol_name="",
-        )
-        _add_limited_violation(
-            violations,
-            source_id=source_id,
-            rule="max_functions_per_file",
-            actual=len(source_file.functions),
-            limit=shape.max_functions_per_file,
-            symbol_kind="file",
-            symbol_name="",
-        )
-        allowed_import_crossing_types = set(
-            shape.effective_allowed_imports_crossing_types
-        )
-        reported_aliased_imports: set[tuple[str, str]] = set()
-        reported_imports: set[tuple[str, str, str]] = set()
-        for source_import in source_file.imports:
-            if source_import.file_barrier_crossed and (
-                source_import.is_aliased and not shape.allow_imports_aliases
-            ):
-                violation_key = (source_id, source_import.normalized_path)
-                if violation_key not in reported_aliased_imports:
-                    reported_aliased_imports.add(violation_key)
-                    violations.append(
-                        ShapeViolation(
-                            source_id=source_id,
-                            rule="allow_imports_aliases",
-                            actual=1,
-                            limit=0,
-                            symbol_kind="import",
-                            symbol_name=source_import.normalized_path,
-                        )
-                    )
-            if (
-                not source_import.file_barrier_crossed
-                or source_import.crossing_type in allowed_import_crossing_types
-            ):
-                continue
-            violation_key = (
-                source_id,
-                source_import.normalized_path,
-                source_import.crossing_type,
-            )
-            if violation_key in reported_imports:
-                continue
-            reported_imports.add(violation_key)
-            symbol_name = (
-                f"{source_import.normalized_path} ({source_import.crossing_type})"
-            )
-            violations.append(
-                ShapeViolation(
-                    source_id=source_id,
-                    rule="allowed_imports_crossing_types",
-                    actual=1,
-                    limit=0,
-                    symbol_kind="import",
-                    symbol_name=symbol_name,
-                )
-            )
-        if shape.enforce_joined_imports:
-            _add_joined_import_violations(
-                violations,
-                source_id=source_id,
-                source_imports=source_file.imports,
-            )
-
-        for function in source_file.functions:
-            _add_limited_violation(
-                violations,
-                source_id=source_id,
-                rule="max_declared_args_per_function",
-                actual=function.declared_args,
-                limit=shape.max_declared_args_per_function,
-                symbol_kind="function",
-                symbol_name=function.name,
-            )
-            _add_limited_violation(
-                violations,
-                source_id=source_id,
-                rule="max_lines_count_per_function",
-                actual=function.line_count,
-                limit=shape.max_lines_count_per_function,
-                symbol_kind="function",
-                symbol_name=function.name,
-            )
-            if not shape.allow_optional_function_args and function.optional_args > 0:
-                violations.append(
-                    ShapeViolation(
-                        source_id=source_id,
-                        rule="allow_optional_function_args",
-                        actual=function.optional_args,
-                        limit=0,
-                        symbol_kind="function",
-                        symbol_name=function.name,
-                    )
-                )
-
-        for class_definition in source_file.classes:
-            _add_class_like_violations(
-                violations,
-                source_id=source_id,
-                shape=shape,
-                symbol_kind="class",
-                symbol_name=class_definition.name,
-                methods=class_definition.methods,
-                properties=class_definition.properties,
-                line_count=class_definition.line_count,
-            )
-
-        for abstract_class in source_file.abstract_classes:
-            _add_class_like_violations(
-                violations,
-                source_id=source_id,
-                shape=shape,
-                symbol_kind="abstract_class",
-                symbol_name=abstract_class.name,
-                methods=[
-                    *abstract_class.abstract_methods,
-                    *abstract_class.concrete_methods,
-                ],
-                properties=abstract_class.properties,
-                line_count=abstract_class.line_count,
-            )
-
+    owners = _symbol_owners(code_map)
+    violations = [
+        normalized
+        for violation in evaluate_modwire_shape(code_map, shape.to_modwire_config())
+        if (normalized := _normalize_violation(violation, shape, owners)) is not None
+    ]
+    if shape.enforce_joined_imports:
+        violations.extend(_joined_import_violations(code_map))
     return tuple(violations)
 
 
-def _add_joined_import_violations(
-    violations: list[ShapeViolation],
-    *,
-    source_id: str,
-    source_imports,
-) -> None:
-    imports_by_join_key = {}
-    for source_import in source_imports:
-        if not source_import.file_barrier_crossed or not source_import.join_key:
-            continue
-        imports_by_join_key.setdefault(source_import.join_key, []).append(source_import)
-
-    for join_key, imports in sorted(imports_by_join_key.items()):
-        if len(imports) <= 1:
-            continue
-        statement_ids = {
-            source_import.statement_id
-            for source_import in imports
-            if source_import.statement_id
-        }
-        statement_count = len(statement_ids) if statement_ids else len(imports)
-        uses_joined_import = all(
-            source_import.uses_joined_import for source_import in imports
-        )
-        if statement_count <= 1 and uses_joined_import:
-            continue
-        violations.append(
-            ShapeViolation(
-                source_id=source_id,
-                rule="enforce_joined_imports",
-                actual=statement_count if statement_count > 1 else len(imports),
-                limit=1,
-                symbol_kind="import",
-                symbol_name=join_key,
-            )
-        )
-
-
-def _add_class_like_violations(
-    violations: list[ShapeViolation],
-    *,
-    source_id: str,
+def _normalize_violation(
+    violation: object,
     shape: ShapeConfig,
-    symbol_kind: str,
-    symbol_name: str,
-    methods,
-    properties,
-    line_count: int,
+    owners: dict[tuple[str, str, str], tuple[str, str]],
+) -> ShapeViolation | None:
+    rule_name = getattr(violation, "rule_name")
+    source_id = getattr(violation, "source_id")
+    symbol_kind = getattr(violation, "symbol_kind") or "file"
+    symbol_name = getattr(violation, "symbol_name") or ""
+    actual = getattr(violation, "actual")
+    limit = getattr(violation, "limit")
+
+    if rule_name == "max_declared_args":
+        if symbol_kind == "function":
+            rule_name = "max_declared_args_per_function"
+            limit = shape.max_declared_args_per_function
+        else:
+            rule_name = "max_declared_args_per_method"
+            limit = shape.max_declared_args_per_method
+        if limit == -1 or actual <= limit:
+            return None
+    elif rule_name == "max_function_lines":
+        rule_name = "max_lines_count_per_function"
+    elif rule_name == "max_method_lines":
+        rule_name = "max_lines_count_per_method"
+    elif rule_name == "max_class_lines":
+        rule_name = "max_lines_count_per_class"
+    elif rule_name == "allow_import_aliases":
+        rule_name = "allow_imports_aliases"
+        actual, limit = 1, 0
+    elif rule_name == "allowed_import_crossing_types":
+        symbol_name = f"{symbol_name} ({actual})"
+        actual, limit = 1, 0
+
+    owner = owners.get((source_id, symbol_kind, symbol_name))
+    if owner is not None:
+        symbol_kind, symbol_name = owner
+
+    return ShapeViolation(
+        source_id=source_id,
+        rule=rule_name,
+        actual=actual,
+        limit=limit,
+        symbol_kind=symbol_kind,
+        symbol_name=symbol_name,
+    )
+
+
+def _symbol_owners(code_map: CodeMap) -> dict[tuple[str, str, str], tuple[str, str]]:
+    owners: dict[tuple[str, str, str], tuple[str, str]] = {}
+    for source_id, source_file in code_map.extraction_result.files.items():
+        for class_definition in source_file.classes:
+            _add_class_owners(owners, source_id, "class", class_definition)
+        for abstract_class in source_file.abstract_classes:
+            _add_abstract_class_owners(owners, source_id, abstract_class)
+    return owners
+
+
+def _add_class_owners(
+    owners: dict[tuple[str, str, str], tuple[str, str]],
+    source_id: str,
+    owner_kind: str,
+    class_definition: object,
 ) -> None:
-    _add_limited_violation(
-        violations,
-        source_id=source_id,
-        rule="max_methods_per_class",
-        actual=len(methods),
-        limit=shape.max_methods_per_class,
-        symbol_kind=symbol_kind,
-        symbol_name=symbol_name,
-    )
-    _add_limited_violation(
-        violations,
-        source_id=source_id,
-        rule="max_lines_count_per_class",
-        actual=line_count,
-        limit=shape.max_lines_count_per_class,
-        symbol_kind=symbol_kind,
-        symbol_name=symbol_name,
-    )
-    optional_property_count = sum(
-        1
-        for property_definition in properties
-        if property_definition.is_optional
-    )
-    if not shape.allow_optional_class_properties and optional_property_count > 0:
-        violations.append(
-            ShapeViolation(
-                source_id=source_id,
-                rule="allow_optional_class_properties",
-                actual=optional_property_count,
-                limit=0,
-                symbol_kind=symbol_kind,
-                symbol_name=symbol_name,
+    for method in getattr(class_definition, "methods", ()):
+        owners[(source_id, "method", method.name)] = (
+            "method",
+            f"{class_definition.name}.{method.name}",
+        )
+    for property_definition in getattr(class_definition, "properties", ()):
+        owners[(source_id, f"{owner_kind}_property", property_definition.name)] = (
+            owner_kind,
+            class_definition.name,
+        )
+
+
+def _add_abstract_class_owners(
+    owners: dict[tuple[str, str, str], tuple[str, str]],
+    source_id: str,
+    abstract_class: object,
+) -> None:
+    for method in (
+        *getattr(abstract_class, "abstract_methods", ()),
+        *getattr(abstract_class, "concrete_methods", ()),
+    ):
+        owners[(source_id, "method", method.name)] = (
+            "method",
+            f"{abstract_class.name}.{method.name}",
+        )
+    for property_definition in getattr(abstract_class, "properties", ()):
+        owners[(source_id, "abstract_class_property", property_definition.name)] = (
+            "abstract_class",
+            abstract_class.name,
+        )
+
+
+def _joined_import_violations(code_map: CodeMap) -> tuple[ShapeViolation, ...]:
+    violations: list[ShapeViolation] = []
+    for source_id, source_file in code_map.extraction_result.files.items():
+        imports_by_join_key = {}
+        for source_import in source_file.imports:
+            if not source_import.file_barrier_crossed or not source_import.join_key:
+                continue
+            imports_by_join_key.setdefault(source_import.join_key, []).append(
+                source_import
             )
-        )
-    for method in methods:
-        method_name = f"{symbol_name}.{method.name}"
-        _add_limited_violation(
-            violations,
-            source_id=source_id,
-            rule="max_declared_args_per_method",
-            actual=method.declared_args,
-            limit=shape.max_declared_args_per_method,
-            symbol_kind="method",
-            symbol_name=method_name,
-        )
-        _add_limited_violation(
-            violations,
-            source_id=source_id,
-            rule="max_lines_count_per_method",
-            actual=method.line_count,
-            limit=shape.max_lines_count_per_method,
-            symbol_kind="method",
-            symbol_name=method_name,
-        )
-        if not shape.allow_optional_method_args and method.optional_args > 0:
+        for join_key, imports in sorted(imports_by_join_key.items()):
+            if len(imports) <= 1:
+                continue
+            statement_ids = {
+                source_import.statement_id
+                for source_import in imports
+                if source_import.statement_id
+            }
+            statement_count = len(statement_ids) if statement_ids else len(imports)
+            if statement_count <= 1 and all(
+                source_import.uses_joined_import for source_import in imports
+            ):
+                continue
             violations.append(
                 ShapeViolation(
                     source_id=source_id,
-                    rule="allow_optional_method_args",
-                    actual=method.optional_args,
-                    limit=0,
-                    symbol_kind="method",
-                    symbol_name=method_name,
+                    rule="enforce_joined_imports",
+                    actual=statement_count if statement_count > 1 else len(imports),
+                    limit=1,
+                    symbol_kind="import",
+                    symbol_name=join_key,
                 )
             )
+    return tuple(violations)
 
 
-def _add_limited_violation(
-    violations: list[ShapeViolation],
-    *,
-    source_id: str,
-    rule: str,
-    actual: int,
-    limit: int,
-    symbol_kind: str,
-    symbol_name: str,
-) -> None:
-    if limit == -1 or actual <= limit:
-        return
-    violations.append(
-        ShapeViolation(
-            source_id=source_id,
-            rule=rule,
-            actual=actual,
-            limit=limit,
-            symbol_kind=symbol_kind,
-            symbol_name=symbol_name,
-        )
-    )
+def _combined_limit(*limits: int) -> int:
+    enabled_limits = [limit for limit in limits if limit != -1]
+    return min(enabled_limits) if enabled_limits else -1
 
 
 __all__ = [
     "evaluate_shape",
     "ShapeConfig",
     "ShapeConfigError",
-    "ShapeConfigOwner",
     "ShapeReport",
     "ShapeViolation",
 ]

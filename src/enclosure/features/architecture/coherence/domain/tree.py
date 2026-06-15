@@ -4,7 +4,7 @@ from collections import defaultdict
 from pathlib import PurePosixPath
 
 from modwire import CodeMap
-from modwire.architecture.matching import match_node
+from modwire.architecture import TagMatcher
 
 from . import models
 
@@ -16,21 +16,22 @@ def map_files(
     api_rule: object | None,
     layer_rules: dict[str, object],
 ) -> dict[str, models.FileMap]:
+    matcher = TagMatcher(config)
     file_maps: dict[str, models.FileMap] = {}
     for source_id in sorted(code_map.extraction_result.files):
-        stream = matched_tag_path(source_id, config, stream_rule)
+        stream = matched_tag_path(source_id, matcher, stream_rule)
         if not stream:
             continue
         parts = relative_parts(source_id, stream)
         if not parts:
             continue
-        layer, layer_root = layer_match(source_id, config, layer_rules)
+        layer, layer_root = layer_match(source_id, matcher, layer_rules)
         file_maps[source_id] = models.FileMap(
             source_id=source_id,
             stream=stream,
             layer=layer,
             layer_root=layer_root,
-            is_api=is_api_match(source_id, config, api_rule),
+            is_api=is_api_match(source_id, matcher, api_rule),
             root_part=parts[0],
             parts=parts,
         )
@@ -117,32 +118,26 @@ def node_target(
     )
 
 
-def matched_tag_path(source_id: str, config: object, rule: object) -> str:
-    match = match_node(
-        source_id,
-        getattr(rule, "match"),
-        config,
-        {},
-        exclude=excluded_patterns(rule),
-    )
+def matched_tag_path(source_id: str, matcher: TagMatcher, rule: object) -> str:
+    match = matcher.match(source_id, getattr(rule, "name", ""))
     if match is None:
         return ""
-    return display_path(match[0], config)
+    return matcher.display_path(match.captured_path)
 
 
-def is_api_match(source_id: str, config: object, api_rule: object | None) -> bool:
+def is_api_match(source_id: str, matcher: TagMatcher, api_rule: object | None) -> bool:
     if api_rule is None:
         return False
-    return bool(matched_tag_path(source_id, config, api_rule))
+    return bool(matched_tag_path(source_id, matcher, api_rule))
 
 
 def layer_match(
     source_id: str,
-    config: object,
+    matcher: TagMatcher,
     layer_rules_by_name: dict[str, object],
 ) -> tuple[str, str]:
     for layer, rule in layer_rules_by_name.items():
-        layer_root = matched_tag_path(source_id, config, rule)
+        layer_root = matched_tag_path(source_id, matcher, rule)
         if not layer_root:
             continue
         return layer, layer_root
@@ -157,24 +152,6 @@ def relative_parts(source_id: str, stream: str) -> tuple[str, ...]:
     if normalized.startswith(f"{prefix}/"):
         return PurePosixPath(normalized[len(prefix) + 1 :]).parts
     return ()
-
-
-def display_path(path: str, config: object) -> str:
-    normalized = path.strip("/")
-    root = (getattr(config, "architecture_root", None) or "").strip("/")
-    if root and normalized == root:
-        return "."
-    if root and normalized.startswith(f"{root}/"):
-        return normalized[len(root) + 1 :]
-    return normalized
-
-
-def excluded_patterns(rule: object) -> tuple[str, ...]:
-    excluded = getattr(rule, "excluded_patterns", None)
-    if excluded is not None:
-        return tuple(excluded)
-    return tuple(getattr(rule, "except_", ())) + tuple(getattr(rule, "exclude", ()))
-
 
 __all__ = [
     "layer_rules",

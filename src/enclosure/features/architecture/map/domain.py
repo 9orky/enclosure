@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
 
-from modwire.architecture.matching import match_node
+from modwire.architecture import TagMatcher
 from pydantic import field_validator
 
 from enclosure.shared import architecture, config, limits
@@ -118,24 +118,29 @@ def describe_architecture_map(
     tracked_files: tuple[str, ...] | None,
     top: int,
 ) -> "MappedArchitecture":
-    tag_rules = {rule.name: rule for rule in config.rules.tags}
-    module_rule = tag_rules.get(config.rules.flow.module_tag)
-    layer_rules = tuple(
-        tag_rules[layer_name]
+    tag_names = {rule.name for rule in config.rules.tags}
+    module_tag = (
+        config.rules.flow.module_tag
+        if config.rules.flow.module_tag in tag_names
+        else ""
+    )
+    layer_names = tuple(
+        layer_name
         for layer_name in config.rules.flow.layers
-        if layer_name in tag_rules
+        if layer_name in tag_names
     )
 
     tracked_node_ids = tuple(tracked_files or graph.node_ids())
+    matcher = TagMatcher(config)
     file_maps = {
-        node_id: _map_file(node_id, config, module_rule, layer_rules)
+        node_id: _map_file(node_id, matcher, module_tag, layer_names)
         for node_id in tracked_node_ids
     }
     builders: dict[str, _ModuleBuilder] = defaultdict(_ModuleBuilder)
     unknown_files: list[str] = []
 
     for node_id, file_map in file_maps.items():
-        display_path = _display_path(node_id, config)
+        display_path = matcher.display_path(node_id)
         if not file_map.module_name:
             unknown_files.append(display_path)
             continue
@@ -224,43 +229,23 @@ class _ModuleBuilder:
         )
 
 
-def _map_file(node_id: str, config, module_rule, layer_rules) -> _FileMap:
+def _map_file(
+    node_id: str,
+    matcher: TagMatcher,
+    module_tag: str,
+    layer_names: tuple[str, ...],
+) -> _FileMap:
     module_name = ""
-    if module_rule is not None:
-        match = match_node(
-            node_id,
-            module_rule.match,
-            config,
-            {},
-            exclude=module_rule.excluded_patterns,
-        )
+    if module_tag:
+        match = matcher.match(node_id, module_tag)
         if match is not None:
-            module_name = _display_path(match[0], config)
+            module_name = matcher.display_path(match.captured_path)
 
     layer_name = ""
-    for layer_rule in layer_rules:
-        match = match_node(
-            node_id,
-            layer_rule.match,
-            config,
-            {},
-            exclude=layer_rule.excluded_patterns,
-        )
-        if match is not None:
-            layer_name = layer_rule.name
-            break
+    if layer_match := matcher.first_match(node_id, layer_names):
+        layer_name = layer_match.name
 
     return _FileMap(module_name=module_name, layer_name=layer_name)
-
-
-def _display_path(path: str, config) -> str:
-    normalized = path.strip("/")
-    root = (getattr(config, "architecture_root", None) or "").strip("/")
-    if root and normalized == root:
-        return "."
-    if root and normalized.startswith(f"{root}/"):
-        return normalized[len(root) + 1 :]
-    return normalized
 
 
 def _hotspots(

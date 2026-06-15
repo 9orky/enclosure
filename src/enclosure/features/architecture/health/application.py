@@ -28,7 +28,7 @@ def _build_health_report(top_override: int | None) -> domain.ArchitectureHealthR
     )
     boundary_violations = tuple(
         ArchitecturePolicyEvaluator().evaluate(
-            architecture_code.tracked_dependency_graph(code_map),
+            code_map.tracked_only().graph,
             code_analysis.matching_config,
         )
     )
