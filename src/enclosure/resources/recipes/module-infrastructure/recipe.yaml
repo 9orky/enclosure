@@ -1,0 +1,17 @@
+schema_version: 1
+role: archetype
+description: Feature-module infrastructure package archetype.
+inputs:
+  module:
+    type: string
+    default_from: target_name
+  cli_command:
+    type: slug
+    default_from: target_kebab
+files:
+  - source: templates/infrastructure/__init__.py.tmpl
+    target: "{{ target.path }}/infrastructure/__init__.py"
+  - source: templates/infrastructure/loader.py.tmpl
+    target: "{{ target.path }}/infrastructure/loader.py"
+  - source: templates/infrastructure/repository.py.tmpl
+    target: "{{ target.path }}/infrastructure/repository.py"

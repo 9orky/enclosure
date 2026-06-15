@@ -1,0 +1,16 @@
+from __future__ import annotations
+
+# Application package rule:
+# Orchestrate use cases here. Keep UI concerns outside this package.
+
+from . import service
+
+{{ module.class }}ApplicationError = service.{{ module.class }}ApplicationError
+{{ module.class }}ReportOutput = service.{{ module.class }}ReportOutput
+build_{{ module.snake }}_report_output = service.build_{{ module.snake }}_report_output
+
+__all__ = [
+    "{{ module.class }}ApplicationError",
+    "{{ module.class }}ReportOutput",
+    "build_{{ module.snake }}_report_output",
+]

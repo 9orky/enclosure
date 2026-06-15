@@ -3,6 +3,15 @@ Recipe '{{ recipe.name }}'.
 {% if recipe.description %}
 {{ recipe.description }}
 {% endif %}
+{% if recipe.role %}
+Role: {{ recipe.role }}
+{% endif %}
+{% if recipe.archetypes %}
+Archetypes:
+{% for archetype in recipe.archetypes %}
+- {{ archetype }}
+{% endfor %}
+{% endif %}
 {% if recipe.inputs %}
 Inputs:
 {% for input_name in recipe.inputs %}

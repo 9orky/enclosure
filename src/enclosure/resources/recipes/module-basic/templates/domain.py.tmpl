@@ -1,0 +1,48 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+class {{ module.class }}Error(RuntimeError):
+    pass
+
+
+@dataclass(frozen=True)
+class {{ module.class }}Item:
+    name: str
+    priority: int
+
+
+@dataclass(frozen=True)
+class {{ module.class }}Report:
+    items: tuple[{{ module.class }}Item, ...]
+    total_priority: int
+    highest_priority_name: str
+
+    def to_json_dict(self) -> dict[str, object]:
+        return {
+            "items": [
+                {"name": item.name, "priority": item.priority}
+                for item in self.items
+            ],
+            "total_priority": self.total_priority,
+            "highest_priority_name": self.highest_priority_name,
+        }
+
+
+def summarize_{{ module.snake }}(items: tuple[{{ module.class }}Item, ...]) -> {{ module.class }}Report:
+    ordered_items = tuple(sorted(items, key=lambda item: (-item.priority, item.name)))
+    highest_priority_name = ordered_items[0].name if ordered_items else ""
+    return {{ module.class }}Report(
+        items=ordered_items,
+        total_priority=sum(item.priority for item in ordered_items),
+        highest_priority_name=highest_priority_name,
+    )
+
+
+__all__ = [
+    "{{ module.class }}Error",
+    "{{ module.class }}Item",
+    "{{ module.class }}Report",
+    "summarize_{{ module.snake }}",
+]

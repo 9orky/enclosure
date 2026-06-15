@@ -89,6 +89,7 @@ def docs_commands() -> tuple[list[str], ...]:
         ["workspace", "sync", "--docs"],
         ["workspace", "sync", "init", "--docs"],
         ["workspace", "sync", "update", "--docs"],
+        ["workspace", "sync", "migrate", "--docs"],
         ["workspace", "health", "--docs"],
         ["workspace", "plan", "--docs"],
         ["workspace", "recipe", "--docs"],

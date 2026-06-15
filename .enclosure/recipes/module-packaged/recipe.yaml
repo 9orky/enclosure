@@ -1,4 +1,11 @@
 schema_version: 1
+role: container
+archetypes:
+  - module-root
+  - module-domain
+  - module-infrastructure
+  - module-application
+  - module-ui
 description: Feature-module recipe for modules that need package-per-layer internals.
 inputs:
   module:

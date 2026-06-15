@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+import copy
+from dataclasses import dataclass
 from importlib.resources import files
 from pathlib import Path
 
@@ -14,12 +16,25 @@ from enclosure.shared import layout
 from . import domain
 
 
+@dataclass(frozen=True)
+class _MigratedConfig:
+    content: str
+    changed: bool
+    warnings: tuple[str, ...]
+
+
 class FileRepository:
     def load(self, path: Path) -> domain.Workspace:
         project_root = Path(path).resolve()
         workspace_layout = layout.EnclosureProjectLayout()
         shared_rule_documents = self._load_shared_rule_documents()
+        packaged_recipe_documents = self._load_packaged_recipe_documents()
         config_content = _packaged_text("enclosure.yaml")
+        migrated_config = self._migrated_config(
+            project_root,
+            workspace_layout,
+            config_content,
+        )
         bootstrap_instruction_content = _packaged_text("copilot-instructions.md")
         agent_instruction_content = _packaged_text("AGENTS.md")
 
@@ -33,13 +48,22 @@ class FileRepository:
         return domain.Workspace(
             project_root=project_root,
             shared_rule_documents=shared_rule_documents,
+            packaged_recipe_documents=packaged_recipe_documents,
             config_content=config_content,
+            migrated_config_content=migrated_config.content,
+            config_changed=migrated_config.changed,
+            config_warnings=migrated_config.warnings,
             bootstrap_instruction_content=bootstrap_instruction_content,
             agent_instruction_content=agent_instruction_content,
             existing_shared_rule_paths=self._existing_shared_rule_paths(
                 project_root,
                 workspace_layout,
                 shared_rule_documents,
+            ),
+            existing_packaged_recipe_paths=self._existing_packaged_recipe_paths(
+                project_root,
+                workspace_layout,
+                packaged_recipe_documents,
             ),
             local_paths=self._list_workspace_files(
                 workspace_layout.local_rules_dir(project_root)
@@ -69,6 +93,24 @@ class FileRepository:
             )
         )
 
+    def _load_packaged_recipe_documents(
+        self,
+    ) -> tuple[domain.PackagedRecipeDocument, ...]:
+        recipes_root = files("enclosure").joinpath("resources", "recipes")
+        if not recipes_root.is_dir():
+            return ()
+        return tuple(
+            domain.PackagedRecipeDocument(
+                relative_path=child_relative_path,
+                content=child.read_text(encoding="utf-8"),
+            )
+            for child_relative_path, child in _iter_visible_files(
+                recipes_root,
+                relative_path=Path(),
+                suffix=None,
+            )
+        )
+
     def _existing_shared_rule_paths(
         self,
         project_root: Path,
@@ -85,6 +127,22 @@ class FileRepository:
             if target_path.is_file()
         )
 
+    def _existing_packaged_recipe_paths(
+        self,
+        project_root: Path,
+        workspace_layout: layout.EnclosureProjectLayout,
+        packaged_recipe_documents: tuple[domain.PackagedRecipeDocument, ...],
+    ) -> tuple[Path, ...]:
+        recipes_dir = workspace_layout.recipes_dir(project_root)
+        return tuple(
+            target_path
+            for target_path in (
+                recipes_dir / document.relative_path
+                for document in packaged_recipe_documents
+            )
+            if target_path.is_file()
+        )
+
     def _list_workspace_files(self, root: Path) -> tuple[Path, ...]:
         if not root.is_dir():
             return ()
@@ -94,6 +152,72 @@ class FileRepository:
             for path in sorted(root.rglob("*"), key=lambda item: item.as_posix())
             if path.is_file()
             and not any(part.startswith(".") for part in path.relative_to(root).parts)
+        )
+
+    def _migrated_config(
+        self,
+        project_root: Path,
+        workspace_layout: layout.EnclosureProjectLayout,
+        packaged_config_content: str,
+    ) -> "_MigratedConfig":
+        config_path = workspace_layout.config_path(project_root, None)
+        if not config_path.is_file():
+            return _MigratedConfig(
+                content=packaged_config_content,
+                changed=False,
+                warnings=(),
+            )
+
+        try:
+            existing_text = config_path.read_text(encoding="utf-8")
+        except OSError as exc:
+            return _MigratedConfig(
+                content=packaged_config_content,
+                changed=False,
+                warnings=(f"Could not read existing config: {exc}",),
+            )
+
+        try:
+            existing_data = yaml.safe_load(existing_text)
+        except yaml.YAMLError as exc:
+            return _MigratedConfig(
+                content=existing_text,
+                changed=False,
+                warnings=(f"Invalid enclosure.yaml syntax: {exc}",),
+            )
+        try:
+            packaged_data = yaml.safe_load(packaged_config_content)
+        except yaml.YAMLError as exc:
+            raise ValueError(f"Invalid generated config asset: {exc}") from exc
+
+        if not isinstance(existing_data, dict):
+            return _MigratedConfig(
+                content=existing_text,
+                changed=False,
+                warnings=("Existing enclosure.yaml must contain a mapping at the top level",),
+            )
+        if not isinstance(packaged_data, dict):
+            raise ValueError("Invalid generated config asset: top level must be a mapping")
+
+        merged_data = copy.deepcopy(existing_data)
+        warnings: list[str] = []
+        changed = _merge_missing_config_values(
+            merged_data,
+            packaged_data,
+            warnings,
+            path=(),
+        )
+        if not changed:
+            return _MigratedConfig(
+                content=existing_text,
+                changed=False,
+                warnings=tuple(warnings),
+            )
+
+        return _MigratedConfig(
+            content=yaml.safe_dump(merged_data, sort_keys=False),
+            changed=True,
+            warnings=tuple(warnings),
         )
 
 
@@ -195,6 +319,49 @@ def _load_generated_yaml_mapping(
     if not isinstance(raw_data, dict):
         raise ValueError(f"{label} must contain a mapping at the top level: {path}")
     return raw_data
+
+
+def _merge_missing_config_values(
+    target: dict[object, object],
+    defaults: dict[object, object],
+    warnings: list[str],
+    *,
+    path: tuple[str, ...],
+) -> bool:
+    changed = False
+    for key in target:
+        if key not in defaults:
+            warnings.append(f"Unknown config key preserved: {_config_path_label((*path, key))}")
+
+    for key, default_value in defaults.items():
+        current_path = (*path, str(key))
+        if key not in target:
+            target[key] = copy.deepcopy(default_value)
+            changed = True
+            continue
+
+        target_value = target[key]
+        if isinstance(default_value, dict):
+            if isinstance(target_value, dict):
+                changed = (
+                    _merge_missing_config_values(
+                        target_value,
+                        default_value,
+                        warnings,
+                        path=current_path,
+                    )
+                    or changed
+                )
+                continue
+            warnings.append(
+                "Cannot merge config section because existing value is not a mapping: "
+                f"{_config_path_label(current_path)}"
+            )
+    return changed
+
+
+def _config_path_label(path: tuple[object, ...]) -> str:
+    return ".".join(str(part) for part in path)
 
 
 class WorkspaceWritePlanMaterializer:

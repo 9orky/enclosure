@@ -1,0 +1,27 @@
+from __future__ import annotations
+
+from .. import domain
+
+
+def load_{{ module.snake }}_items(raw_items: tuple[str, ...]) -> tuple[domain.{{ module.class }}Item, ...]:
+    return tuple(_parse_{{ module.snake }}_item(raw_item) for raw_item in raw_items)
+
+
+def _parse_{{ module.snake }}_item(raw_item: str) -> domain.{{ module.class }}Item:
+    name, separator, raw_priority = raw_item.partition(":")
+    if not separator:
+        raise ValueError(f"Expected item in name:priority format: {raw_item}")
+
+    normalized_name = name.strip()
+    if not normalized_name:
+        raise ValueError("Item name must not be empty")
+
+    try:
+        priority = int(raw_priority.strip())
+    except ValueError as exc:
+        raise ValueError(f"Priority must be an integer: {raw_item}") from exc
+
+    return domain.{{ module.class }}Item(name=normalized_name, priority=priority)
+
+
+__all__ = ["load_{{ module.snake }}_items"]

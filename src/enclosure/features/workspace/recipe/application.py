@@ -61,10 +61,12 @@ class _RecipeGenerationService:
 
         if recipe_name is None:
             rendered_paths_checked = 0
+            recipes_by_name = _recipes_by_name(recipes)
             for recipe in recipes:
                 rendered_paths_checked += self._check_recipe(
                     violations,
                     recipe,
+                    recipes_by_name=recipes_by_name,
                     project_root=project_root,
                     target_path=Path("_enclosure_recipe_check") / recipe.name,
                     variables=_check_variables_for(recipe, variables),
@@ -98,6 +100,7 @@ class _RecipeGenerationService:
         rendered_paths_checked = self._check_recipe(
             violations,
             recipe,
+            recipes_by_name=_recipes_by_name(recipes),
             project_root=project_root,
             target_path=target_path or Path("_enclosure_recipe_check") / recipe.name,
             variables=_check_variables_for(recipe, variables),
@@ -117,10 +120,12 @@ class _RecipeGenerationService:
         violations: list[domain.RecipeCheckViolation],
         recipe: domain.Recipe,
         *,
+        recipes_by_name: Mapping[str, domain.Recipe],
         project_root: Path,
         target_path: Path | str,
         variables: Mapping[str, str],
     ) -> int:
+        self._validate_recipe_contract(violations, recipe, recipes_by_name)
         try:
             rendered_files = self._render_files(
                 recipe,
@@ -139,7 +144,142 @@ class _RecipeGenerationService:
             return 0
 
         create_paths, skipped_paths = self._plan_paths(rendered_files)
+        if recipe.role is domain.RecipeRole.CONTAINER:
+            self._validate_container_composition(
+                violations,
+                recipe,
+                recipes_by_name,
+                project_root=project_root,
+                target_path=target_path,
+                variables=variables,
+                container_files=rendered_files,
+            )
         return len(create_paths) + len(skipped_paths)
+
+    def _validate_recipe_contract(
+        self,
+        violations: list[domain.RecipeCheckViolation],
+        recipe: domain.Recipe,
+        recipes_by_name: Mapping[str, domain.Recipe],
+    ) -> None:
+        if recipe.role is domain.RecipeRole.ARCHETYPE and recipe.archetypes:
+            violations.append(
+                domain.RecipeCheckViolation(
+                    code="unexpected_archetypes",
+                    message="Only container recipes may declare archetypes",
+                    recipe_name=recipe.name,
+                )
+            )
+            return
+        if recipe.role is domain.RecipeRole.CONTAINER and not recipe.archetypes:
+            violations.append(
+                domain.RecipeCheckViolation(
+                    code="missing_archetypes",
+                    message="Container recipes must declare archetypes",
+                    recipe_name=recipe.name,
+                )
+            )
+            return
+        if recipe.role is domain.RecipeRole.CONTAINER:
+            for archetype_name in recipe.archetypes:
+                archetype = recipes_by_name.get(archetype_name)
+                if archetype is None:
+                    violations.append(
+                        domain.RecipeCheckViolation(
+                            code="missing_archetype",
+                            message=f"Container references missing archetype: {archetype_name}",
+                            recipe_name=recipe.name,
+                        )
+                    )
+                    continue
+                if archetype.role is not domain.RecipeRole.ARCHETYPE:
+                    violations.append(
+                        domain.RecipeCheckViolation(
+                            code="non_archetype_reference",
+                            message=(
+                                "Container archetypes must reference role: archetype "
+                                f"recipes: {archetype_name}"
+                            ),
+                            recipe_name=recipe.name,
+                        )
+                    )
+
+    def _validate_container_composition(
+        self,
+        violations: list[domain.RecipeCheckViolation],
+        recipe: domain.Recipe,
+        recipes_by_name: Mapping[str, domain.Recipe],
+        *,
+        project_root: Path,
+        target_path: Path | str,
+        variables: Mapping[str, str],
+        container_files: tuple[domain.RenderedFile, ...],
+    ) -> None:
+        if _has_contract_violations(violations, recipe.name):
+            return
+
+        archetype_files: list[domain.RenderedFile] = []
+        for archetype_name in recipe.archetypes:
+            archetype = recipes_by_name[archetype_name]
+            try:
+                archetype_files.extend(
+                    self._render_files(
+                        archetype,
+                        project_root=project_root,
+                        target_path=target_path,
+                        variables=variables,
+                    )
+                )
+            except ValueError as exc:
+                violations.append(
+                    domain.RecipeCheckViolation(
+                        code="archetype_render_failed",
+                        message=f"{archetype_name}: {exc}",
+                        recipe_name=recipe.name,
+                    )
+                )
+                return
+
+        container_map = _rendered_file_map(container_files)
+        archetype_map: dict[str, str] = {}
+        for rendered_file in archetype_files:
+            key = rendered_file["relative_path"].as_posix()
+            existing_content = archetype_map.get(key)
+            if existing_content is not None and existing_content != rendered_file["content"]:
+                violations.append(
+                    domain.RecipeCheckViolation(
+                        code="duplicate_archetype_target",
+                        message=f"Archetypes render conflicting content for {key}",
+                        recipe_name=recipe.name,
+                    )
+                )
+                return
+            archetype_map[key] = rendered_file["content"]
+
+        missing_paths = tuple(sorted(set(container_map) - set(archetype_map)))
+        extra_paths = tuple(sorted(set(archetype_map) - set(container_map)))
+        mismatched_paths = tuple(
+            sorted(
+                path
+                for path in set(container_map) & set(archetype_map)
+                if container_map[path] != archetype_map[path]
+            )
+        )
+        if missing_paths or extra_paths or mismatched_paths:
+            details = []
+            if missing_paths:
+                details.append("missing: " + ", ".join(missing_paths))
+            if extra_paths:
+                details.append("extra: " + ", ".join(extra_paths))
+            if mismatched_paths:
+                details.append("mismatch: " + ", ".join(mismatched_paths))
+            violations.append(
+                domain.RecipeCheckViolation(
+                    code="composition_mismatch",
+                    message="Container does not match archetype union; " + "; ".join(details),
+                    recipe_name=recipe.name,
+                )
+            )
 
     def describe(
         self,
@@ -290,6 +430,8 @@ class _RecipeGenerationService:
         return {
             "name": recipe.name,
             "description": recipe.description,
+            "role": recipe.role.value,
+            "archetypes": recipe.archetypes,
             "inputs": tuple(input_spec.name for input_spec in recipe.inputs),
             "files": tuple(recipe_file.target for recipe_file in recipe.files),
         }
@@ -391,6 +533,35 @@ def _sample_value_for(input_spec: domain.RecipeInputSpec) -> str:
     if input_spec.value_type == "dotted_name":
         return "sample"
     return "sample"
+
+
+def _recipes_by_name(recipes: tuple[domain.Recipe, ...]) -> dict[str, domain.Recipe]:
+    return {recipe.name: recipe for recipe in recipes}
+
+
+def _rendered_file_map(
+    rendered_files: tuple[domain.RenderedFile, ...],
+) -> dict[str, str]:
+    return {
+        rendered_file["relative_path"].as_posix(): rendered_file["content"]
+        for rendered_file in rendered_files
+    }
+
+
+def _has_contract_violations(
+    violations: list[domain.RecipeCheckViolation],
+    recipe_name: str,
+) -> bool:
+    contract_codes = {
+        "unexpected_archetypes",
+        "missing_archetypes",
+        "missing_archetype",
+        "non_archetype_reference",
+    }
+    return any(
+        violation.recipe_name == recipe_name and violation.code in contract_codes
+        for violation in violations
+    )
 
 
 RecipeGenerationConfig = domain.RecipeGenerationConfig

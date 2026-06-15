@@ -96,9 +96,39 @@ def update_command(
     ui.render(result, template_name="update_result.tmpl", context={})
 
 
+@app.command(
+    "migrate",
+    help="Safely modernize the local enclosure contract and packaged recipes.",
+)
+@ui.command_error_boundary
+def migrate_command(
+    llm: Annotated[
+        bool,
+        typer.Option("--llm", help="Print LLM-focused guidance for this command."),
+    ],
+    docs: Annotated[
+        bool,
+        typer.Option(
+            "--docs",
+            help="Print human-focused documentation for this command.",
+        ),
+    ],
+) -> None:
+    if llm:
+        ui.render_llm("llm.tmpl")
+        return
+    if docs:
+        ui.render_docs("docs.tmpl")
+        return
+
+    result = application.migrate_project()
+    ui.render(result, template_name="migrate_result.tmpl", context={})
+
+
 ui.set_command_defaults(sync_command, {"llm": False, "docs": False})
 ui.set_command_defaults(init_command, {"llm": False, "docs": False})
 ui.set_command_defaults(update_command, {"llm": False, "docs": False})
+ui.set_command_defaults(migrate_command, {"llm": False, "docs": False})
 
 
 __all__ = ["app"]

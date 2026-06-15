@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from enum import StrEnum
 from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any, TypedDict
@@ -13,6 +14,12 @@ from enclosure.shared import config, naming
 _VARIABLE_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _DOTTED_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$")
 _IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_RECIPE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+
+
+class RecipeRole(StrEnum):
+    CONTAINER = "container"
+    ARCHETYPE = "archetype"
 
 
 @dataclass(frozen=True)
@@ -165,7 +172,9 @@ class RecipeFile:
 class Recipe:
     name: str
     root_path: Path
+    role: RecipeRole
     description: str = ""
+    archetypes: tuple[str, ...] = ()
     inputs: tuple[RecipeInputSpec, ...] = ()
     files: tuple[RecipeFile, ...] = ()
 
@@ -175,11 +184,16 @@ class Recipe:
             raise ValueError("Recipe names must not be empty")
 
         name_path = Path(normalized_name)
-        if len(name_path.parts) != 1 or name_path.parts[0] in {".", ".."}:
+        if (
+            len(name_path.parts) != 1
+            or name_path.parts[0] in {".", ".."}
+            or not _RECIPE_NAME_PATTERN.match(normalized_name)
+        ):
             raise ValueError("Recipe names must be a single folder name")
 
         object.__setattr__(self, "name", normalized_name)
         object.__setattr__(self, "root_path", Path(self.root_path))
+        object.__setattr__(self, "archetypes", tuple(self.archetypes))
         object.__setattr__(self, "inputs", tuple(self.inputs))
         object.__setattr__(self, "files", tuple(self.files))
 
@@ -215,6 +229,8 @@ class GenerateRecipeResult(TypedDict):
 class RecipeSummary(TypedDict):
     name: str
     description: str
+    role: str
+    archetypes: tuple[str, ...]
     inputs: tuple[str, ...]
     files: tuple[str, ...]
 

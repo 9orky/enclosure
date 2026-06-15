@@ -3,9 +3,20 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from pydantic import Field, ValidationError
+
 from enclosure.shared import config, templates
 
 from . import domain
+
+
+class _RecipeManifest(config.StrictConfigModel):
+    schema_version: int
+    role: domain.RecipeRole
+    description: str = ""
+    archetypes: tuple[str, ...] = ()
+    inputs: dict[str, Any] = Field(default_factory=dict)
+    files: list[dict[str, Any]] = Field(default_factory=list)
 
 
 def load_recipe_generation_config() -> domain.RecipeGenerationConfig:
@@ -112,19 +123,25 @@ class FileRecipeMaterializer:
 
 
 def _recipe_from_manifest(recipe_root: Path, raw_data: dict[str, Any]) -> domain.Recipe:
-    schema_version = raw_data.get("schema_version")
-    if schema_version != 1:
+    try:
+        manifest = _RecipeManifest.model_validate(raw_data)
+    except ValidationError as exc:
+        raise ValueError(f"Invalid recipe manifest: {exc}") from exc
+
+    if manifest.schema_version != 1:
         raise ValueError(
             f"Unsupported recipe schema_version in {recipe_root / 'recipe.yaml'}"
         )
 
-    inputs = tuple(_input_specs_from(raw_data.get("inputs", {})))
-    files = tuple(_recipe_files_from(raw_data.get("files", ())))
+    inputs = tuple(_input_specs_from(manifest.inputs))
+    files = tuple(_recipe_files_from(manifest.files))
 
     return domain.Recipe(
         name=recipe_root.name,
         root_path=recipe_root,
-        description=str(raw_data.get("description", "") or ""),
+        description=manifest.description,
+        role=manifest.role,
+        archetypes=manifest.archetypes,
         inputs=inputs,
         files=files,
     )

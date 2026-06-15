@@ -1,4 +1,5 @@
 schema_version: 1
+role: archetype
 description: Basic feature-module recipe using the compact domain/infrastructure/application/ui architecture.
 inputs:
   module:

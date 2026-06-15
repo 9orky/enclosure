@@ -1,0 +1,48 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from . import domain, infrastructure
+
+
+class {{ module.class }}ApplicationError(RuntimeError):
+    pass
+
+
+@dataclass(frozen=True)
+class {{ module.class }}ReportOutput:
+    text: str
+
+
+def build_{{ module.snake }}_report_output(raw_items: tuple[str, ...]) -> {{ module.class }}ReportOutput:
+    try:
+        items = infrastructure.load_{{ module.snake }}_items(raw_items)
+    except ValueError as exc:
+        raise {{ module.class }}ApplicationError(str(exc)) from exc
+    return _output_from_report(domain.summarize_{{ module.snake }}(items))
+
+
+def _output_from_report(report: domain.{{ module.class }}Report) -> {{ module.class }}ReportOutput:
+    return {{ module.class }}ReportOutput(text=_text_from_report(report))
+
+
+def _text_from_report(report: domain.{{ module.class }}Report) -> str:
+    lines = [
+        "{{ module.class }} Report:",
+        f"- Items: {len(report.items)}",
+        f"- Total priority: {report.total_priority}",
+    ]
+    if report.highest_priority_name:
+        lines.append(f"- Highest priority: {report.highest_priority_name}")
+    lines.extend(
+        f"- {item.name}: {item.priority}"
+        for item in report.items
+    )
+    return "\n".join(lines)
+
+
+__all__ = [
+    "{{ module.class }}ApplicationError",
+    "{{ module.class }}ReportOutput",
+    "build_{{ module.snake }}_report_output",
+]

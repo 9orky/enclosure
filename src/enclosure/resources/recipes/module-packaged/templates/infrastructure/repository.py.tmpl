@@ -1,0 +1,14 @@
+from __future__ import annotations
+
+from .. import domain
+
+
+class InMemory{{ module.class }}Repository:
+    def __init__(self, items: tuple[domain.{{ module.class }}Item, ...]) -> None:
+        self._items = items
+
+    def find_all(self) -> tuple[domain.{{ module.class }}Item, ...]:
+        return self._items
+
+
+__all__ = ["InMemory{{ module.class }}Repository"]

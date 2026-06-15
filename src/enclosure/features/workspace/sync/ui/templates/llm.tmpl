@@ -9,12 +9,14 @@ Use this command group to create or refresh the project-local contract that agen
 - Run init when a repository does not yet have a local contract.
 - Run update when packaged shared guidance should be refreshed.
 - Run update after upgrading the CLI package.
+- Run migrate when local `.enclosure/` should be brought toward the current packaged contract without overwriting local recipes or rules.
 
 ## How To Read The Result
 
 - Created entries are newly written contract assets.
 - Updated entries are packaged shared assets refreshed from the current CLI version.
 - Preserved entries are local assets kept intact.
+- Config warnings identify local config shape that migration preserved but could not normalize.
 - Validation errors mean a generated contract asset failed before it was written.
 
 ## Examples

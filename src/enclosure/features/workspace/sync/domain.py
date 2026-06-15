@@ -35,6 +35,23 @@ class SharedRuleDocument:
     content: str
 
 
+@dataclass(frozen=True)
+class PackagedRecipeDocument:
+    relative_path: Path
+    content: str
+
+    def __post_init__(self) -> None:
+        normalized_value = Path(self.relative_path)
+        forbidden_parts = {"..", "."}
+        if (
+            normalized_value.is_absolute()
+            or not normalized_value.parts
+            or any(part in forbidden_parts for part in normalized_value.parts)
+        ):
+            raise ValueError("Packaged recipe paths must stay inside the recipes root")
+        object.__setattr__(self, "relative_path", normalized_value)
+
+
 class SyncAction(StrEnum):
     CREATE = "create"
     UPDATE = "update"
@@ -67,6 +84,12 @@ class WorkspaceWritePlan:
     preserved_paths: tuple[Path, ...] = ()
 
 
+@dataclass(frozen=True)
+class WorkspaceMigrationPlan:
+    write_plan: WorkspaceWritePlan
+    config_warnings: tuple[str, ...] = ()
+
+
 class ProjectSyncResult(TypedDict):
     target_dir: Path
     created_dir: bool
@@ -79,14 +102,23 @@ BootstrapProjectResult = ProjectSyncResult
 UpdateProjectResult = ProjectSyncResult
 
 
+class MigrateProjectResult(ProjectSyncResult):
+    config_warnings: tuple[str, ...]
+
+
 @dataclass(frozen=True)
 class Workspace:
     project_root: Path
     shared_rule_documents: tuple[SharedRuleDocument, ...]
+    packaged_recipe_documents: tuple[PackagedRecipeDocument, ...]
     config_content: str
+    migrated_config_content: str
+    config_changed: bool
+    config_warnings: tuple[str, ...]
     bootstrap_instruction_content: str
     agent_instruction_content: str
     existing_shared_rule_paths: tuple[Path, ...] = ()
+    existing_packaged_recipe_paths: tuple[Path, ...] = ()
     local_paths: tuple[Path, ...] = ()
     enclosure_dir_exists: bool = False
     config_exists: bool = False
@@ -112,6 +144,11 @@ class Workspace:
         )
         object.__setattr__(
             self,
+            "existing_packaged_recipe_paths",
+            _unique_paths(tuple(self.existing_packaged_recipe_paths)),
+        )
+        object.__setattr__(
+            self,
             "local_paths",
             _unique_paths(tuple(self.local_paths)),
         )
@@ -127,12 +164,30 @@ class Workspace:
         return self._build_write_plan(
             overwrite_shared_rule_documents=False,
             overwrite_bootstrap_instruction=False,
+            include_packaged_recipes=False,
+            config_content=self.config_content,
+            overwrite_config=False,
         )
 
     def plan_update(self) -> WorkspaceWritePlan:
         return self._build_write_plan(
             overwrite_shared_rule_documents=True,
             overwrite_bootstrap_instruction=True,
+            include_packaged_recipes=False,
+            config_content=self.config_content,
+            overwrite_config=False,
+        )
+
+    def plan_migrate(self) -> WorkspaceMigrationPlan:
+        return WorkspaceMigrationPlan(
+            write_plan=self._build_write_plan(
+                overwrite_shared_rule_documents=True,
+                overwrite_bootstrap_instruction=True,
+                include_packaged_recipes=True,
+                config_content=self.migrated_config_content,
+                overwrite_config=self.config_changed,
+            ),
+            config_warnings=self.config_warnings,
         )
 
     def summarize(self) -> WorkspaceContractSummary:
@@ -162,6 +217,9 @@ class Workspace:
         *,
         overwrite_shared_rule_documents: bool,
         overwrite_bootstrap_instruction: bool,
+        include_packaged_recipes: bool,
+        config_content: str,
+        overwrite_config: bool,
     ) -> WorkspaceWritePlan:
         changes: list[SyncChange] = []
         preserved_paths: list[Path] = []
@@ -170,8 +228,8 @@ class Workspace:
             (
                 self.layout.config_path(self.project_root, None),
                 self.config_exists,
-                self.config_content,
-                False,
+                config_content,
+                overwrite_config,
             ),
             (
                 self.layout.bootstrap_instruction_path(self.project_root),
@@ -207,6 +265,20 @@ class Workspace:
                 document.content,
                 overwrite_shared_rule_documents,
             )
+
+        if include_packaged_recipes:
+            existing_packaged_recipe_paths = set(self.existing_packaged_recipe_paths)
+            recipes_dir = self.layout.recipes_dir(self.project_root)
+            for document in self.packaged_recipe_documents:
+                target_path = recipes_dir / document.relative_path
+                _append_file_plan(
+                    changes,
+                    preserved_paths,
+                    target_path,
+                    target_path in existing_packaged_recipe_paths,
+                    document.content,
+                    False,
+                )
 
         return WorkspaceWritePlan(
             target_dir=self.layout.target_dir(self.project_root),

@@ -1,0 +1,15 @@
+schema_version: 1
+role: archetype
+description: Feature-module application package archetype.
+inputs:
+  module:
+    type: string
+    default_from: target_name
+  cli_command:
+    type: slug
+    default_from: target_kebab
+files:
+  - source: templates/application/__init__.py.tmpl
+    target: "{{ target.path }}/application/__init__.py"
+  - source: templates/application/service.py.tmpl
+    target: "{{ target.path }}/application/service.py"
