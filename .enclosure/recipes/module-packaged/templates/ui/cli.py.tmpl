@@ -24,10 +24,13 @@ def {{ module.snake }}_command(
             metavar="NAME:PRIORITY",
             help="Add an item to include in the report.",
         ),
-    ] = None,
+    ],
 ) -> None:
     output = application.build_{{ module.snake }}_report_output(tuple(raw_items or ()))
-    ui.render(output)
+    ui.render(output, template_name="report.tmpl", context={})
+
+
+ui.set_command_defaults({{ module.snake }}_command, {"raw_items": None})
 
 
 __all__ = ["app"]

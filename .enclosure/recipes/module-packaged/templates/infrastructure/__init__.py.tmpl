@@ -4,7 +4,9 @@ from __future__ import annotations
 # Translate external input, files, APIs, or persistence into domain values.
 # Infrastructure may import domain, but it should not import application or UI.
 
-from .loader import load_{{ module.snake }}_items
-from .repository import InMemory{{ module.class }}Repository
+from . import loader, repository
+
+InMemory{{ module.class }}Repository = repository.InMemory{{ module.class }}Repository
+load_{{ module.snake }}_items = loader.load_{{ module.snake }}_items
 
 __all__ = ["InMemory{{ module.class }}Repository", "load_{{ module.snake }}_items"]

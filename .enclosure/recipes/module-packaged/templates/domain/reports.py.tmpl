@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .models import {{ module.class }}Item
-from .policies import sort_{{ module.snake }}_items
+from . import models, policies
 
 
 @dataclass(frozen=True)
 class {{ module.class }}Report:
-    items: tuple[{{ module.class }}Item, ...]
+    items: tuple[models.{{ module.class }}Item, ...]
     total_priority: int
     highest_priority_name: str
 
@@ -23,8 +22,10 @@ class {{ module.class }}Report:
         }
 
 
-def summarize_{{ module.snake }}(items: tuple[{{ module.class }}Item, ...]) -> {{ module.class }}Report:
-    ordered_items = sort_{{ module.snake }}_items(items)
+def summarize_{{ module.snake }}(
+    items: tuple[models.{{ module.class }}Item, ...],
+) -> {{ module.class }}Report:
+    ordered_items = policies.sort_{{ module.snake }}_items(items)
     highest_priority_name = ordered_items[0].name if ordered_items else ""
     return {{ module.class }}Report(
         items=ordered_items,
