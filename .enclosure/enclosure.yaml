@@ -78,7 +78,7 @@ workspace:
       workspace/health: module-report-cli
       workspace/plan: module-workspace-cli
       workspace/recipe: module-workspace-cli
-      workspace/rules: module-domain-package-infrastructure-cli
+      workspace/rules: module-domain-package-cli+slot-infrastructure-file
       workspace/sync: module-workspace-cli
   rules:
     local:

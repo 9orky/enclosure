@@ -1,0 +1,11 @@
+schema_version: 1
+role: fragment
+description: Reusable infrastructure file slot.
+ladder:
+  family: module-slot
+  rung: infrastructure-file
+  slots:
+    infrastructure: file
+files:
+  - source: templates/infrastructure.py.tmpl
+    target: "{{ target.path }}/infrastructure.py"

@@ -12,6 +12,12 @@ Archetypes:
 - {{ archetype }}
 {% endfor %}
 {% endif %}
+{% if recipe.includes %}
+Includes:
+{% for include_name in recipe.includes %}
+- {{ include_name }}
+{% endfor %}
+{% endif %}
 {% if recipe.roles_map %}
 Roles map:
 {% for module_name, role_name in recipe.roles_map.items() %}
@@ -30,7 +36,7 @@ Files:
 - {{ file }}
 {% endfor %}
 {% endif %}
-{% if not recipe.inputs and not recipe.files %}
+{% if not recipe.inputs and not recipe.files and not recipe.includes %}
 No inputs or files.
 {% endif %}
 {% else %}

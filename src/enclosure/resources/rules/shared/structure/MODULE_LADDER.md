@@ -22,6 +22,8 @@ escalation_paths:
 - A module ladder is a recipe shape contract, not an architecture style.
 - Recipes describe slots, required files, forbidden file/package combinations,
   and package seams.
+- Reuse fixed `fragment` recipes with `includes`; do not create a new archetype
+  for every combination of slots.
 - Slot names have no global meaning; a project may call slots `domain`,
   `handlers`, `controllers`, `jobs`, or anything else.
 - Package slots require a package seam and may own private internal files.
@@ -31,6 +33,7 @@ escalation_paths:
 ## Checks
 
 - Required files exist.
+- Included fragments resolve without cycles.
 - File slots do not also have package folders.
 - Package slots do not also have sibling files.
 - Split slots declare their child files or packages explicitly.

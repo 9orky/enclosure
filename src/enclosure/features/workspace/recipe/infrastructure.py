@@ -15,6 +15,7 @@ class _RecipeManifest(config.StrictConfigModel):
     role: domain.RecipeRole
     description: str = ""
     ladder: dict[str, Any] = Field(default_factory=dict)
+    includes: list[str] = Field(default_factory=list)
     archetypes: list[str] = Field(default_factory=list)
     roles_map: dict[str, str] = Field(default_factory=dict)
     inputs: dict[str, Any] = Field(default_factory=dict)
@@ -144,6 +145,7 @@ def _recipe_from_manifest(recipe_root: Path, raw_data: dict[str, Any]) -> domain
         description=manifest.description,
         role=manifest.role,
         ladder=_recipe_ladder_from(manifest.ladder),
+        includes=_recipe_includes_from(manifest.includes),
         archetypes=_recipe_archetypes_from(manifest.archetypes),
         roles_map=manifest.roles_map,
         inputs=inputs,
@@ -200,6 +202,10 @@ def _recipe_files_from(raw_files: Any) -> tuple[domain.RecipeFile, ...]:
 
 def _recipe_archetypes_from(raw_archetypes: Any) -> tuple[str, ...]:
     return _string_list(raw_archetypes, "Recipe archetypes must be strings")
+
+
+def _recipe_includes_from(raw_includes: Any) -> tuple[str, ...]:
+    return _string_list(raw_includes, "Recipe includes must be strings")
 
 
 def _recipe_ladder_from(raw_ladder: Any) -> domain.RecipeLadder:

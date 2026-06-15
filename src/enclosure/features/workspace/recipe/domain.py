@@ -31,6 +31,7 @@ def _normalize_relative_path(value: Path | str, label: str) -> Path:
 class RecipeRole(StrEnum):
     CONTAINER = "container"
     ARCHETYPE = "archetype"
+    FRAGMENT = "fragment"
 
 
 class RecipeSlotState(StrEnum):
@@ -272,6 +273,7 @@ class Recipe:
     role: RecipeRole
     description: str = ""
     ladder: RecipeLadder = field(default_factory=RecipeLadder)
+    includes: tuple[str, ...] = ()
     archetypes: tuple[str, ...] = ()
     roles_map: dict[str, str] = field(default_factory=dict)
     inputs: tuple[RecipeInputSpec, ...] = ()
@@ -292,12 +294,13 @@ class Recipe:
 
         object.__setattr__(self, "name", normalized_name)
         object.__setattr__(self, "root_path", Path(self.root_path))
+        object.__setattr__(self, "includes", tuple(self.includes))
         object.__setattr__(self, "archetypes", tuple(self.archetypes))
         object.__setattr__(self, "inputs", tuple(self.inputs))
         object.__setattr__(self, "files", tuple(self.files))
 
     def is_empty(self) -> bool:
-        return len(self.files) == 0
+        return len(self.files) == 0 and len(self.includes) == 0
 
 
 class RenderedFile(TypedDict):
@@ -330,6 +333,7 @@ class RecipeSummary(TypedDict):
     description: str
     role: str
     ladder: dict[str, Any]
+    includes: tuple[str, ...]
     archetypes: tuple[str, ...]
     roles_map: dict[str, str]
     inputs: tuple[str, ...]

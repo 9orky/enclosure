@@ -39,6 +39,8 @@ global recipe requirement.
 
 ## Rungs
 
+- Prefer fixed slot fragments plus `includes` over new archetypes for every
+  slot combination.
 - `file`: require `<slot>.py`; forbid `<slot>/`.
 - `package`: require `<slot>/__init__.py`; forbid `<slot>.py`; allow private internals.
 - `split-files`: require `<slot>/__init__.py` plus declared child files.

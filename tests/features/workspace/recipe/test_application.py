@@ -153,7 +153,7 @@ class WorkspaceRecipeCheckTest(unittest.TestCase):
             roles_map={"feature/module": "module"},
         )
 
-        self.assertEqual(("missing_archetype_recipe",), tuple(
+        self.assertEqual(("missing_archetype_recipe", "non_archetype_role_recipe"), tuple(
             violation.code for violation in report.violations
         ))
 
@@ -166,7 +166,7 @@ class WorkspaceRecipeCheckTest(unittest.TestCase):
             roles_map={"feature/module": "module"},
         )
 
-        self.assertEqual(("multiple_containers",), tuple(
+        self.assertEqual(("multiple_containers", "non_archetype_role_recipe"), tuple(
             violation.code for violation in report.violations
         ))
 
@@ -278,6 +278,45 @@ class WorkspaceRecipeCheckTest(unittest.TestCase):
             ),
         )
 
+        self.assertEqual((), report.drifts[0].missing_files)
+        self.assertEqual((), report.drifts[0].extra_files)
+
+    def test_recipe_drifts_compose_role_from_fixed_fragments(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_root = Path(temporary_directory) / "project"
+            recipe_root = project_root / ".enclosure" / "recipes"
+            module_path = project_root / "src" / "features" / "feature" / "module"
+            module_path.mkdir(parents=True)
+            recipe_root.mkdir(parents=True)
+            (module_path / "__init__.py").write_text("", encoding="utf-8")
+            (module_path / "sample.py").write_text("", encoding="utf-8")
+            (module_path / "support.py").write_text("", encoding="utf-8")
+            _write_recipe_files(
+                recipe_root,
+                {
+                    "module": _container_manifest({"base": "base"}),
+                    "base": _recipe_manifest(role="archetype", content=""),
+                    "support": _slot_manifest(
+                        role="fragment",
+                        slot_lines=("    support: file",),
+                        targets=("{{ target.path }}/support.py",),
+                    ),
+                },
+            )
+            _write_config(
+                project_root,
+                roles_map={"feature/module": "base+support"},
+            )
+
+            with patch.object(
+                application.layout,
+                "current_project_root",
+                return_value=project_root,
+            ):
+                report = application.check_recipe_drifts(recipe_root=recipe_root)
+
+        self.assertEqual(1, report.modules_checked)
+        self.assertEqual((), report.violations)
         self.assertEqual((), report.drifts[0].missing_files)
         self.assertEqual((), report.drifts[0].extra_files)
 
@@ -511,12 +550,13 @@ def _recipe_manifest(
 
 def _slot_manifest(
     *,
+    role: str = "archetype",
     slot_lines: tuple[str, ...],
     targets: tuple[str, ...],
 ) -> tuple[str, str]:
     manifest_lines = [
         "schema_version: 1",
-        "role: archetype",
+        f"role: {role}",
         "ladder:",
         "  family: module",
         "  rung: sample",
