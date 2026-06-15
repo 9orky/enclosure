@@ -3,7 +3,7 @@ Boundaries Summary:
 {% if report.violations %}
 
 === Architectural Violations Detected ===
-{{ report|architecture_violations }}
+{{ report.violations|architecture_violations }}
 {% else %}
 Architecture Boundaries Passed! No violations found.
 {% endif %}
