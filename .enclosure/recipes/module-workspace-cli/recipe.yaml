@@ -1,20 +1,20 @@
 schema_version: 1
 role: archetype
-description: Module tree for workspace command modules with infrastructure.
+description: Workspace command module with compact domain/application/infrastructure files, UI package, and docs/llm templates.
 files:
-  - source: templates/placeholder.tmpl
+  - source: templates/__init__.py.tmpl
     target: "{{ target.path }}/__init__.py"
-  - source: templates/placeholder.tmpl
+  - source: templates/application.py.tmpl
     target: "{{ target.path }}/application.py"
-  - source: templates/placeholder.tmpl
+  - source: templates/domain.py.tmpl
     target: "{{ target.path }}/domain.py"
-  - source: templates/placeholder.tmpl
+  - source: templates/infrastructure.py.tmpl
     target: "{{ target.path }}/infrastructure.py"
-  - source: templates/placeholder.tmpl
+  - source: templates/ui/__init__.py.tmpl
     target: "{{ target.path }}/ui/__init__.py"
-  - source: templates/placeholder.tmpl
+  - source: templates/ui/cli.py.tmpl
     target: "{{ target.path }}/ui/cli.py"
-  - source: templates/placeholder.tmpl
+  - source: templates/ui/templates/docs.tmpl
     target: "{{ target.path }}/ui/templates/docs.tmpl"
-  - source: templates/placeholder.tmpl
+  - source: templates/ui/templates/llm.tmpl
     target: "{{ target.path }}/ui/templates/llm.tmpl"

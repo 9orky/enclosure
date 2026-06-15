@@ -1,0 +1,10 @@
+from __future__ import annotations
+
+from . import domain
+
+
+def load_{{ target.snake }}_config() -> domain.{{ target.class }}Config:
+    return domain.{{ target.class }}Config(enabled=True)
+
+
+__all__ = ["load_{{ target.snake }}_config"]

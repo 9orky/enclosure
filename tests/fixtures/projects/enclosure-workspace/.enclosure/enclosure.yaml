@@ -39,6 +39,8 @@ architecture:
 workspace:
   recipe:
     skip: ["generated/skipped.py"]
+    roles_map:
+      sample/component: component
   rules:
     local:
       max_content_chars: 2400

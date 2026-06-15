@@ -1,0 +1,11 @@
+from __future__ import annotations
+
+from . import domain, infrastructure
+
+{{ target.class }}Config = domain.{{ target.class }}Config
+load_{{ target.snake }}_config = infrastructure.load_{{ target.snake }}_config
+
+__all__ = [
+    "{{ target.class }}Config",
+    "load_{{ target.snake }}_config",
+]

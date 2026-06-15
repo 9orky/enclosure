@@ -94,7 +94,6 @@ enclosure = [
     "resources/copilot-instructions.md",
     "resources/rules/*.md",
     "resources/rules/**/*.md",
-    "resources/recipes/**",
     "templates/*.tmpl",
     "features/**/ui/templates/*.tmpl",
 ]

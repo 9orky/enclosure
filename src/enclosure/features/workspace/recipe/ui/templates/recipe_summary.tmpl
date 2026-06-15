@@ -6,6 +6,12 @@ Recipe '{{ recipe.name }}'.
 {% if recipe.role %}
 Role: {{ recipe.role }}
 {% endif %}
+{% if recipe.archetypes %}
+Archetypes:
+{% for archetype in recipe.archetypes %}
+- {{ archetype }}
+{% endfor %}
+{% endif %}
 {% if recipe.roles_map %}
 Roles map:
 {% for module_name, role_name in recipe.roles_map.items() %}

@@ -184,6 +184,7 @@ class Recipe:
     root_path: Path
     role: RecipeRole
     description: str = ""
+    archetypes: tuple[str, ...] = ()
     roles_map: dict[str, str] = field(default_factory=dict)
     inputs: tuple[RecipeInputSpec, ...] = ()
     files: tuple[RecipeFile, ...] = ()
@@ -203,6 +204,7 @@ class Recipe:
 
         object.__setattr__(self, "name", normalized_name)
         object.__setattr__(self, "root_path", Path(self.root_path))
+        object.__setattr__(self, "archetypes", tuple(self.archetypes))
         object.__setattr__(self, "inputs", tuple(self.inputs))
         object.__setattr__(self, "files", tuple(self.files))
 
@@ -239,6 +241,7 @@ class RecipeSummary(TypedDict):
     name: str
     description: str
     role: str
+    archetypes: tuple[str, ...]
     roles_map: dict[str, str]
     inputs: tuple[str, ...]
     files: tuple[str, ...]

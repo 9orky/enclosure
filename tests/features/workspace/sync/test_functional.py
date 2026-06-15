@@ -32,14 +32,14 @@ def test_workspace_sync_init_creates_contract_for_supported_language_fixture(
     assert project.agent_instructions_path.is_file()
 
 
-def test_workspace_sync_migrate_creates_packaged_recipes_and_preserves_local_recipe(
+def test_workspace_sync_migrate_preserves_local_recipes_without_resource_recipe_seed(
     fixture_project,
     use_project,
     cli_runner,
 ) -> None:
     project = fixture_project("enclosure-workspace")
     use_project(project)
-    local_recipe_path = project.recipes_dir / "module" / "recipe.yaml"
+    local_recipe_path = project.recipes_dir / "custom-local" / "recipe.yaml"
     local_recipe_path.parent.mkdir(parents=True)
     local_recipe_content = "schema_version: 1\nrole: archetype\n"
     local_recipe_path.write_text(local_recipe_content, encoding="utf-8")
@@ -48,10 +48,7 @@ def test_workspace_sync_migrate_creates_packaged_recipes_and_preserves_local_rec
 
     assert result.exit_code == 0, result.output
     assert local_recipe_path.read_text(encoding="utf-8") == local_recipe_content
-    assert (project.recipes_dir / "module-report-cli" / "recipe.yaml").is_file()
-    assert (
-        project.recipes_dir / "module-workspace-cli" / "templates" / "placeholder.tmpl"
-    ).is_file()
+    assert not (project.recipes_dir / "module-report-cli" / "recipe.yaml").exists()
 
 
 def test_workspace_sync_migrate_safe_merges_config_and_warns_about_unknown_keys(

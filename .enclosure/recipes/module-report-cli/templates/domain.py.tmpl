@@ -1,0 +1,21 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class {{ target.class }}ReportLine:
+    label: str
+    value: str
+
+
+@dataclass(frozen=True)
+class {{ target.class }}Report:
+    title: str
+    lines: tuple[{{ target.class }}ReportLine, ...]
+
+
+__all__ = [
+    "{{ target.class }}Report",
+    "{{ target.class }}ReportLine",
+]

@@ -1,0 +1,14 @@
+from __future__ import annotations
+
+from . import domain, infrastructure
+
+
+def describe_{{ target.snake }}() -> domain.{{ target.class }}Summary:
+    workspace_name = infrastructure.current_workspace_name()
+    return domain.{{ target.class }}Summary(
+        module_path="{{ target.path }}",
+        workspace_name=workspace_name,
+    )
+
+
+__all__ = ["describe_{{ target.snake }}"]

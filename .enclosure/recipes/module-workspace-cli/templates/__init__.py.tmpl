@@ -1,0 +1,11 @@
+from __future__ import annotations
+
+from . import application, domain
+
+{{ target.class }}Summary = domain.{{ target.class }}Summary
+describe_{{ target.snake }} = application.describe_{{ target.snake }}
+
+__all__ = [
+    "{{ target.class }}Summary",
+    "describe_{{ target.snake }}",
+]

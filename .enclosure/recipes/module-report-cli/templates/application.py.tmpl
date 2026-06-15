@@ -1,0 +1,17 @@
+from __future__ import annotations
+
+from . import domain
+
+
+def build_{{ target.snake }}_report() -> domain.{{ target.class }}Report:
+    lines = (
+        domain.{{ target.class }}ReportLine(label="Module", value="{{ target.path }}"),
+        domain.{{ target.class }}ReportLine(label="Archetype", value="module-report-cli"),
+    )
+    return domain.{{ target.class }}Report(
+        title="{{ target.class }} Report",
+        lines=lines,
+    )
+
+
+__all__ = ["build_{{ target.snake }}_report"]

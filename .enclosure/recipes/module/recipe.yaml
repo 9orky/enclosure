@@ -1,19 +1,29 @@
 schema_version: 1
 role: container
-description: Container map from repository feature modules to module tree archetypes.
-roles_map:
-  architecture/boundaries: module-report-cli
-  architecture/clusters: module-report-cli
-  architecture/coherence: module-domain-package-cli
-  architecture/config: module-config-support
-  architecture/health: module-report-cli
-  architecture/map: module-report-cli
-  architecture/shape: module-report-cli
-  health/report: module-report-cli
-  workspace/config: module-config-support
-  workspace/health: module-report-cli
-  workspace/plan: module-workspace-cli
-  workspace/recipe: module-workspace-cli
-  workspace/rules: module-domain-package-cli
-  workspace/sync: module-workspace-cli
-files: []
+description: Container module recipe with the combined compact command/support tree.
+archetypes:
+  - module-config-support
+  - module-domain-package-cli
+  - module-report-cli
+  - module-workspace-cli
+files:
+  - source: templates/__init__.py.tmpl
+    target: "{{ target.path }}/__init__.py"
+  - source: templates/application.py.tmpl
+    target: "{{ target.path }}/application.py"
+  - source: templates/domain.py.tmpl
+    target: "{{ target.path }}/domain.py"
+  - source: templates/domain/__init__.py.tmpl
+    target: "{{ target.path }}/domain/__init__.py"
+  - source: templates/infrastructure.py.tmpl
+    target: "{{ target.path }}/infrastructure.py"
+  - source: templates/ui/__init__.py.tmpl
+    target: "{{ target.path }}/ui/__init__.py"
+  - source: templates/ui/cli.py.tmpl
+    target: "{{ target.path }}/ui/cli.py"
+  - source: templates/ui/templates/docs.tmpl
+    target: "{{ target.path }}/ui/templates/docs.tmpl"
+  - source: templates/ui/templates/llm.tmpl
+    target: "{{ target.path }}/ui/templates/llm.tmpl"
+  - source: templates/ui/templates/report.tmpl
+    target: "{{ target.path }}/ui/templates/report.tmpl"

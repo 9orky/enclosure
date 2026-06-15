@@ -14,6 +14,7 @@ class _RecipeManifest(config.StrictConfigModel):
     schema_version: int
     role: domain.RecipeRole
     description: str = ""
+    archetypes: list[str] = Field(default_factory=list)
     roles_map: dict[str, str] = Field(default_factory=dict)
     inputs: dict[str, Any] = Field(default_factory=dict)
     files: list[dict[str, Any]] = Field(default_factory=list)
@@ -141,6 +142,7 @@ def _recipe_from_manifest(recipe_root: Path, raw_data: dict[str, Any]) -> domain
         root_path=recipe_root,
         description=manifest.description,
         role=manifest.role,
+        archetypes=_recipe_archetypes_from(manifest.archetypes),
         roles_map=manifest.roles_map,
         inputs=inputs,
         files=files,
@@ -192,6 +194,10 @@ def _recipe_files_from(raw_files: Any) -> tuple[domain.RecipeFile, ...]:
             raise ValueError("Recipe files require source and target")
         files.append(domain.RecipeFile(domain.RelativePath(Path(source)), target))
     return tuple(files)
+
+
+def _recipe_archetypes_from(raw_archetypes: Any) -> tuple[str, ...]:
+    return _string_list(raw_archetypes, "Recipe archetypes must be strings")
 
 
 def _optional_string(value: Any) -> str | None:

@@ -98,7 +98,7 @@ def update_command(
 
 @app.command(
     "migrate",
-    help="Safely modernize the local enclosure contract and packaged recipes.",
+    help="Safely modernize the local enclosure contract.",
 )
 @ui.command_error_boundary
 def migrate_command(

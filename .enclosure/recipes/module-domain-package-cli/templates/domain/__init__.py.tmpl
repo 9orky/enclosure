@@ -1,0 +1,16 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class {{ target.class }}Report:
+    title: str
+    lines: tuple[str, ...]
+
+    @classmethod
+    def from_lines(cls, title: str, lines: tuple[str, ...]) -> "{{ target.class }}Report":
+        return cls(title=title, lines=lines)
+
+
+__all__ = ["{{ target.class }}Report"]

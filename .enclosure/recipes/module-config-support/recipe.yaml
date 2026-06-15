@@ -1,10 +1,10 @@
 schema_version: 1
 role: archetype
-description: Module tree for config/support modules without application or UI.
+description: Config/support module with compact domain and infrastructure files and no command UI.
 files:
-  - source: templates/placeholder.tmpl
+  - source: templates/__init__.py.tmpl
     target: "{{ target.path }}/__init__.py"
-  - source: templates/placeholder.tmpl
+  - source: templates/domain.py.tmpl
     target: "{{ target.path }}/domain.py"
-  - source: templates/placeholder.tmpl
+  - source: templates/infrastructure.py.tmpl
     target: "{{ target.path }}/infrastructure.py"

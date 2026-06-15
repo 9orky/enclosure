@@ -1,0 +1,10 @@
+from __future__ import annotations
+
+from pydantic import BaseModel
+
+
+class {{ target.class }}Config(BaseModel):
+    enabled: bool
+
+
+__all__ = ["{{ target.class }}Config"]

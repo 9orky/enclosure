@@ -1,0 +1,10 @@
+from __future__ import annotations
+
+from enclosure.shared import layout
+
+
+def current_workspace_name() -> str:
+    return layout.current_project_root().name
+
+
+__all__ = ["current_workspace_name"]

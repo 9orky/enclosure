@@ -1,0 +1,15 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class {{ target.class }}Summary:
+    module_path: str
+    workspace_name: str
+
+    def render_text(self) -> str:
+        return f"{self.module_path}: {self.workspace_name}"
+
+
+__all__ = ["{{ target.class }}Summary"]

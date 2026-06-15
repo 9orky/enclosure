@@ -28,7 +28,6 @@ class FileRepository:
         project_root = Path(path).resolve()
         workspace_layout = layout.EnclosureProjectLayout()
         shared_rule_documents = self._load_shared_rule_documents()
-        packaged_recipe_documents = self._load_packaged_recipe_documents()
         config_content = _packaged_text("enclosure.yaml")
         migrated_config = self._migrated_config(
             project_root,
@@ -48,7 +47,6 @@ class FileRepository:
         return domain.Workspace(
             project_root=project_root,
             shared_rule_documents=shared_rule_documents,
-            packaged_recipe_documents=packaged_recipe_documents,
             config_content=config_content,
             migrated_config_content=migrated_config.content,
             config_changed=migrated_config.changed,
@@ -59,11 +57,6 @@ class FileRepository:
                 project_root,
                 workspace_layout,
                 shared_rule_documents,
-            ),
-            existing_packaged_recipe_paths=self._existing_packaged_recipe_paths(
-                project_root,
-                workspace_layout,
-                packaged_recipe_documents,
             ),
             local_paths=self._list_workspace_files(
                 workspace_layout.local_rules_dir(project_root)
@@ -93,24 +86,6 @@ class FileRepository:
             )
         )
 
-    def _load_packaged_recipe_documents(
-        self,
-    ) -> tuple[domain.PackagedRecipeDocument, ...]:
-        recipes_root = files("enclosure").joinpath("resources", "recipes")
-        if not recipes_root.is_dir():
-            return ()
-        return tuple(
-            domain.PackagedRecipeDocument(
-                relative_path=child_relative_path,
-                content=child.read_text(encoding="utf-8"),
-            )
-            for child_relative_path, child in _iter_visible_files(
-                recipes_root,
-                relative_path=Path(),
-                suffix=None,
-            )
-        )
-
     def _existing_shared_rule_paths(
         self,
         project_root: Path,
@@ -123,22 +98,6 @@ class FileRepository:
             for target_path in (
                 rules_dir / document.shared_rule_path.value
                 for document in shared_rule_documents
-            )
-            if target_path.is_file()
-        )
-
-    def _existing_packaged_recipe_paths(
-        self,
-        project_root: Path,
-        workspace_layout: layout.EnclosureProjectLayout,
-        packaged_recipe_documents: tuple[domain.PackagedRecipeDocument, ...],
-    ) -> tuple[Path, ...]:
-        recipes_dir = workspace_layout.recipes_dir(project_root)
-        return tuple(
-            target_path
-            for target_path in (
-                recipes_dir / document.relative_path
-                for document in packaged_recipe_documents
             )
             if target_path.is_file()
         )

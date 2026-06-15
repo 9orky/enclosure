@@ -9,28 +9,34 @@ from enclosure.shared import ui
 from .. import application
 
 app = typer.Typer(
-    help="Render a layered {{ module.name }} report from name:priority items.",
+    help="Run the {{ target.name }} module command.",
     invoke_without_command=True,
 )
 
 
 @app.callback()
 @ui.command_error_boundary
-def {{ module.snake }}_command(
-    raw_items: Annotated[
-        list[str] | None,
-        typer.Option(
-            "--item",
-            metavar="NAME:PRIORITY",
-            help="Add an item to include in the report.",
-        ),
+def {{ target.snake }}_command(
+    llm: Annotated[
+        bool,
+        typer.Option("--llm", help="Print LLM-focused guidance for this command."),
+    ],
+    docs: Annotated[
+        bool,
+        typer.Option("--docs", help="Print human-focused documentation for this command."),
     ],
 ) -> None:
-    output = application.build_{{ module.snake }}_report_output(tuple(raw_items or ()))
-    ui.render(output, template_name="report.tmpl", context={})
+    if llm:
+        ui.render_llm("llm.tmpl")
+        return
+    if docs:
+        ui.render_docs("docs.tmpl")
+        return
+
+    ui.render(application.describe_{{ target.snake }}(), template_name="report.tmpl", context={})
 
 
-ui.set_command_defaults({{ module.snake }}_command, {"raw_items": None})
+ui.set_command_defaults({{ target.snake }}_command, {"llm": False, "docs": False})
 
 
 __all__ = ["app"]

@@ -39,6 +39,8 @@ architecture:
 workspace:
   recipe:
     skip: []
+    roles_map:
+      sample/broken: broken
   rules:
     local:
       max_content_chars: 8
