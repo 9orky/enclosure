@@ -42,7 +42,14 @@ class NestedConfigTest(unittest.TestCase):
             "module-workspace-cli",
             workspace_settings.recipe.roles_map["workspace/recipe"],
         )
-        self.assertEqual(2400, workspace_settings.rules.local.max_content_chars)
+        self.assertEqual(
+            raw_data["workspace"]["guidance"]["max_template_chars"],
+            workspace_settings.guidance.max_template_chars,
+        )
+        self.assertEqual(
+            raw_data["workspace"]["rules"]["local"]["max_content_chars"],
+            workspace_settings.rules.local.max_content_chars,
+        )
 
     def test_missing_required_module_section_fails(self) -> None:
         raw_data = _packaged_config()
@@ -135,7 +142,35 @@ class NestedConfigTest(unittest.TestCase):
             "module-report-cli",
             workspace_settings.recipe.roles_map["architecture/boundaries"],
         )
-        self.assertEqual(2400, workspace_settings.rules.local.max_content_chars)
+        self.assertEqual(
+            raw_data["workspace"]["guidance"]["max_template_chars"],
+            workspace_settings.guidance.max_template_chars,
+        )
+        self.assertEqual(
+            raw_data["workspace"]["rules"]["local"]["max_content_chars"],
+            workspace_settings.rules.local.max_content_chars,
+        )
+
+    def test_guidance_template_limit_allows_disabled_value(self) -> None:
+        raw_data = _packaged_config()
+        raw_data["workspace"]["guidance"]["max_template_chars"] = -1
+
+        workspace_settings = workspace_config.WorkspaceConfig.validate_mapping(
+            raw_data,
+            Path("enclosure.yaml"),
+        )
+
+        self.assertEqual(-1, workspace_settings.guidance.max_template_chars)
+
+    def test_guidance_template_limit_rejects_values_less_than_disabled(self) -> None:
+        raw_data = _packaged_config()
+        raw_data["workspace"]["guidance"]["max_template_chars"] = -2
+
+        with self.assertRaises(config.ConfigError):
+            workspace_config.WorkspaceConfig.validate_mapping(
+                raw_data,
+                Path("enclosure.yaml"),
+            )
 
     def test_architecture_report_limits_allow_zero_and_unlimited(self) -> None:
         raw_data = _packaged_config()

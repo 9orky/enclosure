@@ -15,6 +15,10 @@ from enclosure.shared import layout
 
 from . import domain
 
+_PROJECT_OWNED_CONFIG_MAPS = {
+    ("workspace", "recipe", "roles_map"),
+}
+
 
 @dataclass(frozen=True)
 class _MigratedConfig:
@@ -287,6 +291,9 @@ def _merge_missing_config_values(
     *,
     path: tuple[str, ...],
 ) -> bool:
+    if path in _PROJECT_OWNED_CONFIG_MAPS:
+        return False
+
     changed = False
     for key in target:
         if key not in defaults:

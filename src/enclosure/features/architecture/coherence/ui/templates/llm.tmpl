@@ -2,32 +2,29 @@
 
 ## Purpose
 
-Use this command to review deterministic coherence signals for feature-module streams in the configured abstract tree: naming, tagged tree shape, sibling patterns, layer flow, public seam use, and dependency pressure.
+Review feature-module coherence: naming, tree shape, sibling patterns, layer flow, seam use, and dependency pressure.
 
 ## When To Run
 
 - Before planning a module streamlining effort.
-- When comparing several modules that should follow the same local shape.
 - After introducing or reshaping a feature module.
 
 ## How To Read The Result
 
-- Each stream has separate axis scores; low scores point at the area to inspect.
-- Sibling-pattern findings identify streams whose tree shape differs from nearby streams under the same parent.
-- Findings include the stream, axis, subject, detail, and concrete path or import evidence.
-- Dependency pressure shows coupling signals; it is not an ownership rule by itself.
-- This command is advisory and should not replace boundary or shape validation.
+- Low axis scores point at the area to inspect.
+- Sibling-pattern findings show streams whose tree shape differs from nearby streams.
+- Dependency pressure is coupling signal, not ownership policy.
+- This is advisory; still run boundary and shape validation.
 
 ## Examples
 
-- If tree-shape is low, inspect missing API seams, untagged tree nodes, or mixed root/nested layer shapes.
-- If sibling-pattern is low, compare the stream to siblings before deciding whether it is special or merely drift.
-- If flow is low, inspect internal imports between layers or unlayered files.
-- If seam use is low, replace cross-stream internal imports with public seam imports when that fits the contract.
-- If naming is low, look for path-segment style drift before standardizing a recipe.
+- Low tree shape: inspect missing seams or mixed layer shapes.
+- Low sibling pattern: compare to nearby streams before calling it drift.
+- Low flow or seam use: inspect internal imports and public seams.
+- Low naming: check path-segment style before standardizing recipes.
 
 ## Agent Tips
 
 - Use `--top -1` for a complete refactoring survey.
 - Prefer fixing boundary and shape failures before using coherence for polish.
-- Do not suggest automatic moves from this report alone; verify ownership and public seams first.
+- Verify ownership and public seams before suggesting moves.

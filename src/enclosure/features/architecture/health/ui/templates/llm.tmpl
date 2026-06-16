@@ -2,37 +2,28 @@
 
 ## Purpose
 
-Use this command as the local architecture health collector: boundaries, shape, map, clusters, pressure, and coherence.
+Collect architecture detail: boundaries, shape, map, clusters, pressure, and coherence.
 
 ## When To Run
 
-- Before starting a non-trivial implementation.
+- Before non-trivial implementation.
 - After touching imports, module seams, or feature structure.
-- Before finalizing work when you need one architecture-oriented detail report.
+- Before finalizing architecture-sensitive work.
 
 ## How To Read The Result
 
-- Use `--v` for quick status, `--vv` for the normal preflight, and `--vvv` when module-level detail should be visible.
+- Use `--v` for quick status, `--vv` for preflight, and `--vvv` for module detail.
 - Boundary and shape findings are blockers when marked as errors.
 - Unknown files are classification signals, not automatic failures.
-- Hotspots point to module-size or dependency-pressure areas worth treating carefully.
-- Pressure clusters show likely blast radius and shared-code gravity.
-- Pressure and coherence findings are attention signals; mention them when they affect the task.
+- Hotspots, pressure, and coherence are attention signals.
 
 ## Examples
 
-- If boundaries or shape report errors, fix those before summarizing the work.
-- If unknown files appear, inspect local rules before moving or editing them.
-- If a high-pressure cluster is involved, prefer smaller commits and rerun checks often.
-- If health passes but shows attention findings, mention the residual risk briefly.
+- Fix boundary or shape errors before final response.
+- Inspect local rules before editing unknown files.
+- Keep high-pressure changes small.
 
 ## Agent Tips
 
-- Use this as the architecture drilldown after root `enclosure health`.
-- Follow up with `enclosure architecture boundaries` when changing dependency direction.
-- Follow up with `enclosure architecture shape` after editing imports or public code shape.
-- Follow up with `enclosure architecture map` when ownership or placement is unclear.
-- Follow up with `enclosure architecture clusters` before broad refactors or risky dependency work.
-- Follow up with `enclosure architecture pressure` before reducing prop drilling or public API surface.
-- Follow up with `enclosure architecture coherence` before streamlining related modules.
-- Do not treat hotspot ranking as ownership policy; policy comes from the contract.
+- Use after root `enclosure health`.
+- Use boundaries for dependencies, shape for public code, map for ownership, clusters for broad refactors, pressure for API surface, and coherence for streamlining.

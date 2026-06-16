@@ -1,34 +1,31 @@
 # Enclosure Command Docs
 
-`enclosure` creates and checks a project-local collaboration contract for humans and coding agents.
+`enclosure` checks repo contracts for humans and agents.
 
 ## Everyday Flow
 
-1. Run `enclosure workspace sync init` in a repository that does not yet have a contract.
-2. Review `.enclosure/enclosure.yaml`, `.enclosure/rules/`, and any local decisions before editing code.
-3. Use `enclosure health` for the broad preflight.
-4. Use `enclosure workspace health` or `enclosure architecture health` when the broad report points at a concern.
-5. Use focused commands when changing rules, recipes, dependency direction, file shape, or module ownership.
-6. Use `enclosure workspace recipe` when a local recipe should create project-shaped scaffolding.
+1. Run `enclosure workspace sync init` when `.enclosure/` is missing.
+2. Run `enclosure --llm` to read the agent operating loop.
+3. Run `enclosure workspace rules route --task calibration` for the first route receipt.
+4. Read `.enclosure/enclosure.yaml` and `.enclosure/rules/` before edits.
+5. Use `enclosure workspace recipe --list`, `enclosure workspace recipe <name> --show`, and `enclosure workspace recipe <name> <path> --shell` before creating project-shaped files.
+6. Use `enclosure health` for the broad preflight.
+7. Use `enclosure workspace health` or `enclosure architecture health` for drilldown.
 
 ## Documentation Surfaces
 
-- Use `enclosure --help` for authoritative command syntax and available options.
-- Use `enclosure --docs` for this human-facing overview.
-- Use `enclosure --llm` for agent-focused operating guidance.
-- Use `enclosure <group> --docs` or `enclosure <group> <command> --docs` for command-level docs.
+- `enclosure --help`: syntax.
+- `enclosure --docs`: human workflow notes.
+- `enclosure --llm`: agent operating guidance.
 
 ## Main Command Groups
 
-- `health` runs the broad workspace and architecture preflight.
-- `workspace` creates, refreshes, validates, and uses the local contract surface.
-- `architecture` inspects dependency rules, file shape, ownership, hotspots, and coupling pressure.
+- `health`: broad workspace and architecture preflight.
+- `workspace`: contract sync, rules, recipes, and workspace checks.
+- `architecture`: boundaries, shape, ownership, coupling, and pressure.
 
 ## Related Commands
 
 - `enclosure workspace --docs`
 - `enclosure architecture --docs`
 - `enclosure health --docs`
-- `enclosure workspace health --docs`
-- `enclosure workspace sync --docs`
-- `enclosure architecture health --docs`

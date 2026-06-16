@@ -1,23 +1,24 @@
 # Workspace Sync Docs
 
-Use `enclosure workspace sync` to create or refresh the project-local contract.
+Use `enclosure workspace sync` to create or refresh `.enclosure/`.
 
 ## When To Use It
 
-- Run `enclosure workspace sync init` when a repository does not yet have `.enclosure/`.
-- Run `enclosure workspace sync update` after upgrading the CLI or refreshing shared guidance.
-- Run `enclosure workspace sync migrate` to safely merge new config keys.
-- Sync validates generated config, instruction, and shared rule assets before writing them.
-- Review preserved local files after each sync; they contain project-owned decisions.
+- Run `enclosure workspace sync init` when `.enclosure/` is missing.
+- Run `update` after upgrading the CLI or refreshing shared guidance.
+- Run `migrate` to merge new config keys.
+- Review preserved local files; they contain project-owned decisions.
 
 ## How To Respond
 
 - Do not overwrite local rule decisions just to refresh shared assets.
 - Review `.enclosure/enclosure.yaml` after initialization.
-- Treat migrate config warnings as blocking review items before broad architecture work.
-- Rerun relevant architecture and rules checks after shared guidance changes.
+- Run `enclosure --llm` for the agent operating loop.
+- Run `enclosure workspace rules route --task calibration` for the initial route.
+- Run `enclosure health` after reviewing the generated contract.
+- Treat migrate warnings as blockers before broad architecture work.
 
 ## Related Commands
 
-- `enclosure workspace rules --docs`
-- `enclosure architecture health --docs`
+- `enclosure workspace rules route --task calibration`
+- `enclosure health --docs`

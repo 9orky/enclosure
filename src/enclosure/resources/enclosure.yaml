@@ -60,6 +60,8 @@ architecture:
     top: 5
 
 workspace:
+  guidance:
+    max_template_chars: 2400
   recipe:
     skip:
       - "**/__pycache__/**"

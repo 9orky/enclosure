@@ -2,33 +2,31 @@
 
 ## Purpose
 
-Use this command group to create or refresh the project-local contract that agents read before operating in a repository.
+Create or refresh the `.enclosure/` contract agents read before edits.
 
 ## When To Run
 
-- Run init when a repository does not yet have a local contract.
-- Run update when packaged shared guidance should be refreshed.
-- Run update after upgrading the CLI package.
-- Run migrate when local `.enclosure/` should be brought toward the current packaged contract without overwriting local recipes or rules.
+- Run init when `.enclosure/` is missing.
+- Run update after CLI upgrades or guidance refresh.
+- Run migrate to merge new config keys without overwriting local recipes or rules.
 
 ## How To Read The Result
 
-- Created entries are newly written contract assets.
-- Updated entries are packaged shared assets refreshed from the current CLI version.
+- Created entries are new assets.
+- Updated entries are packaged assets refreshed from the CLI.
 - Preserved entries are local assets kept intact.
-- Config warnings identify local config shape that migration preserved but could not normalize.
-- Validation errors mean a generated contract asset failed before it was written.
+- Config warnings need review; validation errors stop writes.
 
 ## Examples
 
 - If init creates the contract, read it before editing project code.
-- If update preserves local assets, treat that as intentional user-owned knowledge.
+- After init, run `enclosure --llm`, `enclosure workspace rules route --task calibration`, and `enclosure health`.
+- If update preserves local assets, treat them as user-owned knowledge.
 - If update changes shared guidance, rerun relevant checks before making architecture edits.
-- If a local rule conflicts with refreshed shared guidance, ask which project-specific decision should win.
 
 ## Agent Tips
 
-- Do not overwrite local rule decisions just to refresh shared guidance.
+- Do not overwrite local rules just to refresh guidance.
 - After sync, read the contract before editing application code.
-- If sync reports preserved local assets, treat them as user-owned project knowledge.
-- Run architecture checks after sync when architecture rules changed.
+- Confirm files read, reason, stop point, focused checks, and post-change `enclosure health`.
+- Run architecture checks when architecture rules changed.

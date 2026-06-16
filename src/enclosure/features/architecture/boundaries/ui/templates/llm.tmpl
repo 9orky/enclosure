@@ -2,32 +2,28 @@
 
 ## Purpose
 
-Use this command to validate the current codebase against the configured architecture agreement. It checks disallowed dependencies, layer flow, and cycle rules.
+Validate code against configured dependency, layer-flow, and cycle rules.
 
 ## When To Run
 
 - Before changing cross-module imports.
 - After moving code between layers.
-- Before finishing any refactor that might affect dependency direction.
+- Before finishing refactors that affect dependency direction.
 
 ## How To Read The Result
 
-- A passing result means no configured boundary violations were found.
-- Edge rule findings point to a blocked source-to-target dependency.
-- Flow findings point to a dependency path that moves against the configured layer direction.
-- Cycle findings point to dependency loops that should be broken at the owning seam.
+- Passing output means no configured boundary violation was found.
+- Edge, flow, and cycle findings are blockers.
+- Fix the owner or seam that makes the dependency point the wrong way.
 
 ## Examples
 
-- If a user-facing layer imports persistence behavior directly, move that access behind the application seam that owns the workflow.
-- If one module imports another module's private implementation, switch to the target module's public seam or ask whether a public seam is missing.
-- If a lower-level layer imports a higher-level orchestration layer, invert the dependency so orchestration calls inward.
-- If two modules depend on each other, move shared policy to the true owner or introduce a narrower public handoff.
-- If a violation appears only because a symbol was imported for convenience, prefer passing data through the existing owning workflow.
+- Move persistence access behind the owning application seam.
+- Replace private cross-module imports with the public seam.
+- Break cycles by moving shared policy to the true owner.
 
 ## Agent Tips
 
-- Treat findings as blockers, not style advice.
-- Fix the owning dependency direction instead of adding bypass imports.
-- Prefer using a module's public seam when one exists.
-- Rerun the command after each import or layer-ownership fix.
+- Treat findings as blockers.
+- Do not add bypass imports.
+- Rerun after import or ownership fixes.

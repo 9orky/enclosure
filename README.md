@@ -74,6 +74,22 @@ pipx run enclosure --help
 
 The simplest setup is to let a coding agent do the first pass.
 
+### First-Run Path
+
+From the repository root, use this path for the first useful `enclosure` loop:
+
+```bash
+enclosure workspace sync init
+enclosure --llm
+enclosure workspace rules route --task calibration
+enclosure workspace recipe --list
+enclosure workspace recipe <name> --show
+enclosure workspace recipe <name> <path> --shell
+enclosure health
+```
+
+Then inspect `.enclosure/enclosure.yaml`, `.enclosure/rules/`, and `.enclosure/recipes/` before editing code. Use the route output as the reading checklist, use recipe shell preview before creating project-shaped files, and rerun `enclosure health` plus any focused check relevant to the files changed.
+
 ### Kickstarting Prompt
 
 Copy this into your coding agent from the repository root:
@@ -95,16 +111,17 @@ Or run the first commands yourself:
 ```bash
 cd your-repo
 enclosure workspace sync init
-$EDITOR .enclosure/enclosure.yaml
+enclosure --llm
+enclosure workspace rules route --task calibration
+enclosure workspace recipe --list
 enclosure health
-enclosure architecture health
-enclosure architecture boundaries
 ```
 
 After setup, tell every coding agent:
 
 ```text
 Start in the .enclosure/ folder and stay anchored there while discovering project-specific operating guidance.
+Before editing code, confirm the rule route you read: files read, reason, stop point, focused checks to run, and post-change `enclosure health`.
 ```
 
 ## Contract Shape
@@ -141,7 +158,7 @@ architecture:
 
 The full syntax is available in the generated `.enclosure/enclosure.yaml` and command docs.
 
-Recipes are deliberately modest: they are not a framework. They are the reusable shape of code the repository already accepts. An agent can find a good module, convert that scaffold into a recipe, preview it with `--dry-run`, and then generate files that start inside the enclosure.
+Recipes are deliberately modest: they are not a framework. They are the reusable shape of code the repository already accepts. An agent can find a good module, convert that scaffold into a recipe, preview it with `--dry-run`, and then generate files that start inside the enclosure. Use `enclosure workspace recipe <name> <path> --shell` when the recipe should act as a convention oracle before implementation.
 
 ## Useful Commands
 
@@ -162,9 +179,11 @@ enclosure architecture coherence
 
 enclosure workspace rules
 enclosure workspace rules route --help
+enclosure workspace rules route --task calibration
 enclosure workspace recipe --check
 enclosure workspace recipe --list
 enclosure workspace recipe <name> --show
+enclosure workspace recipe <name> <path> --shell
 enclosure workspace recipe <name> --dry-run
 ```
 

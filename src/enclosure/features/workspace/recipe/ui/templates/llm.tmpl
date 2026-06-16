@@ -2,40 +2,35 @@
 
 ## Purpose
 
-Use this command to inspect, validate, preview, and render local recipes. Recipes are the preferred way to create project-shaped scaffolding.
+Inspect, validate, preview, and render local recipes.
 
 ## When To Run
 
-- Before hand-writing a new module shape that may already have a recipe.
+- During first-run setup before creating files.
+- Before hand-writing shape.
 - When validating recipe changes.
-- When previewing generated files before writing them.
 
 ## How To Read The Result
 
 - Listing shows available recipes.
-- Summary shows required inputs and planned targets.
-- Check validates recipe metadata and sample rendering.
-- Dry run shows what would be created or skipped without writing changes.
-- Shell preview shows the rendered module shell and skeleton content without
-  writing changes.
-- Dry run with `--tree --content` shows the rendered module shell and skeleton
-  content without writing changes.
-- Recipes may compose reusable `fragment` recipes through `includes`.
+- Summary shows inputs and targets.
+- Check validates metadata and rendering.
+- Dry run shows create/skip status without writing.
+- Shell preview shows rendered shell content.
+- Recipes may compose `fragment` recipes through `includes`.
 
 ## Examples
 
-- If a recipe exists for a module shape, inspect it before creating files manually.
+- First-run path: `enclosure workspace recipe --list`, `enclosure workspace recipe <name> --show`, then `enclosure workspace recipe <name> <path> --shell`.
+- Inspect recipes before creating files manually.
 - Keep module-to-role ownership in `workspace.recipe.roles_map`.
-- If required inputs are missing, provide them with explicit variables instead of editing rendered output afterward.
-- If dry run shows an existing target will be skipped, decide whether to preserve, rename, or edit manually.
+- Provide required inputs as variables.
+- If dry run skips a target, preserve, rename, or edit manually.
 - If check fails, fix the recipe before attempting generation.
 
 ## Agent Tips
 
 - Prefer a local recipe over inventing scaffolding.
-- Prefer fixed recipe fragments over one-off archetypes for slot combinations.
 - Inspect a recipe before rendering it.
-- Use `--shell` before module implementation when the recipe should act as the
-  local convention oracle.
-- Use variables explicitly and keep generated names aligned with the target module.
+- Use `--shell` when the recipe is the convention oracle.
 - Run check or dry run before writing generated files.

@@ -9,6 +9,10 @@ from modwire import supported_languages
 from enclosure.__main__ import app
 
 
+def _packaged_instruction(name: str) -> str:
+    return files("enclosure").joinpath("resources", name).read_text(encoding="utf-8")
+
+
 @pytest.mark.parametrize("language", supported_languages())
 def test_workspace_sync_init_creates_contract_for_supported_language_fixture(
     fixture_project,
@@ -30,6 +34,37 @@ def test_workspace_sync_init_creates_contract_for_supported_language_fixture(
     assert project.shared_rules_dir.is_dir()
     assert project.copilot_instructions_path.is_file()
     assert project.agent_instructions_path.is_file()
+    assert project.copilot_instructions_path.read_text(
+        encoding="utf-8"
+    ) == _packaged_instruction("copilot-instructions.md")
+    assert project.agent_instructions_path.read_text(
+        encoding="utf-8"
+    ) == _packaged_instruction("AGENTS.md")
+
+
+def test_workspace_sync_update_preserves_local_recipes_without_resource_recipe_seed(
+    fixture_project,
+    use_project,
+    cli_runner,
+) -> None:
+    project = fixture_project("enclosure-workspace")
+    use_project(project)
+    local_recipe_path = project.recipes_dir / "custom-local" / "recipe.yaml"
+    local_recipe_path.parent.mkdir(parents=True)
+    local_recipe_content = "schema_version: 1\nrole: archetype\n"
+    local_recipe_path.write_text(local_recipe_content, encoding="utf-8")
+
+    result = cli_runner.invoke(app, ["workspace", "sync", "update"])
+
+    assert result.exit_code == 0, result.output
+    assert local_recipe_path.read_text(encoding="utf-8") == local_recipe_content
+    assert not (project.recipes_dir / "module-report-cli" / "recipe.yaml").exists()
+    assert project.copilot_instructions_path.read_text(
+        encoding="utf-8"
+    ) == _packaged_instruction("copilot-instructions.md")
+    assert project.agent_instructions_path.read_text(
+        encoding="utf-8"
+    ) == _packaged_instruction("AGENTS.md")
 
 
 def test_workspace_sync_migrate_preserves_local_recipes_without_resource_recipe_seed(
@@ -49,6 +84,30 @@ def test_workspace_sync_migrate_preserves_local_recipes_without_resource_recipe_
     assert result.exit_code == 0, result.output
     assert local_recipe_path.read_text(encoding="utf-8") == local_recipe_content
     assert not (project.recipes_dir / "module-report-cli" / "recipe.yaml").exists()
+    assert project.copilot_instructions_path.read_text(
+        encoding="utf-8"
+    ) == _packaged_instruction("copilot-instructions.md")
+    assert project.agent_instructions_path.read_text(
+        encoding="utf-8"
+    ) == _packaged_instruction("AGENTS.md")
+
+
+def test_workspace_sync_migrate_preserves_recipe_roles_map_without_unknown_warnings(
+    fixture_project,
+    use_project,
+    cli_runner,
+) -> None:
+    project = fixture_project("enclosure-workspace")
+    use_project(project)
+    raw_config = yaml.safe_load(project.config_path.read_text(encoding="utf-8"))
+    original_roles_map = dict(raw_config["workspace"]["recipe"]["roles_map"])
+
+    result = cli_runner.invoke(app, ["workspace", "sync", "migrate"])
+
+    assert result.exit_code == 0, result.output
+    migrated_config = yaml.safe_load(project.config_path.read_text(encoding="utf-8"))
+    assert migrated_config["workspace"]["recipe"]["roles_map"] == original_roles_map
+    assert "workspace.recipe.roles_map" not in result.output
 
 
 def test_workspace_sync_migrate_safe_merges_config_and_warns_about_unknown_keys(
@@ -116,3 +175,9 @@ def test_workspace_sync_update_refreshes_shared_assets_and_preserves_local_rules
     ).read_text(encoding="utf-8")
     assert project.copilot_instructions_path.is_file()
     assert project.agent_instructions_path.is_file()
+    assert project.copilot_instructions_path.read_text(
+        encoding="utf-8"
+    ) == _packaged_instruction("copilot-instructions.md")
+    assert project.agent_instructions_path.read_text(
+        encoding="utf-8"
+    ) == _packaged_instruction("AGENTS.md")

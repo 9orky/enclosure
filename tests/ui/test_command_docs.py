@@ -8,6 +8,8 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from enclosure.__main__ import app
+from enclosure.features.workspace import config as workspace_config
+from enclosure.shared import config
 from scripts import generate_module_docs
 
 
@@ -23,7 +25,16 @@ GUIDANCE_FILE_GLOBS = (
     "src/enclosure/features/**/ui/templates/llm.tmpl",
     "docs/modules/*.md",
 )
+GUIDANCE_TEMPLATE_GLOBS = (
+    "src/enclosure/templates/*.tmpl",
+    "src/enclosure/features/**/ui/templates/docs.tmpl",
+    "src/enclosure/features/**/ui/templates/llm.tmpl",
+)
 ENCLOSURE_COMMAND_PATTERN = re.compile(r"`(enclosure(?:\s+[^`]+)?)`")
+MINIMAL_AGENT_INSTRUCTION = (
+    "Start in the `.enclosure/` folder and stay anchored there while discovering "
+    "project-specific operating guidance."
+)
 
 
 class CommandDocsTest(unittest.TestCase):
@@ -81,6 +92,27 @@ class CommandDocsTest(unittest.TestCase):
 
             self.assertNotEqual(result.exit_code, 2, result.output)
 
+    def test_guidance_templates_stay_reviewable(self) -> None:
+        max_template_chars = guidance_max_template_chars()
+
+        for file_path in guidance_template_files():
+            with self.subTest(template=str(file_path.relative_to(PROJECT_ROOT))):
+                text = file_path.read_text(encoding="utf-8")
+                headings = [
+                    line
+                    for line in text.splitlines()
+                    if line.startswith("#") and not line.startswith("###")
+                ]
+
+                if max_template_chars >= 0:
+                    self.assertLessEqual(
+                        len(text),
+                        max_template_chars,
+                        f"{file_path.relative_to(PROJECT_ROOT)} is too large; split or trim it",
+                    )
+                self.assertTrue(text.startswith("# "))
+                self.assertGreaterEqual(len(headings), 2)
+
     def test_generated_module_docs_match_feature_templates(self) -> None:
         template_paths = tuple(
             sorted((TEMPLATE_ROOT / "features").glob("**/ui/templates/docs.tmpl"))
@@ -107,6 +139,47 @@ class CommandDocsTest(unittest.TestCase):
                     generate_module_docs.module_doc_text(template_path),
                     doc_path.read_text(encoding="utf-8"),
                 )
+
+    def test_first_run_onboarding_path_is_documented(self) -> None:
+        readme_text = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+        llm_text = (TEMPLATE_ROOT / "templates" / "llm.tmpl").read_text(
+            encoding="utf-8"
+        )
+        expected_commands = (
+            "enclosure workspace sync init",
+            "enclosure --llm",
+            "enclosure workspace rules route --task calibration",
+            "enclosure workspace recipe --list",
+            "enclosure workspace recipe <name> --show",
+            "enclosure workspace recipe <name> <path> --shell",
+            "enclosure health",
+        )
+
+        for command in expected_commands:
+            with self.subTest(command=command, source="README.md"):
+                self.assertIn(command, readme_text)
+
+        for command in expected_commands:
+            with self.subTest(command=command, source="llm.tmpl"):
+                self.assertIn(command, llm_text)
+
+    def test_agent_instruction_assets_stay_minimal(self) -> None:
+        instruction_paths = (
+            PROJECT_ROOT / "AGENTS.md",
+            PROJECT_ROOT / ".github" / "copilot-instructions.md",
+            TEMPLATE_ROOT / "resources" / "AGENTS.md",
+            TEMPLATE_ROOT / "resources" / "copilot-instructions.md",
+        )
+
+        for instruction_path in instruction_paths:
+            with self.subTest(path=str(instruction_path.relative_to(PROJECT_ROOT))):
+                lines = [
+                    line.strip()
+                    for line in instruction_path.read_text(encoding="utf-8").splitlines()
+                    if line.strip()
+                ]
+
+                self.assertEqual(("# enclosure", MINIMAL_AGENT_INSTRUCTION), tuple(lines))
 
 
 def docs_commands() -> tuple[list[str], ...]:
@@ -163,6 +236,26 @@ def guidance_files() -> tuple[Path, ...]:
     for pattern in GUIDANCE_FILE_GLOBS:
         files.extend(PROJECT_ROOT.glob(pattern))
     return tuple(sorted(set(files)))
+
+
+def guidance_template_files() -> tuple[Path, ...]:
+    files: list[Path] = []
+    for pattern in GUIDANCE_TEMPLATE_GLOBS:
+        files.extend(PROJECT_ROOT.glob(pattern))
+    return tuple(sorted(set(files)))
+
+
+def guidance_max_template_chars() -> int:
+    config_path = PROJECT_ROOT / ".enclosure" / "enclosure.yaml"
+    raw_data = config.load_yaml_mapping(
+        config_path,
+        label="Workspace config",
+        error_type=workspace_config.WorkspaceConfigError,
+    )
+    return workspace_config.WorkspaceConfig.validate_mapping(
+        raw_data,
+        config_path,
+    ).guidance.max_template_chars
 
 
 def validation_command(command: list[str]) -> list[str]:

@@ -1,15 +1,16 @@
 # Workspace Rules Docs
 
-Use `enclosure workspace rules` to validate shared and local rule markdown documents in the current workspace.
-Use `enclosure workspace rules route --tag TAG`, `--path PATH`, or `--task TASK` to print a deterministic reading route and short read receipt template for agents.
+Use `enclosure workspace rules` to validate rule markdown.
+Use `enclosure workspace rules route --tag TAG`, `--path PATH`, or `--task TASK` to print a reading route and receipt template.
 
 ## When To Use It
 
+- During first-run setup before editing code.
 - After editing local rule documents.
 - After refreshing packaged shared rules.
-- After adding, removing, or renaming rule references.
-- Before agent work that needs a confirmable rule-reading path.
-- When a path or task category should decide rule tags without guessing.
+- After changing rule references.
+- Before agent work that needs a confirmable route.
+- When path or task context should choose tags.
 
 ## How To Respond
 
@@ -18,13 +19,10 @@ Use `enclosure workspace rules route --tag TAG`, `--path PATH`, or `--task TASK`
 - Keep shared guidance reusable.
 - Update navigation links when rule files or headings change.
 - Ask agents to confirm the route receipt before editing code.
-- Prefer `--path` or `--task` when the agent would otherwise choose tags by judgment.
+- Prefer `--path` or `--task` over judgment.
+- Use the first-run route as the receipt baseline, then narrow it for the actual files being changed.
 
 ## Related Commands
 
-- `enclosure workspace rules route --tag structure`
 - `enclosure workspace rules route --task calibration`
 - `enclosure workspace rules route --path src/enclosure/features/workspace/rules/domain/graph.py`
-- `enclosure workspace rules route --task refactoring`
-- `enclosure workspace sync --docs`
-- `enclosure architecture health --docs`
