@@ -4,6 +4,11 @@ Architecture Pressure:
 - Direct calls: {{ report.call_count }}
 - Resolved internal calls: {{ report.resolved_call_count }}
 - Unresolved calls: {{ report.unresolved_call_count }}
+- Unresolved internal candidates: {{ report.unresolved_call_breakdown.internal_candidate_count }}
+- Unresolved builtin calls: {{ report.unresolved_call_breakdown.builtin_count }}
+- Unresolved external imports: {{ report.unresolved_call_breakdown.external_import_count }}
+- Unresolved attribute/dynamic calls: {{ report.unresolved_call_breakdown.attribute_or_dynamic_count }}
+- Unresolved unknown calls: {{ report.unresolved_call_breakdown.unknown_count }}
 - Top limit: {{ report.top }}
 {% if report.most_calling %}
 

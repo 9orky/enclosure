@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 from modwire import CodeMap
-from modwire.definitions import SourceCall, SourceCallable, SourceExport, SourceFile
+from modwire.definitions import (
+    SourceCall,
+    SourceCallable,
+    SourceExport,
+    SourceFile,
+    SourceImport,
+)
 from modwire.extraction import ExtractionResult, ExtractionSummary
 from modwire.graph import DependencyGraph
 
@@ -15,6 +21,8 @@ def test_describe_architecture_pressure_ranks_callables_and_exports() -> None:
     assert report.call_count == 5
     assert report.resolved_call_count == 4
     assert report.unresolved_call_count == 1
+    assert report.unresolved_call_breakdown.internal_candidate_count == 0
+    assert report.unresolved_call_breakdown.unknown_count == 1
     assert [pressure.qualified_name for pressure in report.most_calling] == [
         "orchestrate",
         "target",
@@ -47,6 +55,21 @@ def test_describe_architecture_pressure_honors_zero_limit() -> None:
     assert report.public_api_hubs == ()
 
 
+def test_unresolved_call_breakdown_splits_internal_candidates_from_context() -> None:
+    report = domain.describe_architecture_pressure(
+        _code_map(include_unresolved_breakdown=True),
+        top=2,
+    )
+
+    assert report.unresolved_call_count == 6
+    assert report.unresolved_call_breakdown.internal_candidate_count == 2
+    assert report.unresolved_call_breakdown.builtin_count == 1
+    assert report.unresolved_call_breakdown.external_import_count == 1
+    assert report.unresolved_call_breakdown.attribute_or_dynamic_count == 1
+    assert report.unresolved_call_breakdown.unknown_count == 1
+    assert report.unresolved_call_breakdown.non_actionable_count == 4
+
+
 def test_pressure_locations_do_not_invent_python_extensions() -> None:
     report = domain.describe_architecture_pressure(_code_map(), top=2)
 
@@ -65,7 +88,95 @@ def test_reexport_hubs_are_not_limited_to_python_init_modules() -> None:
     ]
 
 
-def _code_map(public_source_id: str = "feature/api/__init__") -> CodeMap:
+def _code_map(
+    public_source_id: str = "feature/api/__init__",
+    *,
+    include_unresolved_breakdown: bool = False,
+) -> CodeMap:
+    application_imports = []
+    application_calls = [
+        _call(
+            "feature/api/application::orchestrate",
+            "feature/api/domain::target",
+            line=12,
+            target_name="target",
+        ),
+        _call(
+            "feature/api/application::orchestrate",
+            "feature/api/domain::target",
+            line=13,
+            target_name="target",
+        ),
+        _call(
+            "feature/api/application::orchestrate",
+            "feature/api/domain::other",
+            line=14,
+            target_name="other",
+        ),
+        SourceCall(
+            source_callable_id="feature/api/application::orchestrate",
+            target_callable_id="",
+            source_id="feature/api/application",
+            line=15,
+            expression="external()",
+            resolution="unresolved",
+            target_name="external",
+        ),
+    ]
+    if include_unresolved_breakdown:
+        application_imports = [
+            _import("domain", "feature/api/domain", is_relative=True),
+            _import("Path", "pathlib"),
+        ]
+        application_calls.extend(
+            [
+                SourceCall(
+                    source_callable_id="feature/api/application::orchestrate",
+                    target_callable_id="",
+                    source_id="feature/api/application",
+                    line=16,
+                    expression="domain.Target()",
+                    resolution="unresolved",
+                    target_name="domain.Target",
+                ),
+                SourceCall(
+                    source_callable_id="feature/api/application::orchestrate",
+                    target_callable_id="",
+                    source_id="feature/api/application",
+                    line=17,
+                    expression="other()",
+                    resolution="unresolved",
+                    target_name="other",
+                ),
+                SourceCall(
+                    source_callable_id="feature/api/application::orchestrate",
+                    target_callable_id="",
+                    source_id="feature/api/application",
+                    line=18,
+                    expression="len(items)",
+                    resolution="unresolved",
+                    target_name="len",
+                ),
+                SourceCall(
+                    source_callable_id="feature/api/application::orchestrate",
+                    target_callable_id="",
+                    source_id="feature/api/application",
+                    line=19,
+                    expression="Path(value)",
+                    resolution="unresolved",
+                    target_name="Path",
+                ),
+                SourceCall(
+                    source_callable_id="feature/api/application::orchestrate",
+                    target_callable_id="",
+                    source_id="feature/api/application",
+                    line=20,
+                    expression="items.append(value)",
+                    resolution="unresolved",
+                    target_name="items.append",
+                ),
+            ]
+        )
     files = {
         public_source_id: SourceFile(
             imports=[],
@@ -106,7 +217,7 @@ def _code_map(public_source_id: str = "feature/api/__init__") -> CodeMap:
             public_symbol_count=2,
         ),
         "feature/api/application": SourceFile(
-            imports=[],
+            imports=application_imports,
             exports=[],
             classes=[],
             functions=[],
@@ -114,35 +225,7 @@ def _code_map(public_source_id: str = "feature/api/__init__") -> CodeMap:
                 _callable("feature/api/application", "orchestrate", 10, 4),
                 _callable("feature/api/application", "helper", 30, 3),
             ],
-            calls=[
-                _call(
-                    "feature/api/application::orchestrate",
-                    "feature/api/domain::target",
-                    line=12,
-                    target_name="target",
-                ),
-                _call(
-                    "feature/api/application::orchestrate",
-                    "feature/api/domain::target",
-                    line=13,
-                    target_name="target",
-                ),
-                _call(
-                    "feature/api/application::orchestrate",
-                    "feature/api/domain::other",
-                    line=14,
-                    target_name="other",
-                ),
-                SourceCall(
-                    source_callable_id="feature/api/application::orchestrate",
-                    target_callable_id="",
-                    source_id="feature/api/application",
-                    line=15,
-                    expression="external()",
-                    resolution="unresolved",
-                    target_name="external",
-                ),
-            ],
+            calls=application_calls,
             line_count=40,
             code_line_count=30,
             public_symbol_count=2,
@@ -223,4 +306,24 @@ def _call(
         expression=f"{target_name}()",
         resolution="resolved",
         target_name=target_name,
+    )
+
+
+def _import(
+    imported_name: str,
+    normalized_path: str,
+    *,
+    is_relative: bool = False,
+) -> SourceImport:
+    return SourceImport(
+        path=normalized_path.replace("/", "."),
+        is_relative=is_relative,
+        normalized_path=normalized_path,
+        imported_name=imported_name,
+        is_aliased=False,
+        crossing_type="module",
+        file_barrier_crossed=False,
+        statement_id=1,
+        join_key="",
+        uses_joined_import=False,
     )

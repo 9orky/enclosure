@@ -23,6 +23,7 @@ def build_pressure_report_for_top(top: int | None) -> domain.ArchitecturePressur
         call_count=described.call_count,
         resolved_call_count=described.resolved_call_count,
         unresolved_call_count=described.unresolved_call_count,
+        unresolved_call_breakdown=described.unresolved_call_breakdown,
         most_calling=described.most_calling,
         most_called=described.most_called,
         wide_signatures=described.wide_signatures,

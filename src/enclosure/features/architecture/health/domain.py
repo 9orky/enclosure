@@ -92,6 +92,8 @@ class ArchitectureHealthReport:
     callable_count: int = 0
     call_count: int = 0
     unresolved_call_count: int = 0
+    unresolved_internal_call_count: int = 0
+    unresolved_non_actionable_call_count: int = 0
     coherence_stream_count: int = 0
     coherence_finding_count: int = 0
     cluster_group_depth: int = 0
@@ -132,6 +134,10 @@ class ArchitectureHealthReport:
             "callable_count": self.callable_count,
             "call_count": self.call_count,
             "unresolved_call_count": self.unresolved_call_count,
+            "unresolved_internal_call_count": self.unresolved_internal_call_count,
+            "unresolved_non_actionable_call_count": (
+                self.unresolved_non_actionable_call_count
+            ),
             "coherence_stream_count": self.coherence_stream_count,
             "coherence_finding_count": self.coherence_finding_count,
             "cluster_group_depth": self.cluster_group_depth,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -75,6 +76,45 @@ class ExportPressure:
 
 
 @dataclass(frozen=True)
+class UnresolvedCallBreakdown:
+    internal_candidate_count: int = 0
+    builtin_count: int = 0
+    external_import_count: int = 0
+    attribute_or_dynamic_count: int = 0
+    unknown_count: int = 0
+
+    @property
+    def total_count(self) -> int:
+        return (
+            self.internal_candidate_count
+            + self.builtin_count
+            + self.external_import_count
+            + self.attribute_or_dynamic_count
+            + self.unknown_count
+        )
+
+    @property
+    def non_actionable_count(self) -> int:
+        return (
+            self.builtin_count
+            + self.external_import_count
+            + self.attribute_or_dynamic_count
+            + self.unknown_count
+        )
+
+    def to_json_dict(self) -> dict[str, object]:
+        return {
+            "total_count": self.total_count,
+            "internal_candidate_count": self.internal_candidate_count,
+            "builtin_count": self.builtin_count,
+            "external_import_count": self.external_import_count,
+            "attribute_or_dynamic_count": self.attribute_or_dynamic_count,
+            "unknown_count": self.unknown_count,
+            "non_actionable_count": self.non_actionable_count,
+        }
+
+
+@dataclass(frozen=True)
 class ArchitecturePressureReport:
     project_root: Path
     config_path: Path
@@ -89,6 +129,7 @@ class ArchitecturePressureReport:
     call_count: int = 0
     resolved_call_count: int = 0
     unresolved_call_count: int = 0
+    unresolved_call_breakdown: UnresolvedCallBreakdown = UnresolvedCallBreakdown()
     most_calling: tuple[CallablePressure, ...] = ()
     most_called: tuple[CallablePressure, ...] = ()
     wide_signatures: tuple[CallablePressure, ...] = ()
@@ -103,6 +144,7 @@ class ArchitecturePressureReport:
             "call_count": self.call_count,
             "resolved_call_count": self.resolved_call_count,
             "unresolved_call_count": self.unresolved_call_count,
+            "unresolved_call_breakdown": self.unresolved_call_breakdown.to_json_dict(),
             "most_calling": [
                 pressure.to_json_dict() for pressure in self.most_calling
             ],
@@ -127,6 +169,7 @@ class DescribedArchitecturePressure:
     call_count: int
     resolved_call_count: int
     unresolved_call_count: int
+    unresolved_call_breakdown: UnresolvedCallBreakdown
     most_calling: tuple[CallablePressure, ...]
     most_called: tuple[CallablePressure, ...]
     wide_signatures: tuple[CallablePressure, ...]
@@ -154,13 +197,15 @@ def describe_architecture_pressure(
         for source_call in source_file.calls
         if source_call.resolution == "resolved"
     )
+    unresolved_call_breakdown = _unresolved_call_breakdown(code_map)
     export_pressures = tuple(_export_pressures(code_map))
 
     return DescribedArchitecturePressure(
         callable_count=len(callable_pressures),
         call_count=call_count,
         resolved_call_count=resolved_call_count,
-        unresolved_call_count=call_count - resolved_call_count,
+        unresolved_call_count=unresolved_call_breakdown.total_count,
+        unresolved_call_breakdown=unresolved_call_breakdown,
         most_calling=limits.apply_limit(
             sorted(
                 callable_pressures,
@@ -239,6 +284,75 @@ def _callable_pressure(code_map: CodeMap, callable_id: str) -> CallablePressure:
     )
 
 
+def _unresolved_call_breakdown(code_map: CodeMap) -> UnresolvedCallBreakdown:
+    files = code_map.extraction_result.files
+    known_source_ids = set(files)
+    known_callable_names = {
+        source_callable.name
+        for source_file in files.values()
+        for source_callable in source_file.callables
+    } | {
+        source_callable.qualified_name
+        for source_file in files.values()
+        for source_callable in source_file.callables
+    }
+    internal_candidate_count = 0
+    builtin_count = 0
+    external_import_count = 0
+    attribute_or_dynamic_count = 0
+    unknown_count = 0
+
+    for source_file in files.values():
+        imports_by_name = _imports_by_local_name(source_file.imports)
+        for source_call in source_file.calls:
+            if source_call.resolution == "resolved":
+                continue
+
+            target_name = source_call.target_name.strip()
+            target_base = target_name.split(".", maxsplit=1)[0]
+            imported_path = imports_by_name.get(target_base)
+            if _is_builtin_name(target_base):
+                builtin_count += 1
+            elif imported_path and imported_path in known_source_ids:
+                internal_candidate_count += 1
+            elif imported_path:
+                external_import_count += 1
+            elif target_name in known_callable_names:
+                internal_candidate_count += 1
+            elif "." in target_name:
+                attribute_or_dynamic_count += 1
+            else:
+                unknown_count += 1
+
+    return UnresolvedCallBreakdown(
+        internal_candidate_count=internal_candidate_count,
+        builtin_count=builtin_count,
+        external_import_count=external_import_count,
+        attribute_or_dynamic_count=attribute_or_dynamic_count,
+        unknown_count=unknown_count,
+    )
+
+
+def _imports_by_local_name(imports: object) -> dict[str, str]:
+    imports_by_name: dict[str, str] = {}
+    for source_import in imports:
+        imported_name = getattr(source_import, "imported_name", "")
+        normalized_path = getattr(source_import, "normalized_path", "")
+        if imported_name:
+            imports_by_name[str(imported_name)] = str(normalized_path)
+        for imported_symbol in getattr(source_import, "imported_symbols", ()):
+            name = getattr(imported_symbol, "name", "")
+            alias = getattr(imported_symbol, "alias", "")
+            local_name = str(alias or name)
+            if local_name:
+                imports_by_name[local_name] = str(normalized_path)
+    return imports_by_name
+
+
+def _is_builtin_name(name: str) -> bool:
+    return name in vars(builtins)
+
+
 def _export_pressures(code_map: CodeMap) -> tuple[ExportPressure, ...]:
     pressures = []
     for source_id, source_file in code_map.extraction_result.files.items():
@@ -286,5 +400,6 @@ __all__ = [
     "DescribedArchitecturePressure",
     "ExportPressure",
     "PressureConfig",
+    "UnresolvedCallBreakdown",
     "describe_architecture_pressure",
 ]

@@ -11,7 +11,7 @@ Architecture Modules:
 - Shape: {{ report.shape_violation_count }} violation(s)
 - Map: {{ report.module_count }} module(s), {{ report.cross_module_dependency_count }} cross-module dependency path(s), {{ report.unknown_file_count }} unknown file(s)
 - Clusters: {{ report.cluster_count }} cluster(s), showing {{ report.clusters|length }}, group depth {{ report.cluster_group_depth }}
-- Pressure: {{ report.callable_count }} callable(s), {{ report.call_count }} direct call(s), {{ report.unresolved_call_count }} unresolved call(s)
+- Pressure: {{ report.callable_count }} callable(s), {{ report.call_count }} direct call(s), {{ report.unresolved_internal_call_count }} unresolved internal candidate call(s), {{ report.unresolved_non_actionable_call_count }} context-only unresolved call(s)
 - Coherence: {{ report.coherence_stream_count }} stream(s), {{ report.coherence_finding_count }} finding(s)
 {% if verbosity == "summary" %}
 - Findings: {{ report.findings|length }}

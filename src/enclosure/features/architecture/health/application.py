@@ -70,6 +70,12 @@ def _build_health_report(top_override: int | None) -> domain.ArchitectureHealthR
         callable_count=pressure.callable_count,
         call_count=pressure.call_count,
         unresolved_call_count=pressure.unresolved_call_count,
+        unresolved_internal_call_count=(
+            pressure.unresolved_call_breakdown.internal_candidate_count
+        ),
+        unresolved_non_actionable_call_count=(
+            pressure.unresolved_call_breakdown.non_actionable_count
+        ),
         coherence_stream_count=coherence.stream_count,
         coherence_finding_count=coherence.finding_count,
         cluster_group_depth=config.clusters.group_depth,
@@ -81,7 +87,12 @@ def _build_health_report(top_override: int | None) -> domain.ArchitectureHealthR
             shape_violation_count=len(shape_violations),
             unknown_file_count=len(mapped.unknown_files),
             pressure_clusters=clusters,
-            unresolved_call_count=pressure.unresolved_call_count,
+            unresolved_internal_call_count=(
+                pressure.unresolved_call_breakdown.internal_candidate_count
+            ),
+            unresolved_non_actionable_call_count=(
+                pressure.unresolved_call_breakdown.non_actionable_count
+            ),
             coherence_finding_count=coherence.finding_count,
         ),
         hotspots=tuple(
@@ -129,7 +140,8 @@ def _findings(
         enclosure.features.architecture.clusters.ArchitectureCluster,
         ...,
     ],
-    unresolved_call_count: int,
+    unresolved_internal_call_count: int,
+    unresolved_non_actionable_call_count: int,
     coherence_finding_count: int,
 ) -> tuple[domain.HealthFinding, ...]:
     findings: list[domain.HealthFinding] = []
@@ -169,13 +181,18 @@ def _findings(
                 detail=f"{unknown_file_count} file(s) outside configured module tags.",
             )
         )
-    if unresolved_call_count:
+    if unresolved_internal_call_count:
         findings.append(
             domain.HealthFinding(
                 severity="attention",
                 category="pressure",
-                subject="unresolved calls",
-                detail=f"{unresolved_call_count} call(s) could not be resolved.",
+                subject="unresolved internal call candidates",
+                detail=(
+                    f"{unresolved_internal_call_count} internal candidate call(s) "
+                    "could not be resolved"
+                    f"; {unresolved_non_actionable_call_count} builtin, external, "
+                    "or dynamic call(s) are reported as context only."
+                ),
             )
         )
     if coherence_finding_count:
