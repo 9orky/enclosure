@@ -310,6 +310,21 @@ class RenderedFile(TypedDict):
     content: str
 
 
+class RecipePreviewStatus(StrEnum):
+    CREATE = "create"
+    SKIP_EXISTS = "skip_exists"
+    SKIP_CONFIG = "skip_config"
+
+
+@dataclass(frozen=True)
+class RecipePreviewFile:
+    source_path: Path
+    target_path: Path
+    relative_path: RelativePath
+    status: RecipePreviewStatus
+    content: str
+
+
 class RecipeGenerationReport(TypedDict):
     recipe_name: str
     project_root: Path
@@ -317,6 +332,7 @@ class RecipeGenerationReport(TypedDict):
     recipe_empty: bool
     create_paths: tuple[Path, ...]
     skipped_paths: tuple[Path, ...]
+    preview_files: tuple[RecipePreviewFile, ...]
 
 
 class GenerateRecipeResult(TypedDict):

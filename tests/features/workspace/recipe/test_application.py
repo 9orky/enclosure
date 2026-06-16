@@ -228,6 +228,114 @@ class WorkspaceRecipeCheckTest(unittest.TestCase):
         ))
         self.assertIn("Unsupported recipe ladder state", report.violations[0].message)
 
+    def test_recipe_dry_run_includes_rendered_preview_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_root = Path(temporary_directory) / "project"
+            recipe_root = Path(temporary_directory) / "recipes"
+            project_root.mkdir()
+            recipe_root.mkdir()
+            _write_config(project_root)
+            _write_recipe(
+                recipe_root / "role",
+                template_text="class {{ target.class }}:\n    pass\n",
+            )
+
+            with patch.object(
+                application.layout,
+                "current_project_root",
+                return_value=project_root,
+            ):
+                report = application.describe_recipe_generation(
+                    "role",
+                    "generated",
+                    recipe_root=recipe_root,
+                    variables={},
+                )
+
+        expected_project_root = project_root.resolve()
+        self.assertEqual(
+            (expected_project_root / "generated" / "sample.py",),
+            report["create_paths"],
+        )
+        self.assertEqual((), report["skipped_paths"])
+        self.assertEqual(1, len(report["preview_files"]))
+        preview_file = report["preview_files"][0]
+        self.assertEqual(
+            recipe_root / "role" / "template.py.tmpl",
+            preview_file.source_path,
+        )
+        self.assertEqual(
+            expected_project_root / "generated" / "sample.py",
+            preview_file.target_path,
+        )
+        self.assertEqual("generated/sample.py", preview_file.relative_path.as_posix())
+        self.assertEqual(application.RecipePreviewStatus.CREATE, preview_file.status)
+        self.assertEqual("class Generated:\n    pass\n", preview_file.content)
+
+    def test_recipe_dry_run_preview_marks_existing_targets_as_skipped(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_root = Path(temporary_directory) / "project"
+            recipe_root = Path(temporary_directory) / "recipes"
+            generated_file = project_root / "generated" / "sample.py"
+            project_root.mkdir()
+            recipe_root.mkdir()
+            generated_file.parent.mkdir(parents=True)
+            generated_file.write_text("existing\n", encoding="utf-8")
+            _write_config(project_root)
+            _write_recipe(recipe_root / "role", template_text="new\n")
+
+            with patch.object(
+                application.layout,
+                "current_project_root",
+                return_value=project_root,
+            ):
+                report = application.describe_recipe_generation(
+                    "role",
+                    "generated",
+                    recipe_root=recipe_root,
+                    variables={},
+                )
+
+        self.assertEqual((), report["create_paths"])
+        self.assertEqual((generated_file.resolve(),), report["skipped_paths"])
+        self.assertEqual(
+            application.RecipePreviewStatus.SKIP_EXISTS,
+            report["preview_files"][0].status,
+        )
+        self.assertEqual("new\n", report["preview_files"][0].content)
+
+    def test_recipe_dry_run_preview_marks_config_skips(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_root = Path(temporary_directory) / "project"
+            recipe_root = Path(temporary_directory) / "recipes"
+            project_root.mkdir()
+            recipe_root.mkdir()
+            _write_config(project_root, skip=("generated/sample.py",))
+            _write_recipe(recipe_root / "role", template_text="skipped\n")
+
+            with patch.object(
+                application.layout,
+                "current_project_root",
+                return_value=project_root,
+            ):
+                report = application.describe_recipe_generation(
+                    "role",
+                    "generated",
+                    recipe_root=recipe_root,
+                    variables={},
+                )
+
+        self.assertEqual((), report["create_paths"])
+        self.assertEqual(
+            (project_root.resolve() / "generated" / "sample.py",),
+            report["skipped_paths"],
+        )
+        self.assertEqual(
+            application.RecipePreviewStatus.SKIP_CONFIG,
+            report["preview_files"][0].status,
+        )
+        self.assertEqual("skipped\n", report["preview_files"][0].content)
+
     def test_recipe_drifts_compare_mapped_module_tree(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_root = Path(temporary_directory) / "project"

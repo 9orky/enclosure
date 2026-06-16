@@ -36,6 +36,9 @@ escalation_paths:
 - Package slots require a package seam and may own private internal files.
 - Drift checks report missing required seams and forbidden shapes; they do not
   report private files under an allowed package slot.
+- Before implementing recipe-shaped code, run
+  `enclosure workspace recipe <name> <path> --shell` to preview the rendered
+  tree and skeleton content without writing files.
 
 ## Review Checks
 

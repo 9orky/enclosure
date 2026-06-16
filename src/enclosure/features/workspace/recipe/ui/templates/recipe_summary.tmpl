@@ -36,6 +36,8 @@ Files:
 - {{ file }}
 {% endfor %}
 {% endif %}
+Shell preview:
+- enclosure workspace recipe {{ recipe.name }} <path> --shell
 {% if not recipe.inputs and not recipe.files and not recipe.includes %}
 No inputs or files.
 {% endif %}

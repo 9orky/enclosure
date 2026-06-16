@@ -14,6 +14,8 @@ RecipeCheckViolation = domain.RecipeCheckViolation
 RecipeDrift = domain.RecipeDrift
 RecipeDriftReport = domain.RecipeDriftReport
 RecipeGenerationReport = domain.RecipeGenerationReport
+RecipePreviewFile = domain.RecipePreviewFile
+RecipePreviewStatus = domain.RecipePreviewStatus
 RecipeSummary = domain.RecipeSummary
 check_recipe_drifts = application.check_recipe_drifts
 check_recipes = application.check_recipes
@@ -36,6 +38,8 @@ __all__ = [
     "RecipeDrift",
     "RecipeDriftReport",
     "RecipeGenerationReport",
+    "RecipePreviewFile",
+    "RecipePreviewStatus",
     "RecipeSummary",
     "check_recipe_drifts",
     "check_recipes",

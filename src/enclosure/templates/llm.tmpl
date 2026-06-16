@@ -16,7 +16,9 @@ Standard help explains syntax. LLM help explains how an agent should use and int
 4. Use `enclosure workspace health` or `enclosure architecture health` when the broad report points at a concern.
 5. Use focused commands such as `enclosure workspace rules`, `enclosure workspace recipe --check`, `enclosure architecture boundaries`, and `enclosure architecture shape` for blocking drilldowns.
 6. Use `enclosure architecture map`, `enclosure architecture clusters`, `enclosure architecture pressure`, and `enclosure architecture coherence` when you need to understand ownership, hotspots, coupling, callable/API pressure, or stream consistency before making a larger change.
-7. Use `enclosure workspace recipe --list`, `--show`, and `--dry-run` before generating recipe-based code.
+7. Use `enclosure workspace recipe --list` and `--show` to choose a recipe, then
+   `enclosure workspace recipe <name> <path> --shell` to preview the rendered
+   module shell before generating or hand-writing recipe-shaped code.
 8. After changes, rerun `enclosure health` and any focused command relevant to the files changed.
 
 ## Flexibility

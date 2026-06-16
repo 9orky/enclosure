@@ -15,6 +15,18 @@ Skipped {{ result.skipped_paths|length }} path(s).
 {% if not result.create_paths and not result.skipped_paths %}
 No changes.
 {% endif %}
+{% if tree_requested or content_requested %}
+
+Recipe shell.
+{% for file in result.preview_files %}
+- [{{ file.status.value }}] {{ file.target_path|present_path(result.project_root) }} <- {{ file.source_path|present_path(result.project_root) }}
+{% if content_requested %}
+```text
+{{ file.content.rstrip() }}
+```
+{% endif %}
+{% endfor %}
+{% endif %}
 {% if result.recipe_empty %}
 Warning: recipe '{{ result.recipe_name }}' is empty.
 {% endif %}

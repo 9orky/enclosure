@@ -27,6 +27,27 @@ def recipe_command(
             help="Preview what the recipe would create without writing files.",
         ),
     ],
+    shell_requested: Annotated[
+        bool,
+        typer.Option(
+            "--shell",
+            help="Preview the rendered recipe shell tree and content without writing files.",
+        ),
+    ],
+    tree_requested: Annotated[
+        bool,
+        typer.Option(
+            "--tree",
+            help="With --dry-run, show the rendered recipe shell file tree.",
+        ),
+    ],
+    content_requested: Annotated[
+        bool,
+        typer.Option(
+            "--content",
+            help="With --dry-run, show rendered file content.",
+        ),
+    ],
     raw_variables: Annotated[
         list[str] | None,
         typer.Option(
@@ -136,7 +157,7 @@ def recipe_command(
 
     target_path = Path(path)
 
-    if dry_run:
+    if dry_run or shell_requested:
         result = application.describe_recipe_generation(
             recipe_name,
             target_path,
@@ -149,6 +170,8 @@ def recipe_command(
             context={
                 "result": result,
                 "recipe_root_label": recipe_root_label,
+                "tree_requested": tree_requested or shell_requested,
+                "content_requested": content_requested or shell_requested,
             },
         )
         if not result["recipe_found"]:
@@ -179,6 +202,9 @@ ui.set_command_defaults(
         "recipe_name": None,
         "path": None,
         "dry_run": False,
+        "shell_requested": False,
+        "tree_requested": False,
+        "content_requested": False,
         "raw_variables": None,
         "list_requested": False,
         "show_requested": False,

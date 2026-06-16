@@ -216,6 +216,7 @@ class _RecipeGenerationService:
                 "recipe_empty": False,
                 "create_paths": (),
                 "skipped_paths": (),
+                "preview_files": (),
             }
         recipes_by_name = _recipes_by_name(self._repository.find_all())
 
@@ -226,7 +227,8 @@ class _RecipeGenerationService:
             target_path=target_path,
             variables=variables,
         )
-        create_paths, skipped_paths = self._plan_paths(rendered_files)
+        preview_files = self._plan_preview_files(rendered_files)
+        create_paths, skipped_paths = _paths_from_preview_files(preview_files)
         return {
             "recipe_name": recipe.name,
             "project_root": project_root,
@@ -234,6 +236,7 @@ class _RecipeGenerationService:
             "recipe_empty": recipe.is_empty(),
             "create_paths": create_paths,
             "skipped_paths": skipped_paths,
+            "preview_files": preview_files,
         }
 
     def generate(
@@ -338,22 +341,34 @@ class _RecipeGenerationService:
         self,
         rendered_files: tuple[domain.RenderedFile, ...],
     ) -> tuple[tuple[Path, ...], tuple[Path, ...]]:
-        create_paths: list[Path] = []
-        skipped_paths: list[Path] = []
+        return _paths_from_preview_files(self._plan_preview_files(rendered_files))
 
+    def _plan_preview_files(
+        self,
+        rendered_files: tuple[domain.RenderedFile, ...],
+    ) -> tuple[domain.RecipePreviewFile, ...]:
+        preview_files: list[domain.RecipePreviewFile] = []
         for rendered_file in rendered_files:
             target_path = rendered_file["target_path"]
             relative_path = rendered_file["relative_path"]
             if self._config.should_skip(relative_path):
-                skipped_paths.append(target_path)
-                continue
-            if target_path.exists():
-                skipped_paths.append(target_path)
-                continue
+                status = domain.RecipePreviewStatus.SKIP_CONFIG
+            elif target_path.exists():
+                status = domain.RecipePreviewStatus.SKIP_EXISTS
+            else:
+                status = domain.RecipePreviewStatus.CREATE
 
-            create_paths.append(target_path)
+            preview_files.append(
+                domain.RecipePreviewFile(
+                    source_path=rendered_file["source_path"],
+                    target_path=target_path,
+                    relative_path=relative_path,
+                    status=status,
+                    content=rendered_file["content"],
+                )
+            )
 
-        return tuple(create_paths), tuple(skipped_paths)
+        return tuple(preview_files)
 
     def drifts(self, project_root: Path) -> domain.RecipeDriftReport:
         project_root = Path(project_root).resolve()
@@ -592,6 +607,22 @@ def _sample_value_for(input_spec: domain.RecipeInputSpec) -> str:
     if input_spec.value_type == "dotted_name":
         return "sample"
     return "sample"
+
+
+def _paths_from_preview_files(
+    preview_files: tuple[domain.RecipePreviewFile, ...],
+) -> tuple[tuple[Path, ...], tuple[Path, ...]]:
+    create_paths = tuple(
+        preview_file.target_path
+        for preview_file in preview_files
+        if preview_file.status is domain.RecipePreviewStatus.CREATE
+    )
+    skipped_paths = tuple(
+        preview_file.target_path
+        for preview_file in preview_files
+        if preview_file.status is not domain.RecipePreviewStatus.CREATE
+    )
+    return create_paths, skipped_paths
 
 
 def _recipes_by_name(recipes: tuple[domain.Recipe, ...]) -> dict[str, domain.Recipe]:
@@ -1072,5 +1103,7 @@ RecipeCheckViolation = domain.RecipeCheckViolation
 RecipeDrift = domain.RecipeDrift
 RecipeDriftReport = domain.RecipeDriftReport
 RecipeGenerationReport = domain.RecipeGenerationReport
+RecipePreviewFile = domain.RecipePreviewFile
+RecipePreviewStatus = domain.RecipePreviewStatus
 RecipeSummary = domain.RecipeSummary
 parse_variables = domain.parse_variables

@@ -16,6 +16,10 @@ Use this command to inspect, validate, preview, and render local recipes. Recipe
 - Summary shows required inputs and planned targets.
 - Check validates recipe metadata and sample rendering.
 - Dry run shows what would be created or skipped without writing changes.
+- Shell preview shows the rendered module shell and skeleton content without
+  writing changes.
+- Dry run with `--tree --content` shows the rendered module shell and skeleton
+  content without writing changes.
 - Recipes may compose reusable `fragment` recipes through `includes`.
 
 ## Examples
@@ -31,5 +35,7 @@ Use this command to inspect, validate, preview, and render local recipes. Recipe
 - Prefer a local recipe over inventing scaffolding.
 - Prefer fixed recipe fragments over one-off archetypes for slot combinations.
 - Inspect a recipe before rendering it.
+- Use `--shell` before module implementation when the recipe should act as the
+  local convention oracle.
 - Use variables explicitly and keep generated names aligned with the target module.
 - Run check or dry run before writing generated files.

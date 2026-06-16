@@ -34,6 +34,7 @@ def test_workspace_recipe_cli_lists_shows_checks_dry_runs_and_generates_recipe(
     assert "component" in list_result.output
     assert show_result.exit_code == 0, show_result.output
     assert "{{ target.path }}/{{ component.snake }}.py" in show_result.output
+    assert "enclosure workspace recipe component <path> --shell" in show_result.output
     assert check_result.exit_code == 0, check_result.output
 
     dry_run_result = cli_runner.invoke(
@@ -51,6 +52,67 @@ def test_workspace_recipe_cli_lists_shows_checks_dry_runs_and_generates_recipe(
 
     assert dry_run_result.exit_code == 0, dry_run_result.output
     assert "generated/sample.py" in dry_run_result.output
+    assert not generated_file.exists()
+
+    tree_result = cli_runner.invoke(
+        app,
+        [
+            "workspace",
+            "recipe",
+            "component",
+            "generated",
+            "--dry-run",
+            "--tree",
+            "--var",
+            "component=sample",
+        ],
+    )
+
+    assert tree_result.exit_code == 0, tree_result.output
+    assert "Recipe shell." in tree_result.output
+    assert "- [create] generated/sample.py" in tree_result.output
+    assert ".enclosure/recipes/component/component.py.tmpl" in tree_result.output
+    assert 'class Sample:\n    name = "sample"' not in tree_result.output
+    assert not generated_file.exists()
+
+    content_result = cli_runner.invoke(
+        app,
+        [
+            "workspace",
+            "recipe",
+            "component",
+            "generated",
+            "--dry-run",
+            "--content",
+            "--var",
+            "component=sample",
+        ],
+    )
+
+    assert content_result.exit_code == 0, content_result.output
+    assert "Recipe shell." in content_result.output
+    assert "```text" in content_result.output
+    assert 'class Sample:\n    name = "sample"' in content_result.output
+    assert not generated_file.exists()
+
+    shell_result = cli_runner.invoke(
+        app,
+        [
+            "workspace",
+            "recipe",
+            "component",
+            "generated",
+            "--shell",
+            "--var",
+            "component=sample",
+        ],
+    )
+
+    assert shell_result.exit_code == 0, shell_result.output
+    assert "Dry run for recipe 'component'." in shell_result.output
+    assert "Recipe shell." in shell_result.output
+    assert "- [create] generated/sample.py" in shell_result.output
+    assert 'class Sample:\n    name = "sample"' in shell_result.output
     assert not generated_file.exists()
 
     generate_result = cli_runner.invoke(

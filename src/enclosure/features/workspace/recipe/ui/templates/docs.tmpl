@@ -14,6 +14,10 @@ Use `enclosure workspace recipe` to inspect, validate, preview, and render local
 - List available recipes before choosing one.
 - Show a recipe before rendering it.
 - Use dry runs to review target files before writing.
+- Use `--shell` when an agent needs the rendered module shell as a convention
+  oracle before implementation.
+- Use `--dry-run --tree` or `--dry-run --content` only when partial shell
+  output is enough.
 - Run recipe checks after editing recipe metadata or templates.
 - Compose reusable `fragment` recipes with `includes` instead of creating a new
   archetype for every slot combination.
