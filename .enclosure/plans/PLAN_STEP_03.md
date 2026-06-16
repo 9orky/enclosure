@@ -1,57 +1,88 @@
-# Step 03: Guidance Sync Calibration
+# Step 03: Workflow Integration
 
 ## Implementation Tree
 
 ```text
-.enclosure/
-  plans/
-    PLAN.md
-    PLAN_STEP_03.md
-  rules/shared/structure/MODULE_LADDER.md
 src/enclosure/
+  features/
+    health/
+      report/
+        domain.py
+          class HealthReport
+          def HealthReport.to_json_dict(...) -> dict[str, object]
+        ui/
+          cli.py
+            def health_command(...) -> None
+    workspace/
+      health/
+        domain.py
+          class WorkspaceHealthReport
+          def WorkspaceHealthReport.to_json_dict(...) -> dict[str, object]
+        ui/
+          cli.py
+            def health_command(...) -> None
+      rules/
+        ui/
+          cli.py
+            def rules_command(...) -> None
+          templates/
+            docs.tmpl
+            llm.tmpl
+      recipe/
+        ui/
+          cli.py
+            def recipe_command(...) -> None
+          templates/
+            docs.tmpl
+            llm.tmpl
   resources/
     AGENTS.md
-    rules/shared/structure/MODULE_LADDER.md
+    copilot-instructions.md
   templates/
     llm.tmpl
-  features/workspace/sync/
-    application.py
-      update_project()
-    domain.py
-      Workspace.plan_update()
-    infrastructure.py
-      FileRepository.load(...)
-tests/ui/
-  test_command_docs.py
+docs/
+  modules/
+    health-report.md
+    workspace-health.md
+    workspace-rules.md
+    workspace-recipe.md
+tests/
+  ui/
+    test_command_docs.py
+      def test_documented_enclosure_commands_resolve(...) -> None
+      def test_guidance_enclosure_commands_resolve(...) -> None
+      def test_workflow_integration_commands_are_documented(...) -> None
 ```
 
 ## Goal
 
-Verify upgraded workspaces learn about agent-facing recipe shell preview after sync/update through the guidance surfaces agents already read.
+Make enclosure feedback usable in CI, PR review, editor surfaces, and agent handoffs.
 
 ## Step Contract
 
-- Inputs: root `--llm` guidance, packaged shared rules, workspace sync update behavior, command docs validation.
-- Outputs: synced guidance that advertises `enclosure workspace recipe <name> <path> --shell` without requiring agents to infer granular flag combinations.
-- Scope: guidance discoverability and sync-carried packaged resources.
-- Out of scope: changing sync overwrite policy, adding new sync commands, or editing local project config.
-- Owner: packaged resources under `src/enclosure/resources` and guidance templates under `src/enclosure/templates`.
-- Dependency direction: packaged resources flow into `.enclosure/` through sync; local rules narrow shared guidance after update.
+- Inputs: current CLI output options, generated assistant instructions, command docs, health/rules/recipe checks, and repository CI expectations.
+- Outputs: stable automation path for core checks, documented CI examples, and synced agent instructions that name pre-change and post-change commands.
+- Scope: command docs, generated guidance, existing JSON/report output paths, and examples for automation.
+- Out of scope: hosted integrations, GitHub API posting, editor plugin implementation, or new CI service-specific behavior.
+- Owner: CLI output formats, generated instructions, and automation documentation.
+- Dependency direction: automation examples consume stable command seams; command seams do not depend on one CI provider.
 
 ## Execution
 
-1. Confirm root `enclosure --llm` guidance names `--shell` in the recipe workflow.
-2. Confirm packaged shared `MODULE_LADDER.md` names `--shell`.
-3. Confirm current workspace `.enclosure/rules/shared/structure/MODULE_LADDER.md` matches the packaged guidance when self-calibrating this repo.
-4. Validate command examples through the command-docs test surface.
-5. Stop if a synced workspace would only discover `--shell` through low-level `--help`.
+1. Inventory which core commands already support human-readable and machine-readable output.
+2. Decide the first stable workflow path for CI and agent handoff using existing commands where possible.
+3. Update command docs and generated guidance to show pre-change route discovery and post-change verification.
+4. Add examples for `enclosure workspace rules`, `enclosure workspace recipe --check`, and `enclosure health` as the default automation loop.
+5. Extend command-docs tests so workflow examples remain valid.
+6. Stop if a workflow example requires an output format or option that is not implemented; create a follow-up implementation step instead of documenting it.
 
 ## Verification
 
-- Run `pytest tests/ui/test_command_docs.py`.
+- Run `uv run pytest tests/ui/test_command_docs.py`.
 - Run `enclosure workspace rules`.
-- If sync behavior changes later, run focused workspace sync functional tests before accepting the phase.
+- Run `enclosure workspace recipe --check`.
+- Run `enclosure health`.
 
 ## Completion
 
-Incomplete until the root LLM route, packaged module-ladder rule, and recipe command docs all expose `--shell` as the simple agent path.
+Complete when docs and generated instructions give teams a validated automation path for checks before review and a clear agent handoff loop after changes.

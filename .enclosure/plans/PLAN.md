@@ -1,4 +1,4 @@
-# Enclosure Self-Calibration Plan
+# Enclosure Product Improvement Plan
 
 ## File Tree
 
@@ -7,87 +7,90 @@
   enclosure.yaml
   plans/
     PLAN.md
-  recipes/
+    PLAN_STEP_01.md
+    PLAN_STEP_02.md
+    PLAN_STEP_03.md
   rules/
-    INDEX.md
     local/
     shared/
 src/enclosure/
   features/
-    architecture/
     health/
     workspace/
   resources/
+  templates/
 tests/
+docs/
 ```
 
 ## Goal
 
-Use enclosure to calibrate this repository against its own contract before further feature work. The work should prove that the current rules, recipes, generated guidance, and health checks give an agent enough signal to discover the right route, preview recipe-shaped modules, detect drift, and verify changes without relying on memory or ad hoc conventions.
+Make `enclosure` a clearer product by turning the current contract-check loop into a guided, actionable, and workflow-integrated experience.
+
+The plan covers three product improvements:
+
+- sharper first-run onboarding;
+- more actionable health output;
+- better workflow integration.
+
+## Strategic Model
+
+`enclosure` should feel less like a toolbox of architecture commands and more like a repeatable operating loop for agentic coding:
+
+1. start from the project contract;
+2. discover the correct route;
+3. make or review a change;
+4. get concrete architectural feedback;
+5. carry the result into CI, review, and assistant instructions.
+
+The product should keep the repo-local contract as the source of truth. Improvements should explain and expose that contract, not replace it with a hosted workflow or hidden policy engine.
 
 ## Execution Frame
 
-- Owner: workspace contract and recipe/tooling surfaces in `src/enclosure/features/workspace`.
-- Public seam: CLI commands and generated `.enclosure/` contract surfaces.
-- Direction: rules and recipes guide agents; implementation conforms to them; failed checks trigger implementation fixes before contract changes.
-- Shape: prefer existing compact module or declared recipe shapes; do not introduce a new module unless the calibration proves one is needed.
-- Verification: highest practical seam is the CLI plus workspace/rule/recipe/health checks.
+- Owner: product-facing CLI, generated guidance, health reports, and docs.
+- Public seam: `enclosure --llm`, `enclosure workspace sync`, `enclosure workspace rules`, `enclosure workspace recipe`, `enclosure health`, and CI-friendly command output.
+- Direction: workspace contract and rules remain source input; commands and guidance render that contract into user-facing workflows.
+- Shape: prefer changes inside existing compact feature modules under `src/enclosure/features`; add new modules only if existing ownership cannot carry the work.
+- Verification: highest practical seam is CLI output plus focused tests for command docs, health reports, and workspace sync behavior.
 
 ## Phases
 
-### Phase 1: Route And Contract Calibration
+### Phase 1: First-Run Onboarding
 
-- Objective: confirm the minimal rule route an agent should read before editing this repository.
-- Owner: `.enclosure/rules` and `.enclosure/enclosure.yaml`.
-- Inputs: shared/local execution rules, structure rules, architecture contract, current AGENTS instruction.
-- Outputs: confirmed route receipt pattern and any explicit gaps in first-read guidance.
-- Acceptance: route names files read, reason, stop point, focused checks, and post-change `enclosure health`.
+- Objective: make a new user or agent understand the first useful path within one short command sequence.
+- Owner: workspace sync, root guidance templates, README quick start, and command docs.
+- Inputs: current README quick start, `enclosure --llm`, generated `AGENTS.md`, workspace sync init/update behavior, recipe preview guidance, and existing command docs tests.
+- Outputs: a guided first-run path that shows how to initialize, inspect, draft or refine the contract, preview recipes, run health, and choose the next action.
+- Acceptance: docs and generated guidance name one primary onboarding path; command examples validate; a user can distinguish initialization, inspection, recipe preview, and health checks without inferring flag combinations.
 
-### Phase 2: Recipe Shell Calibration
+### Phase 2: Actionable Health Output
 
-- Objective: prove recipe shell preview is discoverable and useful as the module-shape oracle.
-- Owner: `workspace/recipe` command and `.enclosure/recipes`.
-- Inputs: `workspace.recipe.roles_map`, recipe manifests, `--show`, `--shell`, and `--drifts`.
-- Outputs: documented command path for agents to list, inspect, shell-preview, and drift-check recipe-shaped modules.
-- Acceptance: `enclosure workspace recipe --show` points to `--shell`; `--shell` displays rendered tree and skeleton content without writing files; existing drift remains mechanical and named.
+- Objective: turn health findings into prioritized next actions instead of raw attention signals.
+- Owner: health report surfaces and the architecture/workspace reports they aggregate.
+- Inputs: `enclosure health`, `enclosure architecture health`, recipe drift output, boundary and shape reports, pressure/coherence/clusters findings, and current health tests.
+- Outputs: health summaries that separate blockers, baseline drift, attention findings, and suggested remediation commands.
+- Acceptance: health output identifies whether a finding should block review, be migrated later, or be investigated; known drift can be named without suppressing violations; tests cover at least one blocker, one drift item, and one attention-level finding.
 
-### Phase 3: Guidance Sync Calibration
+### Phase 3: Workflow Integration
 
-- Objective: verify upgraded workspaces learn about new agent-facing commands after sync/update.
-- Owner: packaged resources under `src/enclosure/resources` and generated instruction/guidance templates.
-- Inputs: root `--llm`, packaged shared rules, workspace sync update behavior.
-- Outputs: synced guidance that advertises the simple command path instead of requiring agents to infer flag combinations.
-- Acceptance: `enclosure workspace sync update` would carry the relevant rule guidance; command examples pass docs validation.
-
-### Phase 4: Health And Drift Reconciliation
-
-- Objective: separate actionable regressions from known baseline attention findings.
-- Owner: workspace health and architecture health reports.
-- Inputs: `enclosure workspace rules`, `enclosure workspace recipe --check`, `enclosure workspace recipe --drifts`, `enclosure health`.
-- Outputs: concise reconciliation of pass/fail checks, known recipe drift, and attention-level architecture findings.
-- Acceptance: rules and recipes pass; boundaries and shape have 0 violations; known drift or attention findings are reported without weakening the contract.
-
-### Phase 5: Codification Decision
-
-- Objective: decide whether calibration discoveries should become durable local rules, docs, recipes, or no change.
-- Owner: local rule supplements and packaged guidance only when justified.
-- Inputs: outcomes from phases 1-4.
-- Outputs: explicit keep/change/defer decisions for each discovery.
-- Acceptance: durable facts are codified narrowly under the matching local/shared anchor; one-off observations stay in the plan or final report.
+- Objective: make enclosure feedback usable in CI, PR review, editor surfaces, and agent handoffs.
+- Owner: CLI output formats, sync-carried instructions, and documentation for automation.
+- Inputs: current CLI command surfaces, command docs, generated assistant instructions, health/rules/recipe checks, and repository CI expectations.
+- Outputs: machine-readable or review-friendly output for core checks, documented CI command examples, and synced instructions that tell agents exactly what to run before and after changes.
+- Acceptance: CI examples run through docs validation; command output has a stable automation path; generated agent instructions include pre-change route discovery and post-change health verification.
 
 ## Acceptance
 
-- `.enclosure/plans/PLAN.md` exists and remains phase-level only.
-- No `PLAN_STEP_0X.md` files exist before phase approval.
-- Focused checks run after plan creation:
+- `.enclosure/plans/PLAN.md` remains phase-level.
+- Approved phases have matching `PLAN_STEP_0X.md` files.
+- Each phase names objective, owner, inputs, outputs, and acceptance.
+- The plan keeps implementation detail out of the big picture.
+- Focused checks after this planning change:
   - `enclosure workspace rules`
-  - `enclosure workspace recipe --check`
   - `enclosure health`
-- Any check failure is treated as signal; the contract is not weakened to manufacture a pass.
-- The final calibration report names route, owner, seam, direction, shape, verification, drift, and remaining open questions.
 
 ## Open Questions
 
-- Should known recipe drift in `workspace/plan`, `workspace/recipe`, and `workspace/sync` become an explicit migration target or remain accepted legacy shape for now?
-- Should `--shell` be promoted beyond recipe guidance into the top-level assistant instruction file, or is root `--llm` plus module-ladder guidance enough?
-- Should self-calibration produce reusable local execution rules, or should it remain a one-time plan until repeated by another module change?
+- Should onboarding become a new command, a documented command sequence, or enhanced `--llm` guidance first?
+- Should actionable health suggestions be plain text only, or should they share a structured model with future JSON output?
+- Which workflow integration should ship first: CI examples, JSON output, PR annotations, or editor-friendly summaries?

@@ -1,55 +1,69 @@
-# Step 01: Route And Contract Calibration
+# Step 01: First-Run Onboarding
 
 ## Implementation Tree
 
 ```text
-.enclosure/
-  AGENTS.md
-  enclosure.yaml
-  plans/
-    PLAN.md
-    PLAN_STEP_01.md
-  rules/
-    INDEX.md
-    shared/execution/CALIBRATION.md
-    shared/execution/BIG_PICTURE.md
-    shared/execution/STEP.md
-    local/INDEX.md
-    local/execution/BIG_PICTURE.md
-    local/execution/STEP.md
+README.md
+  Quick Start
 src/enclosure/
-  templates/llm.tmpl
-  resources/AGENTS.md
+  resources/
+    AGENTS.md
+    copilot-instructions.md
+  templates/
+    llm.tmpl
+    docs.tmpl
+  features/
+    workspace/
+      sync/
+        ui/
+          templates/
+            docs.tmpl
+            llm.tmpl
+      recipe/
+        ui/
+          templates/
+            docs.tmpl
+            llm.tmpl
+      rules/
+        ui/
+          templates/
+            docs.tmpl
+            llm.tmpl
+tests/
+  ui/
+    test_command_docs.py
+      def test_documented_enclosure_commands_resolve(...) -> None
+      def test_guidance_enclosure_commands_resolve(...) -> None
+      def test_first_run_onboarding_path_is_documented(...) -> None
 ```
 
 ## Goal
 
-Confirm the minimal rule route an agent should read before editing this repository and record the route receipt pattern expected by the contract.
+Make the first useful `enclosure` path obvious for a new user or coding agent.
 
 ## Step Contract
 
-- Inputs: `.enclosure/AGENTS.md`, `.enclosure/enclosure.yaml`, shared/local execution rules, and any task-specific structure or architecture rules reached by routing.
-- Outputs: confirmed route receipt for self-calibration and a list of first-read guidance gaps, if any.
-- Scope: discovery and contract interpretation only.
-- Out of scope: editing implementation code, changing rules, changing recipes, or weakening checks.
-- Owner: `.enclosure/rules` and `.enclosure/enclosure.yaml`.
-- Dependency direction: guidance and config constrain implementation; implementation does not redefine the contract during this step.
+- Inputs: current README quick start, `enclosure --llm`, generated agent instructions, workspace sync guidance, recipe preview guidance, rule route guidance, and command docs validation.
+- Outputs: one primary onboarding path that covers initialization, contract inspection, route discovery, recipe preview, health checks, and next-action selection.
+- Scope: documentation, generated guidance, and command examples for the first-run loop.
+- Out of scope: new onboarding command, sync overwrite policy changes, health semantics, or recipe behavior changes.
+- Owner: workspace sync guidance, root guidance templates, README quick start, and command docs.
+- Dependency direction: generated guidance consumes the existing CLI contract; docs do not invent commands that the CLI cannot validate.
 
 ## Execution
 
-1. Start in `.enclosure/` and read `rules/INDEX.md`.
-2. Route through shared execution guidance to calibration and step rules.
-3. Read local execution supplements after the shared branch is in scope.
-4. Inspect `enclosure.yaml` for architecture root, tags, layer direction, recipes, and verification commands.
-5. Emit the route receipt before any later implementation step: files read, reason, stop point, focused checks, and post-change `enclosure health`.
-6. Stop if ownership, dependency direction, or contract authority is unclear.
+1. Compare README quick start, `enclosure --llm`, generated `AGENTS.md`, and workspace command docs for conflicting first-run paths.
+2. Define one canonical first-run sequence from repository root: sync/init, inspect contract, route rules, preview recipes, run health, and choose the next task.
+3. Update README and generated guidance templates so human docs and agent-facing guidance tell the same story.
+4. Add or extend command-docs tests so every command in the onboarding sequence resolves.
+5. Stop if the desired onboarding path needs CLI behavior that does not exist yet; record that as a later implementation decision instead of documenting a false path.
 
 ## Verification
 
+- Run `uv run pytest tests/ui/test_command_docs.py`.
 - Run `enclosure workspace rules`.
-- Confirm rule schema reports 0 documents with issues.
-- Confirm the route receipt names owner, seam, direction, shape, and verification.
+- Run `enclosure health`.
 
 ## Completion
 
-Incomplete until the route receipt is recorded in the calibration report and any first-read gaps are either named for later phases or explicitly marked as absent.
+Complete when README, `enclosure --llm`, and generated agent guidance expose the same first-run loop and the documented commands validate.
