@@ -9,6 +9,7 @@ Use `enclosure workspace recipe` to inspect, validate, preview, and render recip
 - During first-run setup before creating project-shaped files.
 - Before hand-writing a module shape that may already have a recipe.
 - After changing recipe manifests or templates.
+- Between rule validation and root health in automation.
 - Before writing generated scaffolding.
 - When checking modules against their mapped recipe role.
 
@@ -27,4 +28,5 @@ Use `enclosure workspace recipe` to inspect, validate, preview, and render recip
 
 - `enclosure workspace recipe --help`
 - `enclosure workspace recipe --list`
+- `enclosure workspace recipe --check`
 - `enclosure workspace rules --docs`

@@ -4,25 +4,33 @@
 
 ## Everyday Flow
 
-1. Run `enclosure workspace sync init` when `.enclosure/` is missing.
-2. Run `enclosure --llm` to read the agent operating loop.
-3. Run `enclosure workspace rules route --task calibration` for the first route receipt.
-4. Read `.enclosure/enclosure.yaml` and `.enclosure/rules/` before edits.
-5. Use `enclosure workspace recipe --list`, `enclosure workspace recipe <name> --show`, and `enclosure workspace recipe <name> <path> --shell` before creating project-shaped files.
-6. Use `enclosure health` for the broad preflight.
-7. Use `enclosure workspace health` or `enclosure architecture health` for drilldown.
+1. If `.enclosure/` is missing, run `enclosure workspace sync init`.
+2. Run `enclosure --llm`, then `enclosure workspace rules route --task calibration`.
+3. Read `.enclosure/enclosure.yaml`, `.enclosure/rules/INDEX.md`, and route files.
+4. Preview shaped files with `enclosure workspace recipe --list`, `enclosure workspace recipe <name> --show`, and `enclosure workspace recipe <name> <path> --shell`.
+5. Run `enclosure health`, then checks named by the report.
+
+## Automation Loop
+
+Use this CI, PR, and agent handoff loop:
+
+1. `enclosure workspace rules`
+2. `enclosure workspace recipe --check`
+3. `enclosure health`
+
+Stop on the first nonzero exit and attach output.
 
 ## Documentation Surfaces
 
 - `enclosure --help`: syntax.
-- `enclosure --docs`: human workflow notes.
-- `enclosure --llm`: agent operating guidance.
+- `enclosure --docs`: human notes.
+- `enclosure --llm`: agent guide.
 
 ## Main Command Groups
 
-- `health`: broad workspace and architecture preflight.
-- `workspace`: contract sync, rules, recipes, and workspace checks.
-- `architecture`: boundaries, shape, ownership, coupling, and pressure.
+- `health`: broad preflight.
+- `workspace`: sync, rules, recipes, and checks.
+- `architecture`: boundaries, shape, coupling, and pressure.
 
 ## Related Commands
 

@@ -3,20 +3,22 @@
 ## Agent Operating Loop
 
 1. If `.enclosure/` is missing, run `enclosure workspace sync init`.
-2. Run `enclosure --llm` for the current agent guide.
-3. Run `enclosure workspace rules route --task calibration` for the first route receipt.
-4. Read `.enclosure/enclosure.yaml`, `.enclosure/rules/INDEX.md`, and local rules.
-5. Confirm files read, reason, stop point, checks, and post-change `enclosure health`.
-6. Use `enclosure workspace recipe --list`, `enclosure workspace recipe <name> --show`, and `enclosure workspace recipe <name> <path> --shell` before creating recipe-shaped files.
-7. Use `enclosure health` for broad preflight.
-8. Use `enclosure workspace health` or `enclosure architecture health` for drilldown.
-9. Use `enclosure workspace rules`, `enclosure workspace recipe --check`, `enclosure architecture boundaries`, and `enclosure architecture shape` as focused checks.
-10. After changes, rerun `enclosure health` and relevant focused checks.
+2. Run `enclosure --llm`, then `enclosure workspace rules route --task calibration`.
+3. Read `.enclosure/enclosure.yaml`, `.enclosure/rules/INDEX.md`, and route files.
+4. Confirm files read, reason, stop point, checks, and post-change `enclosure health`.
+5. Before shaped files, use `enclosure workspace recipe --list`, `enclosure workspace recipe <name> --show`, and `enclosure workspace recipe <name> <path> --shell`.
+6. Use `enclosure health`, then local health for drilldown.
+7. Use `enclosure workspace rules`, `enclosure workspace recipe --check`, `enclosure architecture boundaries`, and `enclosure architecture shape` as focused checks.
+8. After changes, rerun health and focused checks.
+
+## Automation Loop
+
+For CI, review, or handoff run `enclosure workspace rules`, `enclosure workspace recipe --check`, then `enclosure health`; stop on first failure.
 
 ## Flexibility
 
 - `architecture.root`, `exclusions`, `shape`, `boundaries`, and `flow` define checks.
-- `workspace.rules.local`, `workspace.guidance`, and report sections tune limits.
+- `workspace.rules.local` and `workspace.guidance` tune limits.
 
 ```yaml
 {{ config_yaml }}

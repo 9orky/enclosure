@@ -6,18 +6,20 @@ Use `enclosure health` as the broad preflight for the current repository.
 
 ## Common Workflows
 
-- Start with `enclosure health` before architecture-sensitive work.
-- Use `enclosure workspace health` when workspace contract, rule, or recipe findings appear.
-- Use `enclosure architecture health` when code architecture findings appear.
-- Keep the health ladder simple: root rollup first, then one local health command, then a focused command only when needed.
+- Start with `enclosure health` before sensitive work.
+- Use `enclosure workspace health` for contract, rule, or recipe findings.
+- Use `enclosure architecture health` for code architecture findings.
+- In CI or handoff, run it after `enclosure workspace rules` and `enclosure workspace recipe --check`.
+- Health ladder: root rollup, one local health command, then focused command.
 
 ## Reading Results
 
 - Use `--v` for compact status, `--vv` for the standard report, and `--vvv` for expanded lower-level detail.
-- Root health collects workspace and architecture health without replacing their local detail reports.
-- Workspace and architecture sections show the same categories that their local health commands expand.
-- Error findings are blocking and make the command exit nonzero.
+- Root health collects workspace and architecture health.
+- Sections show categories their local health commands expand.
+- Error findings are blocking and exit nonzero.
 - Attention findings provide context but do not block by themselves.
+- Treat this as the final enclosure check, not a replacement for tests.
 
 ## Related Commands
 

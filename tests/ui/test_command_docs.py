@@ -163,6 +163,58 @@ class CommandDocsTest(unittest.TestCase):
             with self.subTest(command=command, source="llm.tmpl"):
                 self.assertIn(command, llm_text)
 
+    def test_workflow_integration_commands_are_documented(self) -> None:
+        root_sources = (
+            TEMPLATE_ROOT / "templates" / "docs.tmpl",
+            TEMPLATE_ROOT / "templates" / "llm.tmpl",
+        )
+        workflow_commands = (
+            "enclosure workspace rules route --task calibration",
+            "enclosure workspace rules",
+            "enclosure workspace recipe --check",
+            "enclosure health",
+        )
+
+        for source_path in root_sources:
+            text = source_path.read_text(encoding="utf-8")
+            for command in workflow_commands:
+                with self.subTest(
+                    command=command,
+                    source=str(source_path.relative_to(PROJECT_ROOT)),
+                ):
+                    self.assertIn(command, text)
+
+        feature_sources = {
+            TEMPLATE_ROOT
+            / "features"
+            / "workspace"
+            / "rules"
+            / "ui"
+            / "templates"
+            / "docs.tmpl": "enclosure workspace rules",
+            TEMPLATE_ROOT
+            / "features"
+            / "workspace"
+            / "recipe"
+            / "ui"
+            / "templates"
+            / "docs.tmpl": "enclosure workspace recipe --check",
+            TEMPLATE_ROOT
+            / "features"
+            / "health"
+            / "report"
+            / "ui"
+            / "templates"
+            / "docs.tmpl": "enclosure health",
+        }
+
+        for source_path, command in feature_sources.items():
+            with self.subTest(
+                command=command,
+                source=str(source_path.relative_to(PROJECT_ROOT)),
+            ):
+                self.assertIn(command, source_path.read_text(encoding="utf-8"))
+
     def test_agent_instruction_assets_stay_minimal(self) -> None:
         instruction_paths = (
             PROJECT_ROOT / "AGENTS.md",

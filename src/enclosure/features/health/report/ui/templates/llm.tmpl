@@ -1,18 +1,19 @@
 # Enclosure Health LLM Guide
 
-Use this command as the default preflight and post-change verification for repositories with an enclosure contract.
+Use this as the default preflight and post-change verification.
 
 ## When To Run
 
 - Before making changes, after reading `.enclosure/` guidance.
 - After changes, before summarizing results to the user.
-- Whenever you need one command that moves from workspace contract health to architecture health.
+- When one command should cover workspace and architecture health.
+- Last in automation after `enclosure workspace rules` and `enclosure workspace recipe --check`.
 
 ## How To Interpret
 
-- Use `--v` for quick status, `--vv` for the normal preflight, and `--vvv` when you need lower-level detail before choosing a focused command.
-- Treat this as the root rollup. Use local health commands for detail: `enclosure workspace health` and `enclosure architecture health`.
-- Error findings are blocking; name the focused follow-up command in your response.
+- Use `--v` for quick status, `--vv` for normal preflight, and `--vvv` for detail.
+- Treat this as root rollup. Use `enclosure workspace health` and `enclosure architecture health` for detail.
+- Error findings are blocking; name the follow-up command.
 - Workspace findings point to `enclosure workspace health`, `enclosure workspace rules`, or `enclosure workspace recipe --check`.
-- Architecture findings point to `enclosure architecture health`, then boundaries, shape, map, clusters, pressure, or coherence as needed.
-- Passing root health does not replace relevant tests; it confirms the enclosure contract and architecture preflight.
+- Architecture findings point to `enclosure architecture health`, then focused checks.
+- Passing root health does not replace relevant tests.

@@ -2,36 +2,35 @@
 
 ## Purpose
 
-Validate rule docs: metadata, shape, references, routes, and size.
-
-Use route before sensitive edits.
+Validate rule docs, references, routes, and size.
 
 ## When To Run
 
 - First run: `enclosure workspace rules route --task calibration`.
 - After rule or reference changes.
-- Before an agent confirms rules read.
+- Before confirming rule reads.
+- First in automation before recipes and health.
 - When `--path` or `--task` should infer tags.
 
 ## How To Read The Result
 
-- Passing output means documents satisfy schema policy.
+- Passing output means docs satisfy policy.
 - Findings mean the route is unsafe.
 - Local content findings exceeded configured size.
-- Route output is a checklist plus receipt template.
+- Route output is a checklist and receipt.
 
 ## Examples
 
-- Fix failed references to match discovered targets.
-- Add missing sections only for real guidance.
-- Keep shared guidance reusable and local guidance project-specific.
+- Fix failed references.
+- Add sections only for real guidance.
+- Keep shared guidance reusable and local guidance narrow.
 - If no tag is obvious, route with `--path` or `--task`.
-- Use `--task calibration` while the contract needs discovery.
-- Route discovery comes before recipe preview or edits.
+- Use `--task calibration` during discovery.
+- Route before recipe preview and edits.
 
 ## Agent Tips
 
 - Keep rules navigable and narrow.
 - Do not copy shared policy into local rules.
 - Confirm files read, reason, stop point, checks, and `enclosure health`.
-- Rerun `enclosure workspace rules` and `enclosure health` after rule edits.
+- Rerun `enclosure workspace rules`, `enclosure workspace recipe --check`, and `enclosure health`.

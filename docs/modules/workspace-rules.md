@@ -3,28 +3,31 @@
 # Workspace Rules Docs
 
 Use `enclosure workspace rules` to validate rule markdown.
-Use `enclosure workspace rules route --tag TAG`, `--path PATH`, or `--task TASK` to print a reading route and receipt template.
+Use route options to print a reading route and receipt.
 
 ## When To Use It
 
 - During first-run setup before editing code.
 - After editing local rule documents.
-- After refreshing packaged shared rules.
+- After shared rule refresh.
 - After changing rule references.
-- Before agent work that needs a confirmable route.
+- Before agent work needing a route.
+- As the first check in CI, PR review, or agent handoff.
 - When path or task context should choose tags.
 
 ## How To Respond
 
-- Fix parse errors before interpreting other findings.
-- Keep local rules project-specific and narrow.
+- Fix parse errors first.
+- Keep local rules narrow.
 - Keep shared guidance reusable.
-- Update navigation links when rule files or headings change.
-- Ask agents to confirm the route receipt before editing code.
+- Update links when files or headings change.
+- Ask agents to confirm the route before edits.
 - Prefer `--path` or `--task` over judgment.
-- Use the first-run route as the receipt baseline, then narrow it for the actual files being changed.
+- Use first-run route as the baseline, then narrow for changed files.
+- Pair this with `enclosure workspace recipe --check` and `enclosure health`.
 
 ## Related Commands
 
+- `enclosure workspace rules`
 - `enclosure workspace rules route --task calibration`
 - `enclosure workspace rules route --path src/enclosure/features/workspace/rules/domain/graph.py`

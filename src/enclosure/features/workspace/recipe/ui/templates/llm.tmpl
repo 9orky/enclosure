@@ -2,35 +2,36 @@
 
 ## Purpose
 
-Inspect, validate, preview, and render local recipes.
+Inspect, validate, preview, and render recipes.
 
 ## When To Run
 
-- During first-run setup before creating files.
-- Before hand-writing shape.
-- When validating recipe changes.
+- Before creating files.
+- Before hand-writing shaped files.
+- When validating recipes.
+- Between `enclosure workspace rules` and `enclosure health`.
 
 ## How To Read The Result
 
 - Listing shows available recipes.
 - Summary shows inputs and targets.
 - Check validates metadata and rendering.
-- Dry run shows create/skip status without writing.
-- Shell preview shows rendered shell content.
-- Recipes may compose `fragment` recipes through `includes`.
+- Dry run shows create/skip status.
+- Shell preview shows rendered content.
+- Recipes may compose `fragment` recipes.
 
 ## Examples
 
-- First-run path: `enclosure workspace recipe --list`, `enclosure workspace recipe <name> --show`, then `enclosure workspace recipe <name> <path> --shell`.
-- Inspect recipes before creating files manually.
-- Keep module-to-role ownership in `workspace.recipe.roles_map`.
+- First run: `enclosure workspace recipe --list`, `enclosure workspace recipe <name> --show`, then `enclosure workspace recipe <name> <path> --shell`.
+- Inspect recipes before creating files.
+- Keep ownership in `workspace.recipe.roles_map`.
 - Provide required inputs as variables.
-- If dry run skips a target, preserve, rename, or edit manually.
-- If check fails, fix the recipe before attempting generation.
+- If dry run skips a target, preserve or edit manually.
+- If check fails, fix the recipe before generation.
 
 ## Agent Tips
 
-- Prefer a local recipe over inventing scaffolding.
+- Prefer local recipes over inventing scaffolding.
 - Inspect a recipe before rendering it.
-- Use `--shell` when the recipe is the convention oracle.
-- Run check or dry run before writing generated files.
+- Use `--shell` as the convention oracle.
+- Run `enclosure workspace recipe --check` or dry run before writing.
