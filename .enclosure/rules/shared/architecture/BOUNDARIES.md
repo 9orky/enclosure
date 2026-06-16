@@ -28,7 +28,19 @@ escalation_paths:
 - Keep helpers, policies, and intermediate models private.
 - Do not widen APIs to avoid local composition.
 - Do not deep-import across a boundary.
+- Do not change boundary rules to hide a dependency violation.
+
+## Forbidden Shortcuts
+
+- Barrel exports.
+- Abstraction leaks.
+- SSOT forks.
+- Bulletproof programming.
+- Shotgun parsing.
+- Error swallowing.
+- Silent fails.
 
 ## Review Checks
 
 - Seam is explicit, narrow, and not bypassed.
+- Boundary changes are not used as check suppression.
