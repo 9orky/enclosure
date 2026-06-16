@@ -66,16 +66,16 @@ Architecture Details:
 {% if report.findings or (report.workspace and report.workspace.findings) or (report.architecture and report.architecture.findings) %}
 Findings:
 {% for finding in report.findings %}
-- {{ finding.severity }} {{ finding.category }}: {{ finding.subject }} - {{ finding.detail }}
+- {{ finding.severity }} {{ finding.action_kind }} {{ finding.category }}: {{ finding.subject }} - {{ finding.detail }} Next: {{ finding.next_step }}
 {% endfor %}
 {% if report.workspace %}
 {% for finding in report.workspace.findings %}
-- {{ finding.severity }} workspace/{{ finding.category }}: {{ finding.subject }} - {{ finding.detail }}
+- {{ finding.severity }} {{ finding.action_kind }} workspace/{{ finding.category }}: {{ finding.subject }} - {{ finding.detail }} Next: {{ finding.next_step }}
 {% endfor %}
 {% endif %}
 {% if report.architecture %}
 {% for finding in report.architecture.findings %}
-- {{ finding.severity }} architecture/{{ finding.category }}: {{ finding.subject }} - {{ finding.detail }}
+- {{ finding.severity }} {{ finding.action_kind }} architecture/{{ finding.category }}: {{ finding.subject }} - {{ finding.detail }} Next: {{ finding.next_step }}
 {% endfor %}
 {% endif %}
 {% else %}

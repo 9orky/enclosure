@@ -67,6 +67,14 @@ def build_workspace_health_report() -> domain.WorkspaceHealthReport:
             )
         )
 
+    recipe_drift_report = None
+    try:
+        recipe_drift_report = enclosure.features.workspace.recipe.check_recipe_drifts(
+            recipe_root=recipes_dir,
+        )
+    except Exception:
+        recipe_drift_report = None
+
     findings.extend(
         _filesystem_findings(
             target_dir_present=target_dir.is_dir(),
@@ -96,6 +104,18 @@ def build_workspace_health_report() -> domain.WorkspaceHealthReport:
                 detail=f"{len(recipe_report.violations)} violation(s) detected.",
             )
         )
+    if recipe_drift_report is not None and recipe_drift_report.has_drifts():
+        drift_count = sum(
+            1 for drift in recipe_drift_report.drifts if drift.has_drift()
+        )
+        findings.append(
+            domain.WorkspaceHealthFinding(
+                severity="attention",
+                category="recipe-drift",
+                subject="mapped recipe modules",
+                detail=f"{drift_count} module(s) drift from configured recipes.",
+            )
+        )
     if (
         recipes_dir.is_dir()
         and recipe_report is not None
@@ -121,6 +141,7 @@ def build_workspace_health_report() -> domain.WorkspaceHealthReport:
         recipes_dir_present=recipes_dir.is_dir(),
         rules_report=rules_report,
         recipe_report=recipe_report,
+        recipe_drift_report=recipe_drift_report,
         findings=tuple(findings),
     )
 

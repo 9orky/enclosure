@@ -7,6 +7,24 @@ from typing import Literal
 FindingSeverity = Literal["error", "attention"]
 
 
+def _action_kind_for(severity: FindingSeverity, category: str) -> str:
+    if severity == "error":
+        return "blocker"
+    if category in {"recipe-drift", "drift"}:
+        return "baseline-drift"
+    return "investigate"
+
+
+def _next_step_for(severity: FindingSeverity, category: str) -> str:
+    if category == "workspace":
+        return "Run `enclosure workspace health`."
+    if category == "architecture":
+        return "Run `enclosure architecture health`."
+    if severity == "error":
+        return "Fix this before review."
+    return "Investigate when this area is in scope."
+
+
 @dataclass(frozen=True)
 class HealthFinding:
     severity: FindingSeverity
@@ -14,12 +32,22 @@ class HealthFinding:
     subject: str
     detail: str
 
+    @property
+    def action_kind(self) -> str:
+        return _action_kind_for(self.severity, self.category)
+
+    @property
+    def next_step(self) -> str:
+        return _next_step_for(self.severity, self.category)
+
     def to_json_dict(self) -> dict[str, object]:
         return {
             "severity": self.severity,
+            "action_kind": self.action_kind,
             "category": self.category,
             "subject": self.subject,
             "detail": self.detail,
+            "next_step": self.next_step,
         }
 
 

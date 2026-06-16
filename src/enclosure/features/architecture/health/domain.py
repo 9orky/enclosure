@@ -14,6 +14,30 @@ from enclosure.shared import architecture, config, limits
 FindingSeverity = Literal["error", "attention"]
 
 
+def _action_kind_for(severity: FindingSeverity, category: str) -> str:
+    if severity == "error":
+        return "blocker"
+    return "investigate"
+
+
+def _next_step_for(severity: FindingSeverity, category: str) -> str:
+    if category == "boundaries":
+        return "Run `enclosure architecture boundaries`."
+    if category == "shape":
+        return "Run `enclosure architecture shape`."
+    if category == "map":
+        return "Run `enclosure architecture map`."
+    if category == "pressure":
+        return "Run `enclosure architecture pressure`."
+    if category == "coherence":
+        return "Run `enclosure architecture coherence`."
+    if category == "clusters":
+        return "Run `enclosure architecture clusters`."
+    if severity == "error":
+        return "Fix this before review."
+    return "Investigate when this area is in scope."
+
+
 class HealthConfig(config.StrictConfigModel):
     top: int
 
@@ -30,12 +54,22 @@ class HealthFinding:
     subject: str
     detail: str
 
+    @property
+    def action_kind(self) -> str:
+        return _action_kind_for(self.severity, self.category)
+
+    @property
+    def next_step(self) -> str:
+        return _next_step_for(self.severity, self.category)
+
     def to_json_dict(self) -> dict[str, object]:
         return {
             "severity": self.severity,
+            "action_kind": self.action_kind,
             "category": self.category,
             "subject": self.subject,
             "detail": self.detail,
+            "next_step": self.next_step,
         }
 
 

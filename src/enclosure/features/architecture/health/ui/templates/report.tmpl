@@ -20,7 +20,7 @@ Architecture Modules:
 
 Findings:
 {% for finding in report.findings %}
-- {{ finding.severity }} {{ finding.category }}: {{ finding.subject }} - {{ finding.detail }}
+- {{ finding.severity }} {{ finding.action_kind }} {{ finding.category }}: {{ finding.subject }} - {{ finding.detail }} Next: {{ finding.next_step }}
 {% endfor %}
 {% else %}
 

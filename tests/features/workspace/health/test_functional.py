@@ -75,6 +75,62 @@ def test_workspace_health_reports_broken_fixture_workspace(
     assert "recipe templates" in result.output
 
 
+def test_workspace_health_classifies_findings_by_actionability(
+    fixture_project,
+    use_project,
+    cli_runner,
+) -> None:
+    project = fixture_project("broken-enclosure-workspace")
+    use_project(project)
+
+    result = cli_runner.invoke(app, ["workspace", "health"])
+
+    assert result.exit_code == 1, result.output
+    assert "error blocker rules" in result.output
+    assert "Next: Run `enclosure workspace rules`." in result.output
+    assert "error blocker recipe" in result.output
+    assert "Next: Run `enclosure workspace recipe --check`." in result.output
+
+
+def test_workspace_health_reports_recipe_drift_as_non_blocking_baseline(
+    fixture_project,
+    use_project,
+    cli_runner,
+) -> None:
+    project = fixture_project("enclosure-workspace")
+    use_project(project)
+    recipe_manifest = project.recipes_dir / "component" / "recipe.yaml"
+    recipe_manifest.write_text(
+        "\n".join(
+            (
+                "schema_version: 1",
+                "role: archetype",
+                "ladder:",
+                "  family: component",
+                "  rung: file",
+                "files:",
+                "  - source: component.py.tmpl",
+                '    target: "{{ target.path }}/component.py"',
+                "",
+            )
+        ),
+        encoding="utf-8",
+    )
+    (project.recipes_dir / "component" / "component.py.tmpl").write_text(
+        "x = 1\n",
+        encoding="utf-8",
+    )
+    module_path = project.root / "src" / "sample" / "component"
+    module_path.mkdir(parents=True)
+    (module_path / "other.py").write_text("x = 1\n", encoding="utf-8")
+
+    result = cli_runner.invoke(app, ["workspace", "health"])
+
+    assert result.exit_code == 0, result.output
+    assert "attention baseline-drift recipe-drift" in result.output
+    assert "Next: Run `enclosure workspace recipe --drifts`." in result.output
+
+
 def test_workspace_health_reports_lower_level_errors_as_blocking_findings(
     fixture_project,
     use_project,

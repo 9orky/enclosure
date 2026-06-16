@@ -59,6 +59,23 @@ def test_root_health_fails_when_workspace_health_has_blocking_findings(
     assert result.exit_code == 1, result.output
     assert "workspace/rules" in result.output
     assert "workspace/recipe" in result.output
+    assert "error blocker workspace/rules" in result.output
+    assert "Next: Run `enclosure workspace rules`." in result.output
+
+
+def test_root_health_reports_actionable_next_steps(
+    fixture_project,
+    use_project,
+    cli_runner,
+) -> None:
+    project = fixture_project("enclosure-workspace")
+    use_project(project)
+
+    result = cli_runner.invoke(app, ["health"])
+
+    assert result.exit_code == 0, result.output
+    assert "attention investigate architecture/clusters" in result.output
+    assert "Next: Run `enclosure architecture clusters`." in result.output
 
 
 def test_root_health_reports_lower_level_errors_as_blocking_findings(
