@@ -105,6 +105,8 @@ def test_workspace_rules_route_reports_structure_read_receipt(
     assert result.exit_code == 0, result.output
     assert "Read receipt" in result.output
     assert "shared/structure/INDEX.md" in result.output
+    assert "Focused checks: enclosure workspace rules" in result.output
+    assert "Post-change health: enclosure health" in result.output
 
 
 def test_workspace_rules_route_infers_tags_from_path(

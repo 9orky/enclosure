@@ -41,5 +41,5 @@ Use `enclosure workspace rules route --tag TAG`, `--path PATH`, or `--task TASK`
 - Fix parse errors before interpreting other findings.
 - Keep rule documents navigable and narrow in purpose.
 - Avoid copying shared policy into local rules.
-- Confirm rule reading with: files read, reason, stop point, and checks to run.
-- Rerun after every rule-document edit.
+- Confirm rule reading with: files read, reason, stop point, focused checks, and post-change `enclosure health`.
+- Rerun `enclosure workspace rules` and `enclosure health` after every rule-document edit.

@@ -19,7 +19,8 @@ Read receipt:
 - Rules read: {{ plan.steps|map(attribute="path")|join(", ") }}.
 - Reason: selected tags {{ plan.requested_tags|join(", ") }}.
 - Stop point: {{ plan.stop_point }}.
-- Checks: enclosure workspace rules.
+- Focused checks: enclosure workspace rules.
+- Post-change health: enclosure health.
 {% else %}
 No route matched the requested tag set.
 Try one of the available tags listed above.

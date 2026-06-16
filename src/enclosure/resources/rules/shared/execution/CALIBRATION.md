@@ -48,7 +48,7 @@ escalation_paths:
 
 ## Drift Controls
 
-- Emit a route receipt before edits: files read, reason, stop point, and checks to run.
+- Emit a route receipt before edits: files read, reason, stop point, focused checks to run, and post-change `enclosure health`.
 - Treat local rules as narrowing shared rules, not restating shared policy.
 - Keep recipe drift mechanical: missing required seams, forbidden file/package combinations, and extra root files outside declared slots.
 - Depend on public seams instead of private internals.
@@ -73,4 +73,4 @@ escalation_paths:
 
 - `PLAN.md` receives only approved calibration decisions.
 - Local rule proposals narrow a shared rule and name their shared anchor.
-- Checks include workspace rules and the architecture checks affected by the decision.
+- Checks include post-change `enclosure health`, workspace rules when rule or workspace contract files change, and the architecture checks affected by the decision.
