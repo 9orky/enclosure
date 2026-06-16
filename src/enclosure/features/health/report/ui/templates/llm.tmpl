@@ -11,7 +11,8 @@ Use this command as the default preflight and post-change verification for repos
 ## How To Interpret
 
 - Use `--v` for quick status, `--vv` for the normal preflight, and `--vvv` when you need lower-level detail before choosing a focused command.
+- Treat this as the root rollup. Use local health commands for detail: `enclosure workspace health` and `enclosure architecture health`.
 - Error findings are blocking; name the focused follow-up command in your response.
 - Workspace findings point to `enclosure workspace health`, `enclosure workspace rules`, or `enclosure workspace recipe --check`.
-- Architecture findings point to `enclosure architecture health`, `enclosure architecture boundaries`, `enclosure architecture shape`, `enclosure architecture map`, or `enclosure architecture clusters`.
+- Architecture findings point to `enclosure architecture health`, then boundaries, shape, map, clusters, pressure, or coherence as needed.
 - Passing root health does not replace relevant tests; it confirms the enclosure contract and architecture preflight.

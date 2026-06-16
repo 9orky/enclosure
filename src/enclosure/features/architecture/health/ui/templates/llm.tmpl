@@ -2,21 +2,22 @@
 
 ## Purpose
 
-Use this command to get a compact architecture preflight: boundary status, shape status, unmapped files, hotspots, and dependency-pressure clusters.
+Use this command as the local architecture health collector: boundaries, shape, map, clusters, pressure, and coherence.
 
 ## When To Run
 
 - Before starting a non-trivial implementation.
 - After touching imports, module seams, or feature structure.
-- Before finalizing work when you need one architecture-oriented summary.
+- Before finalizing work when you need one architecture-oriented detail report.
 
 ## How To Read The Result
 
-- Use `--v` for quick status, `--vv` for the normal preflight, and `--vvv` when report metadata should be visible.
+- Use `--v` for quick status, `--vv` for the normal preflight, and `--vvv` when module-level detail should be visible.
 - Boundary and shape findings are blockers when marked as errors.
 - Unknown files are classification signals, not automatic failures.
 - Hotspots point to module-size or dependency-pressure areas worth treating carefully.
 - Pressure clusters show likely blast radius and shared-code gravity.
+- Pressure and coherence findings are attention signals; mention them when they affect the task.
 
 ## Examples
 
@@ -27,9 +28,11 @@ Use this command to get a compact architecture preflight: boundary status, shape
 
 ## Agent Tips
 
-- Use this as an overview, not a replacement for focused boundary or shape checks.
-- Follow up with `architecture boundaries` when changing dependency direction.
-- Follow up with `architecture shape` after editing imports or public code shape.
-- Follow up with `architecture pressure` before reducing prop drilling or public API surface.
-- Follow up with `architecture coherence` before streamlining related modules.
+- Use this as the architecture drilldown after root `enclosure health`.
+- Follow up with `enclosure architecture boundaries` when changing dependency direction.
+- Follow up with `enclosure architecture shape` after editing imports or public code shape.
+- Follow up with `enclosure architecture map` when ownership or placement is unclear.
+- Follow up with `enclosure architecture clusters` before broad refactors or risky dependency work.
+- Follow up with `enclosure architecture pressure` before reducing prop drilling or public API surface.
+- Follow up with `enclosure architecture coherence` before streamlining related modules.
 - Do not treat hotspot ranking as ownership policy; policy comes from the contract.

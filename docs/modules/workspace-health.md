@@ -13,6 +13,7 @@ Use `enclosure workspace health` to check the project-local contract before dril
 ## Reading Results
 
 - Use `--v` for compact status, `--vv` for the standard report, and `--vvv` for expanded rule and recipe detail.
+- This command is the workspace collector: paths, config, rules, local rule limits, and recipe rendering all appear here.
 - Config, rules, and recipe failures are blocking findings.
 - Missing recipes are informational unless recipe manifests exist and fail validation or rendering.
 - Root `enclosure health` includes this report before architecture health.

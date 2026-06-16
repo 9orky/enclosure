@@ -1,8 +1,18 @@
 Architecture Health{% if verbosity != "standard" %} ({{ verbosity }}){% endif %}:
 {{ report|scan_summary }}
-- Boundary violations: {{ report.boundary_violation_count }}
-- Shape violations: {{ report.shape_violation_count }}
-- Unknown files: {{ report.unknown_file_count }}
+- Config: {{ report.config_path|present_path(project_root) }}
+- Config format: {{ report.config_format }}
+- Language: {{ report.language }}
+- Runtime command: {{ report.runtime_command if report.runtime_command else "none" }}
+- Health item limit: {% if report.top < 0 %}all{% elif report.top == 0 %}none{% else %}{{ report.top }}{% endif %}
+{{ "\n" }}
+Architecture Modules:
+- Boundaries: {{ report.boundary_violation_count }} violation(s)
+- Shape: {{ report.shape_violation_count }} violation(s)
+- Map: {{ report.module_count }} module(s), {{ report.cross_module_dependency_count }} cross-module dependency path(s), {{ report.unknown_file_count }} unknown file(s)
+- Clusters: {{ report.cluster_count }} cluster(s), showing {{ report.clusters|length }}, group depth {{ report.cluster_group_depth }}
+- Pressure: {{ report.callable_count }} callable(s), {{ report.call_count }} direct call(s), {{ report.unresolved_call_count }} unresolved call(s)
+- Coherence: {{ report.coherence_stream_count }} stream(s), {{ report.coherence_finding_count }} finding(s)
 {% if verbosity == "summary" %}
 - Findings: {{ report.findings|length }}
 {% else %}
@@ -13,16 +23,8 @@ Findings:
 - {{ finding.severity }} {{ finding.category }}: {{ finding.subject }} - {{ finding.detail }}
 {% endfor %}
 {% else %}
-Architecture Health Passed! No findings.
-{% endif %}
-{% if verbosity == "detailed" %}
 
-Report:
-- Config: {{ report.config_path|present_path(project_root) }}
-- Config format: {{ report.config_format }}
-- Language: {{ report.language }}
-- Runtime command: {{ report.runtime_command if report.runtime_command else "none" }}
-- Health item limit: {% if report.top < 0 %}all{% elif report.top == 0 %}none{% else %}{{ report.top }}{% endif %}
+Architecture Health Passed! No findings.
 {% endif %}
 {% if report.hotspots %}
 
@@ -34,8 +36,118 @@ Hotspots:
 {% if report.pressure_clusters %}
 
 Pressure Clusters:
-{% for cluster in report.pressure_clusters %}
-- {{ cluster.name }}: score {{ cluster.pressure_score }}, files {{ cluster.file_count }}, in {{ cluster.incoming_edges }}, out {{ cluster.outgoing_edges }}
+Score  Files  In  Out  Internal  External  Lines  Cluster
+{% for cluster in report.clusters %}
+{{ "%5.2f"|format(cluster.pressure_score) }}  {{ "%5d"|format(cluster.file_count) }}  {{ "%2d"|format(cluster.incoming_edges) }}  {{ "%3d"|format(cluster.outgoing_edges) }}  {{ "%8d"|format(cluster.internal_edges) }}  {{ "%8d"|format(cluster.external_imports) }}  {{ "%5d"|format(cluster.line_count) }}  {{ cluster.name }}
 {% endfor %}
+{% endif %}
+{% if report.coherence_streams %}
+
+Coherence Streams:
+{% for stream in report.coherence_streams %}
+- {{ stream.name }}: {{ stream.source_count }} source node(s), {{ stream.axis_summary }}
+{% endfor %}
+{% endif %}
+{% if verbosity == "detailed" %}
+
+Report:
+- Config: {{ report.config_path|present_path(project_root) }}
+- Config format: {{ report.config_format }}
+- Language: {{ report.language }}
+- Runtime command: {{ report.runtime_command if report.runtime_command else "none" }}
+- Health item limit: {% if report.top < 0 %}all{% elif report.top == 0 %}none{% else %}{{ report.top }}{% endif %}
+
+Architecture Map:
+{% if report.modules %}
+{% for module in report.modules|limit_items(report.top) %}
+- {{ module.name }}: {{ module.files|length }} file(s){{ module.layers|layer_summary }}
+{% endfor %}
+{% else %}
+- No modules matched the configured module tag.
+{% endif %}
+{% if report.dependencies %}
+
+Cross-Module Dependencies:
+{% for dependency in report.dependencies|limit_items(report.top) %}
+- {{ dependency.source }} -> {{ dependency.target }}: {{ dependency.count }}
+{% endfor %}
+{% endif %}
+{% if report.unknown_files %}
+
+Unknown Files:
+{% for file_path in report.unknown_files|limit_items(report.top) %}
+- {{ file_path }}
+{% endfor %}
+{% endif %}
+{% if report.boundary_violations %}
+
+Boundary Violations:
+{{ report.boundary_violations|architecture_violations }}
+{% endif %}
+{% if report.shape_violations %}
+
+Shape Violations:
+{% for violation in report.shape_violations|limit_items(report.top) %}
+- {{ violation|violation_subject }} {{ violation.rule }} actual {{ violation.actual }}, limit {{ violation.limit }}
+{% endfor %}
+{% endif %}
+{% if report.clusters %}
+
+Cluster Details:
+{% for cluster in report.clusters %}
+- {{ cluster.name }}: depends on {{ cluster.dependencies|join(", ") if cluster.dependencies else "none" }}; used by {{ cluster.dependents|join(", ") if cluster.dependents else "none" }}
+  Key files:
+{% for file in cluster.files|limit_items(report.cluster_files_top) %}
+  - {{ file.path }} (imports {{ file.imports_count }}, imported by {{ file.imported_by_count }}, public {{ file.public_symbol_count }}, lines {{ file.line_count }})
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% if report.most_calling %}
+
+Most Calling:
+Calls  Resolved  Args  Called by  Callable
+{% for pressure in report.most_calling %}
+{{ "%5d"|format(pressure.calls_count) }}  {{ "%8d"|format(pressure.resolved_calls_count) }}  {{ "%4d"|format(pressure.declared_args) }}  {{ "%9d"|format(pressure.called_by_count) }}  {{ pressure.qualified_name }} ({{ pressure.location }})
+{% endfor %}
+{% endif %}
+{% if report.most_called %}
+
+Most Called:
+Called by  Calls  Args  Callable
+{% for pressure in report.most_called %}
+{{ "%9d"|format(pressure.called_by_count) }}  {{ "%5d"|format(pressure.calls_count) }}  {{ "%4d"|format(pressure.declared_args) }}  {{ pressure.qualified_name }} ({{ pressure.location }})
+{% endfor %}
+{% endif %}
+{% if report.wide_signatures %}
+
+Wide Signatures:
+Args  Called by  Calls  Callable
+{% for pressure in report.wide_signatures %}
+{{ "%4d"|format(pressure.declared_args) }}  {{ "%9d"|format(pressure.called_by_count) }}  {{ "%5d"|format(pressure.calls_count) }}  {{ pressure.qualified_name }} ({{ pressure.location }})
+{% endfor %}
+{% endif %}
+{% if report.reexport_hubs %}
+
+Re-export Hubs:
+Re-exports  Exports  File
+{% for pressure in report.reexport_hubs %}
+{{ "%10d"|format(pressure.reexported_count) }}  {{ "%7d"|format(pressure.exported_count) }}  {{ pressure.location }}
+{% endfor %}
+{% endif %}
+{% if report.public_api_hubs %}
+
+Public API Hubs:
+Exports  Re-exports  File
+{% for pressure in report.public_api_hubs %}
+{{ "%7d"|format(pressure.exported_count) }}  {{ "%10d"|format(pressure.reexported_count) }}  {{ pressure.location }}
+{% endfor %}
+{% endif %}
+{% if report.coherence_findings %}
+
+Coherence Findings:
+{% for finding in report.coherence_findings %}
+- {{ finding.stream or "architecture" }} {{ finding.axis|replace("_", "-") }}: {{ finding.subject }} - {{ finding.detail }} ({{ finding.evidence }})
+{% endfor %}
+{% endif %}
 {% endif %}
 {% endif %}

@@ -1,76 +1,64 @@
 Enclosure Health{% if verbosity != "standard" %} ({{ verbosity }}){% endif %}:
 - Project root: {{ report.project_root|present_path(project_root) }}
 {{ "\n" }}
+Health Commands:
+- Root: enclosure health
+- Workspace detail: enclosure workspace health
+- Architecture detail: enclosure architecture health
+{{ "\n" }}
 {% if verbosity == "summary" %}
-{% if report.workspace %}
 Workspace:
-- Findings: {{ report.workspace.findings|length }}
-- Rule issues: {{ report.workspace.rules_report.documents_with_issues if report.workspace.rules_report else "unknown" }}
-- Recipe violations: {{ report.workspace.recipe_report.violations|length if report.workspace.recipe_report else "unknown" }}
-{% else %}
-Workspace:
-- Findings: unknown
-{% endif %}
-{% if report.architecture %}
+- Findings: {{ report.workspace.findings|length if report.workspace else "unknown" }}
+- Rule issues: {{ report.workspace.rules_report.documents_with_issues if report.workspace and report.workspace.rules_report else "unknown" }}
+- Recipe violations: {{ report.workspace.recipe_report.violations|length if report.workspace and report.workspace.recipe_report else "unknown" }}
 Architecture:
-- Boundary violations: {{ report.architecture.boundary_violation_count }}
-- Shape violations: {{ report.architecture.shape_violation_count }}
-- Unknown files: {{ report.architecture.unknown_file_count }}
-- Findings: {{ report.architecture.findings|length }}
+- Findings: {{ report.architecture.findings|length if report.architecture else "unknown" }}
+- Boundary violations: {{ report.architecture.boundary_violation_count if report.architecture else "unknown" }}
+- Shape violations: {{ report.architecture.shape_violation_count if report.architecture else "unknown" }}
+- Unknown files: {{ report.architecture.unknown_file_count if report.architecture else "unknown" }}
 {% else %}
-Architecture:
-- Findings: unknown
-{% endif %}
-{{ "\n" }}
-{% else %}
-{% if report.workspace %}
 Workspace:
+{% if report.workspace %}
 - Config: {{ report.workspace.config_path|present_path(project_root) if report.workspace.config_present else "missing or invalid" }}
-- Rule issues: {{ report.workspace.rules_report.documents_with_issues if report.workspace.rules_report else "unknown" }}
-- Recipe violations: {{ report.workspace.recipe_report.violations|length if report.workspace.recipe_report else "unknown" }}
-{{ "\n" }}
+- Paths: target {{ "present" if report.workspace.target_dir_present else "missing" }}, rules {{ "present" if report.workspace.rules_dir_present else "missing" }}, recipes {{ "present" if report.workspace.recipes_dir_present else "missing" }}
+- Rules: {{ report.workspace.rules_report.documents_checked if report.workspace.rules_report else "unknown" }} checked, {{ report.workspace.rules_report.documents_with_issues if report.workspace.rules_report else "unknown" }} with issue(s)
+- Recipes: {{ report.workspace.recipe_report.recipes_checked if report.workspace.recipe_report else "unknown" }} checked, {{ report.workspace.recipe_report.violations|length if report.workspace.recipe_report else "unknown" }} violation(s)
+{% else %}
+- unavailable
 {% endif %}
-{% if report.architecture %}
+{{ "\n" }}
 Architecture:
+{% if report.architecture %}
 {{ report.architecture|scan_summary }}
-- Boundary violations: {{ report.architecture.boundary_violation_count }}
-- Shape violations: {{ report.architecture.shape_violation_count }}
-- Unknown files: {{ report.architecture.unknown_file_count }}
-{{ "\n" }}
+- Boundaries: {{ report.architecture.boundary_violation_count }} violation(s)
+- Shape: {{ report.architecture.shape_violation_count }} violation(s)
+- Map: {{ report.architecture.module_count }} module(s), {{ report.architecture.cross_module_dependency_count }} cross-module dependency path(s), {{ report.architecture.unknown_file_count }} unknown file(s)
+- Clusters: {{ report.architecture.cluster_count }} cluster(s), showing {{ report.architecture.clusters|length }}
+- Pressure: {{ report.architecture.callable_count }} callable(s), {{ report.architecture.call_count }} direct call(s), {{ report.architecture.unresolved_call_count }} unresolved call(s)
+- Coherence: {{ report.architecture.coherence_stream_count }} stream(s), {{ report.architecture.coherence_finding_count }} finding(s)
+{% else %}
+- unavailable
 {% endif %}
-{% if verbosity == "detailed" and report.workspace and report.workspace.rules_report %}
+{{ "\n" }}
+{% if verbosity == "detailed" %}
 Workspace Rule Documents:
-{% for document in report.workspace.rules_report.documents -%}
-- {{ document.path }}{% if document.scope %} [{{ document.scope }}]{% endif %}: {{ document|rule_document_status }}{% if document.is_local %} (content {{ document.content_char_count }} chars){% endif %}
-{{ "\n" }}{% endfor -%}
-{{ "\n" }}
+{% if report.workspace and report.workspace.rules_report %}
+- Documents checked: {{ report.workspace.rules_report.documents_checked }}
+- Documents with issues: {{ report.workspace.rules_report.documents_with_issues }}
+- Full detail: enclosure workspace health --vvv
+{% else %}
+- unavailable
 {% endif %}
-{% if verbosity == "detailed" and report.workspace and report.workspace.recipe_report and report.workspace.recipe_report.violations %}
-Workspace Recipe Violations:
-{% for violation in report.workspace.recipe_report.violations -%}
-- {{ violation.code }}{% if violation.recipe_name %} {{ violation.recipe_name }}{% endif %}: {{ violation.message }}
-{{ "\n" }}{% endfor -%}
 {{ "\n" }}
-{% endif %}
-{% if verbosity == "detailed" and report.architecture %}
 Architecture Details:
+{% if report.architecture %}
 - Config: {{ report.architecture.config_path|present_path(project_root) }}
 - Config format: {{ report.architecture.config_format }}
 - Language: {{ report.architecture.language }}
 - Runtime command: {{ report.architecture.runtime_command if report.architecture.runtime_command else "none" }}
-- Health item limit: {% if report.architecture.top < 0 %}all{% elif report.architecture.top == 0 %}none{% else %}{{ report.architecture.top }}{% endif %}{{ "\n" }}
-{% if report.architecture.hotspots %}
-Architecture Hotspots:
-{% for hotspot in report.architecture.hotspots %}
-- {{ hotspot.kind }}: {{ hotspot.name }} ({{ hotspot.detail }}, score {{ hotspot.score }})
-{% endfor %}
-{{ "\n" }}
-{% endif %}
-{% if report.architecture.pressure_clusters %}
-Architecture Pressure Clusters:
-{% for cluster in report.architecture.pressure_clusters %}
-- {{ cluster.name }}: score {{ cluster.pressure_score }}, files {{ cluster.file_count }}, in {{ cluster.incoming_edges }}, out {{ cluster.outgoing_edges }}
-{% endfor %}
+- Full detail: enclosure architecture health --vvv
+{% else %}
+- unavailable
 {% endif %}
 {{ "\n" }}
 {% endif %}

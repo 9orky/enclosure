@@ -17,6 +17,13 @@ DOC_FILES = (
     PROJECT_ROOT / "README.md",
     PROJECT_ROOT / "docs" / "repo" / "CONTRIBUTING.md",
 )
+GUIDANCE_FILE_GLOBS = (
+    "src/enclosure/templates/*.tmpl",
+    "src/enclosure/features/**/ui/templates/docs.tmpl",
+    "src/enclosure/features/**/ui/templates/llm.tmpl",
+    "docs/modules/*.md",
+)
+ENCLOSURE_COMMAND_PATTERN = re.compile(r"`(enclosure(?:\s+[^`]+)?)`")
 
 
 class CommandDocsTest(unittest.TestCase):
@@ -43,11 +50,33 @@ class CommandDocsTest(unittest.TestCase):
                 f"{docs_template.relative_to(PROJECT_ROOT)} is missing",
             )
 
+    def test_llm_surfaces_render_successfully(self) -> None:
+        runner = CliRunner()
+
+        for command in llm_commands():
+            with self.subTest(command="enclosure " + " ".join(command)):
+                result = runner.invoke(app, command)
+
+            self.assertEqual(result.exit_code, 0, result.output)
+            self.assertIn("Guide", result.output)
+
     def test_documented_enclosure_commands_resolve(self) -> None:
         runner = CliRunner()
 
         for command in documented_commands():
             with self.subTest(command=" ".join(command)):
+                result = runner.invoke(app, validation_command(command))
+
+            self.assertNotEqual(result.exit_code, 2, result.output)
+
+    def test_guidance_enclosure_commands_resolve(self) -> None:
+        runner = CliRunner()
+
+        for command, source in documented_guidance_commands():
+            with self.subTest(
+                command=" ".join(command),
+                source=str(source.relative_to(PROJECT_ROOT)),
+            ):
                 result = runner.invoke(app, validation_command(command))
 
             self.assertNotEqual(result.exit_code, 2, result.output)
@@ -104,6 +133,10 @@ def docs_commands() -> tuple[list[str], ...]:
     )
 
 
+def llm_commands() -> tuple[list[str], ...]:
+    return tuple([*command[:-1], "--llm"] for command in docs_commands())
+
+
 def documented_commands() -> tuple[list[str], ...]:
     commands: list[list[str]] = []
     for doc_file in DOC_FILES:
@@ -113,6 +146,23 @@ def documented_commands() -> tuple[list[str], ...]:
                 continue
             commands.append(shlex.split(stripped))
     return tuple(commands)
+
+
+def documented_guidance_commands() -> tuple[tuple[list[str], Path], ...]:
+    commands: list[tuple[list[str], Path]] = []
+    for file_path in guidance_files():
+        text = file_path.read_text(encoding="utf-8")
+        for match in ENCLOSURE_COMMAND_PATTERN.finditer(text):
+            command_text = match.group(1).strip().rstrip(".,:;")
+            commands.append((shlex.split(command_text), file_path))
+    return tuple(commands)
+
+
+def guidance_files() -> tuple[Path, ...]:
+    files: list[Path] = []
+    for pattern in GUIDANCE_FILE_GLOBS:
+        files.extend(PROJECT_ROOT.glob(pattern))
+    return tuple(sorted(set(files)))
 
 
 def validation_command(command: list[str]) -> list[str]:
