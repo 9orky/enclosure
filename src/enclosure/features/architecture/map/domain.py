@@ -8,6 +8,7 @@ from pathlib import Path
 from modwire.architecture import TagMatcher
 from pydantic import field_validator
 
+from enclosure.features.architecture import flow
 from enclosure.shared import architecture, config, limits
 
 
@@ -38,10 +39,14 @@ class MappedModule:
     name: str
     files: tuple[str, ...]
     layers: tuple[MappedLayer, ...]
+    realm: str = ""
+    module_tag: str = ""
 
     def to_json_dict(self) -> dict[str, object]:
         return {
             "name": self.name,
+            "realm": self.realm,
+            "module_tag": self.module_tag,
             "file_count": len(self.files),
             "files": list(self.files),
             "layers": [layer.to_json_dict() for layer in self.layers],
@@ -119,21 +124,16 @@ def describe_architecture_map(
     top: int,
 ) -> "MappedArchitecture":
     tag_names = {rule.name for rule in config.rules.tags}
-    module_tag = (
-        config.rules.flow.module_tag
-        if config.rules.flow.module_tag in tag_names
-        else ""
-    )
-    layer_names = tuple(
-        layer_name
-        for layer_name in config.rules.flow.layers
-        if layer_name in tag_names
+    realms = tuple(
+        realm
+        for realm in flow.configured_realms(config)
+        if realm.module_tag in tag_names
     )
 
     tracked_node_ids = tuple(tracked_files or graph.node_ids())
     matcher = TagMatcher(config)
     file_maps = {
-        node_id: _map_file(node_id, matcher, module_tag, layer_names)
+        node_id: _map_file(node_id, matcher, realms, tag_names)
         for node_id in tracked_node_ids
     }
     builders: dict[str, _ModuleBuilder] = defaultdict(_ModuleBuilder)
@@ -144,7 +144,12 @@ def describe_architecture_map(
         if not file_map.module_name:
             unknown_files.append(display_path)
             continue
-        builders[file_map.module_name].add_file(display_path, file_map.layer_name)
+        builders[file_map.module_name].add_file(
+            display_path,
+            file_map.layer_name,
+            file_map.realm_name,
+            file_map.module_tag,
+        )
 
     dependency_counts: Counter[tuple[str, str]] = Counter()
     incoming_counts: Counter[str] = Counter()
@@ -204,17 +209,31 @@ class MappedArchitecture:
 class _FileMap:
     module_name: str = ""
     layer_name: str = ""
+    realm_name: str = ""
+    module_tag: str = ""
 
 
 @dataclass
 class _ModuleBuilder:
     files: list[str] = field(default_factory=list)
+    realm_name: str = ""
+    module_tag: str = ""
     files_by_layer: dict[str, list[str]] = field(
         default_factory=lambda: defaultdict(list)
     )
 
-    def add_file(self, file_path: str, layer_name: str) -> None:
+    def add_file(
+        self,
+        file_path: str,
+        layer_name: str,
+        realm_name: str,
+        module_tag: str,
+    ) -> None:
         self.files.append(file_path)
+        if not self.realm_name:
+            self.realm_name = realm_name
+        if not self.module_tag:
+            self.module_tag = module_tag
         if layer_name:
             self.files_by_layer[layer_name].append(file_path)
 
@@ -226,26 +245,52 @@ class _ModuleBuilder:
                 MappedLayer(layer_name, tuple(sorted(files)))
                 for layer_name, files in sorted(self.files_by_layer.items())
             ),
+            realm=self.realm_name,
+            module_tag=self.module_tag,
         )
 
 
 def _map_file(
     node_id: str,
     matcher: TagMatcher,
-    module_tag: str,
-    layer_names: tuple[str, ...],
+    realms: tuple[flow.ArchitectureRealm, ...],
+    tag_names: set[str],
 ) -> _FileMap:
+    selected_realm: flow.ArchitectureRealm | None = None
     module_name = ""
-    if module_tag:
-        match = matcher.match(node_id, module_tag)
+    for realm in realms:
+        match = matcher.match(node_id, realm.module_tag)
         if match is not None:
-            module_name = matcher.display_path(match.captured_path)
+            matched_module_name = matcher.display_path(match.captured_path)
+            if _is_more_specific(matched_module_name, module_name):
+                selected_realm = realm
+                module_name = matched_module_name
 
     layer_name = ""
+    layer_names = ()
+    if selected_realm is not None:
+        layer_names = tuple(
+            layer_name
+            for layer_name in selected_realm.layers
+            if layer_name in tag_names
+        )
     if layer_match := matcher.first_match(node_id, layer_names):
         layer_name = layer_match.name
 
-    return _FileMap(module_name=module_name, layer_name=layer_name)
+    return _FileMap(
+        module_name=module_name,
+        layer_name=layer_name,
+        realm_name="" if selected_realm is None else selected_realm.name,
+        module_tag="" if selected_realm is None else selected_realm.module_tag,
+    )
+
+
+def _is_more_specific(candidate: str, current: str) -> bool:
+    if not current:
+        return True
+    candidate_parts = tuple(part for part in candidate.split("/") if part)
+    current_parts = tuple(part for part in current.split("/") if part)
+    return (len(candidate_parts), candidate) > (len(current_parts), current)
 
 
 def _hotspots(
@@ -301,7 +346,10 @@ def _hotspots(
             ArchitectureHotspot(
                 kind="unknown-files",
                 name="unmapped",
-                detail=f"{len(unknown_files)} file(s) outside module tags",
+                detail=(
+                    f"{len(unknown_files)} file(s) outside configured module "
+                    "tags or realms"
+                ),
                 score=len(unknown_files),
             )
         )

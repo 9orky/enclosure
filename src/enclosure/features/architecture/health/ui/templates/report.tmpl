@@ -63,7 +63,7 @@ Architecture Map:
 - {{ module.name }}: {{ module.files|length }} file(s){{ module.layers|layer_summary }}
 {% endfor %}
 {% else %}
-- No modules matched the configured module tag.
+- No modules matched the configured module tags or realms.
 {% endif %}
 {% if report.dependencies %}
 

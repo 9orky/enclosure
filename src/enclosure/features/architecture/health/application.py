@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from modwire.architecture import ArchitecturePolicyEvaluator
-
+from enclosure.features.architecture import flow
 import enclosure.features.architecture.clusters
 import enclosure.features.architecture.coherence
 import enclosure.features.architecture.map
@@ -28,11 +27,9 @@ def _build_health_report(top_override: int | None) -> domain.ArchitectureHealthR
     top = limits.validate_report_limit(
         config.health.top if top_override is None else top_override
     )
-    boundary_violations = tuple(
-        ArchitecturePolicyEvaluator().evaluate(
-            code_map.tracked_only().graph,
-            code_analysis.matching_config,
-        )
+    boundary_violations = flow.evaluate_policy(
+        code_map.tracked_only().graph,
+        code_analysis.matching_config,
     )
     shape_violations = enclosure.features.architecture.shape.evaluate_shape(
         code_map,
@@ -178,7 +175,10 @@ def _findings(
                 severity="attention",
                 category="map",
                 subject="unmapped files",
-                detail=f"{unknown_file_count} file(s) outside configured module tags.",
+                detail=(
+                    f"{unknown_file_count} file(s) outside configured module "
+                    "tags or realms."
+                ),
             )
         )
     if unresolved_internal_call_count:

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from modwire.architecture import EdgeRuleViolation, FlowViolation, supported_analyzers
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from enclosure.shared import architecture, config
 
@@ -27,10 +28,18 @@ class ConfigTagRule(config.StrictConfigModel):
         return (*self.except_, *self.exclude)
 
 
-class FlowRuleSet(config.StrictConfigModel):
-    layers: list[str]
+class FlowRealmRule(config.StrictConfigModel):
+    name: str
     module_tag: str
-    analyzers: list[str]
+    layers: list[str] | None = None
+
+
+class FlowRuleSet(config.StrictConfigModel):
+    layers: list[str] = Field(default_factory=list)
+    module_tag: str = ""
+    module_tags: list[str] = Field(default_factory=list)
+    realms: list[FlowRealmRule] = Field(default_factory=list)
+    analyzers: list[str] = Field(default_factory=list)
 
     @field_validator("analyzers")
     @classmethod
@@ -49,6 +58,15 @@ class BoundariesConfig(config.StrictConfigModel):
     @property
     def boundaries(self) -> list[BoundaryRule]:
         return self.rules
+
+    @model_validator(mode="after")
+    def tag_names_are_unique(self) -> BoundariesConfig:
+        counts = Counter(rule.name for rule in self.tags)
+        duplicates = tuple(sorted(name for name, count in counts.items() if count > 1))
+        if duplicates:
+            names = ", ".join(duplicates)
+            raise ValueError(f"duplicate architecture boundary tag name(s): {names}")
+        return self
 
 
 @dataclass(frozen=True)
@@ -75,5 +93,6 @@ __all__ = [
     "BoundariesReport",
     "BoundaryRule",
     "ConfigTagRule",
+    "FlowRealmRule",
     "FlowRuleSet",
 ]
