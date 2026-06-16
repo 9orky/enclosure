@@ -132,6 +132,44 @@ def test_workspace_sync_migrate_safe_merges_config_and_warns_about_unknown_keys(
     assert "Unknown config key preserved: workspace.unknown" in result.output
 
 
+def test_workspace_sync_migrate_keeps_lists_and_list_items_block_style(
+    fixture_project,
+    use_project,
+    cli_runner,
+) -> None:
+    project = fixture_project("enclosure-workspace")
+    use_project(project)
+    raw_config = yaml.safe_load(project.config_path.read_text(encoding="utf-8"))
+    raw_config["architecture"]["boundaries"]["tags"].append(
+        {
+            "name": "feature",
+            "match": "src",
+            "except": ["ignored"],
+            "exclude": [],
+        }
+    )
+    raw_config["workspace"]["compact_scalar_object"] = {
+        "enabled": True,
+        "limit": 2,
+    }
+    del raw_config["workspace"]["sync"]
+    project.config_path.write_text(yaml.safe_dump(raw_config), encoding="utf-8")
+
+    result = cli_runner.invoke(app, ["workspace", "sync", "migrate"])
+
+    assert result.exit_code == 0, result.output
+    migrated_text = project.config_path.read_text(encoding="utf-8")
+    assert "      - except:\n" in migrated_text
+    assert "        - ignored\n" in migrated_text
+    assert "        exclude: []\n" in migrated_text
+    assert "allowed_imports_crossing_types:\n" in migrated_text
+    assert "  - module\n" in migrated_text
+    assert "allowed_imports_crossing_types: [module, symbol]" not in migrated_text
+    assert "compact_scalar_object: {enabled: true, limit: 2}" in migrated_text
+    assert "sync: {}" in migrated_text
+    assert "      - {" not in migrated_text
+
+
 def test_workspace_sync_migrate_preserves_local_rules(
     fixture_project,
     use_project,

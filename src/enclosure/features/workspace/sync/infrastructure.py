@@ -20,6 +20,22 @@ _PROJECT_OWNED_CONFIG_MAPS = {
 }
 
 
+class _FlowMapping(dict[object, object]):
+    pass
+
+
+class _MigratedConfigDumper(yaml.SafeDumper):
+    def ignore_aliases(self, data: object) -> bool:
+        return True
+
+    def increase_indent(
+        self,
+        flow: bool = False,
+        indentless: bool = False,
+    ) -> None:
+        super().increase_indent(flow, indentless=False)
+
+
 @dataclass(frozen=True)
 class _MigratedConfig:
     content: str
@@ -178,7 +194,7 @@ class FileRepository:
             )
 
         return _MigratedConfig(
-            content=yaml.safe_dump(merged_data, sort_keys=False),
+            content=_dump_migrated_config(merged_data),
             changed=True,
             warnings=tuple(warnings),
         )
@@ -328,6 +344,50 @@ def _merge_missing_config_values(
 
 def _config_path_label(path: tuple[object, ...]) -> str:
     return ".".join(str(part) for part in path)
+
+
+def _dump_migrated_config(data: dict[object, object]) -> str:
+    return yaml.dump(
+        _with_compact_yaml_objects(data),
+        Dumper=_MigratedConfigDumper,
+        default_flow_style=False,
+        sort_keys=False,
+    )
+
+
+def _with_compact_yaml_objects(
+    value: object,
+    *,
+    in_sequence: bool = False,
+) -> object:
+    if isinstance(value, list):
+        return [_with_compact_yaml_objects(item, in_sequence=True) for item in value]
+
+    if isinstance(value, dict):
+        converted_items = {
+            key: _with_compact_yaml_objects(item) for key, item in value.items()
+        }
+        if not value or (
+            not in_sequence and all(_is_yaml_scalar(item) for item in value.values())
+        ):
+            return _FlowMapping(converted_items)
+        return converted_items
+
+    return value
+
+
+def _is_yaml_scalar(value: object) -> bool:
+    return value is None or isinstance(value, (str, int, float, bool))
+
+
+def _represent_flow_mapping(
+    dumper: yaml.SafeDumper,
+    data: _FlowMapping,
+) -> yaml.nodes.MappingNode:
+    return dumper.represent_mapping("tag:yaml.org,2002:map", data, flow_style=True)
+
+
+_MigratedConfigDumper.add_representer(_FlowMapping, _represent_flow_mapping)
 
 
 class WorkspaceWritePlanMaterializer:
