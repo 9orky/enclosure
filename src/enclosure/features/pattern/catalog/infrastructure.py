@@ -45,7 +45,7 @@ class FilePatternRepository:
             return ()
 
         return tuple(
-            self._load_pattern(pattern_root)
+            self._load_pattern(pattern_root, layout.recipe_manifest_path(pattern_root))
             for pattern_root in sorted(
                 self._iter_pattern_roots(),
                 key=lambda path: path.name,
@@ -54,30 +54,31 @@ class FilePatternRepository:
 
     def get_by_name(self, name: str) -> domain.Pattern:
         pattern_root = self.root_path / name
-        if not (pattern_root / "recipe.yaml").is_file():
+        manifest_path = layout.recipe_manifest_path(pattern_root)
+        if not manifest_path.is_file():
             raise LookupError(name)
 
-        return self._load_pattern(pattern_root)
+        return self._load_pattern(pattern_root, manifest_path)
 
     def _iter_pattern_roots(self):
         for child in self.root_path.iterdir():
             if child.name.startswith("."):
                 continue
-            if child.is_dir() and (child / "recipe.yaml").is_file():
+            if child.is_dir() and layout.recipe_manifest_path(child).is_file():
                 yield child
 
-    def _load_pattern(self, pattern_root: Path) -> domain.Pattern:
-        manifest_path = pattern_root / "recipe.yaml"
+    def _load_pattern(self, pattern_root: Path, manifest_path: Path) -> domain.Pattern:
         raw_data = config.load_yaml_mapping(
             manifest_path,
             label="Pattern manifest",
             error_type=ValueError,
         )
-        return _pattern_from_manifest(pattern_root, raw_data)
+        return _pattern_from_manifest(pattern_root, manifest_path, raw_data)
 
 
 def _pattern_from_manifest(
     pattern_root: Path,
+    manifest_path: Path,
     raw_data: dict[str, Any],
 ) -> domain.Pattern:
     try:
@@ -86,9 +87,7 @@ def _pattern_from_manifest(
         raise ValueError(f"Invalid Pattern manifest: {exc}") from exc
 
     if manifest.schema_version != 1:
-        raise ValueError(
-            f"Unsupported Pattern schema_version in {pattern_root / 'recipe.yaml'}"
-        )
+        raise ValueError(f"Unsupported Pattern schema_version in {manifest_path}")
 
     return domain.Pattern(
         name=pattern_root.name,

@@ -7,6 +7,7 @@ class EnclosureProjectLayout:
     enclosure_dir_names = (".enclosure",)
     config_file_stem = "enclosure"
     config_extensions = (".yaml", ".yml")
+    recipe_manifest_file_name = "recipe.yaml"
     bootstrap_instructions_dir_name = ".github"
     bootstrap_instructions_file_name = "copilot-instructions.md"
     agent_instructions_file_name = "AGENTS.md"
@@ -129,6 +130,9 @@ class EnclosureProjectLayout:
 
         return self.recipes_dir(target_root)
 
+    def recipe_manifest_path(self, recipe_root: Path) -> Path:
+        return recipe_root / self.recipe_manifest_file_name
+
 
 _CURRENT_LAYOUT = EnclosureProjectLayout()
 
@@ -143,6 +147,10 @@ def current_layout() -> EnclosureProjectLayout:
 
 def current_recipes_root() -> Path:
     return _CURRENT_LAYOUT.recipe_root(current_project_root())
+
+
+def recipe_manifest_path(recipe_root: Path) -> Path:
+    return _CURRENT_LAYOUT.recipe_manifest_path(recipe_root)
 
 
 def current_config_mapping() -> tuple[Path, Path, dict[str, object]]:
@@ -167,4 +175,5 @@ __all__ = [
     "current_layout",
     "current_project_root",
     "current_recipes_root",
+    "recipe_manifest_path",
 ]

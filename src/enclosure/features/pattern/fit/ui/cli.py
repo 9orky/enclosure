@@ -1,0 +1,40 @@
+from __future__ import annotations
+
+from typing import Annotated
+
+import typer
+
+from enclosure.shared import ui
+
+app = typer.Typer(
+    help="Run the fit Pattern module command.",
+    invoke_without_command=True,
+)
+
+
+@app.callback()
+@ui.command_error_boundary
+def fit_command(
+    llm: Annotated[
+        bool,
+        typer.Option("--llm", help="Print LLM-focused guidance for this command."),
+    ],
+    docs: Annotated[
+        bool,
+        typer.Option("--docs", help="Print human-focused documentation for this command."),
+    ],
+) -> None:
+    if llm:
+        ui.render_llm("llm.tmpl")
+        return
+    if docs:
+        ui.render_docs("docs.tmpl")
+        return
+
+    ui.render(None, template_name="result.tmpl", context={})
+
+
+ui.set_command_defaults(fit_command, {"llm": False, "docs": False})
+
+
+__all__ = ["app"]

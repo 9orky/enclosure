@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 from enclosure.__main__ import app
 from enclosure.features.workspace.health import application
+from enclosure.shared import layout
 
 
 def test_workspace_health_accepts_valid_fixture_workspace(
@@ -99,7 +100,7 @@ def test_workspace_health_reports_recipe_drift_as_non_blocking_baseline(
 ) -> None:
     project = fixture_project("enclosure-workspace")
     use_project(project)
-    recipe_manifest = project.recipes_dir / "component" / "recipe.yaml"
+    recipe_manifest = layout.recipe_manifest_path(project.recipes_dir / "component")
     recipe_manifest.write_text(
         "\n".join(
             (

@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from enclosure.features.workspace.recipe import application
+from enclosure.shared import layout
 
 
 class WorkspaceRecipeCheckTest(unittest.TestCase):
@@ -837,7 +838,7 @@ def _write_recipe(
     role_line: str = "role: archetype",
 ) -> None:
     recipe_path.mkdir()
-    (recipe_path / "recipe.yaml").write_text(
+    layout.recipe_manifest_path(recipe_path).write_text(
         textwrap.dedent(
             f"""
             schema_version: 1
@@ -1115,7 +1116,7 @@ def _write_recipe_files(
     for recipe_name, (manifest_text, template_text) in recipe_specs.items():
         recipe_path = recipe_root / recipe_name
         recipe_path.mkdir()
-        (recipe_path / "recipe.yaml").write_text(
+        layout.recipe_manifest_path(recipe_path).write_text(
             manifest_text,
             encoding="utf-8",
         )

@@ -84,6 +84,7 @@ workspace:
       architecture/shape: module-report-cli
       health/report: module-report-cli
       pattern/catalog: pattern-module
+      pattern/fit: pattern-module
       workspace/config: module-config-support
       workspace/health: module-report-cli
       workspace/plan: module-workspace-cli

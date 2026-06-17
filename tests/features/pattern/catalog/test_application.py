@@ -4,6 +4,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
+from enclosure.shared import layout
 from enclosure.features.pattern.catalog import application
 from enclosure.features.pattern.catalog import domain
 
@@ -152,7 +153,10 @@ def _validate_catalog(
 
 def _write_pattern(pattern_path: Path, manifest: str) -> None:
     pattern_path.mkdir(parents=True)
-    (pattern_path / "recipe.yaml").write_text(manifest.strip() + "\n", encoding="utf-8")
+    layout.recipe_manifest_path(pattern_path).write_text(
+        manifest.strip() + "\n",
+        encoding="utf-8",
+    )
     templates_path = pattern_path / "templates"
     templates_path.mkdir()
     (templates_path / "domain.py.tmpl").write_text(
