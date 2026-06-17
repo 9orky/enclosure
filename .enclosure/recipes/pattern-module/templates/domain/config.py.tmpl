@@ -1,0 +1,12 @@
+from __future__ import annotations
+
+from pydantic import Field
+
+from enclosure.shared import config
+
+
+class {{ target.class }}Config(config.StrictConfigModel):
+    skip: tuple[str, ...] = Field(default_factory=tuple)
+
+
+__all__ = ["{{ target.class }}Config"]

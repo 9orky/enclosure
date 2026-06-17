@@ -5,4 +5,6 @@ Use this Pattern module for the {{ target.name }} part of the Pattern feature.
 ## When To Use It
 
 - When work belongs to `{{ target.path }}`.
-- When the module should keep the full Pattern package shape.
+- When the module needs one application use case per file.
+- When domain concepts must stay split by concept instead of accumulating in one model file.
+- When filesystem/config/template adapters need separate infrastructure files.

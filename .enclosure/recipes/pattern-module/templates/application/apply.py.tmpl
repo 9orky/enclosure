@@ -1,0 +1,14 @@
+from __future__ import annotations
+
+from ..domain.reference import {{ target.class }}Reference
+from ..domain.result import {{ target.class }}Result
+
+
+def apply_{{ target.snake }}(reference: {{ target.class }}Reference) -> {{ target.class }}Result:
+    return {{ target.class }}Result(
+        reference=reference,
+        changed_paths=(),
+    )
+
+
+__all__ = ["apply_{{ target.snake }}"]

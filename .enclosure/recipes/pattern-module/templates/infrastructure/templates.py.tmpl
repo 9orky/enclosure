@@ -1,0 +1,10 @@
+from __future__ import annotations
+
+from enclosure.shared import templates
+
+
+def render_{{ target.snake }}_text(template_text: str, context: dict[str, object]) -> str:
+    return templates.render_recipe_template(template_text, context)
+
+
+__all__ = ["render_{{ target.snake }}_text"]

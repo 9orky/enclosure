@@ -1,0 +1,28 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+from pydantic import ValidationError
+
+from enclosure.shared import config
+
+from ..domain.manifest import {{ target.class }}Manifest
+
+
+def load_{{ target.snake }}_manifest(manifest_path: Path) -> {{ target.class }}Manifest:
+    raw_data = config.load_yaml_mapping(
+        manifest_path,
+        label="Pattern manifest",
+        error_type=ValueError,
+    )
+    try:
+        manifest = {{ target.class }}Manifest.model_validate(raw_data)
+    except ValidationError as exc:
+        raise ValueError(f"Invalid Pattern manifest: {exc}") from exc
+
+    if manifest.schema_version != 1:
+        raise ValueError(f"Unsupported Pattern schema_version in {manifest_path}")
+    return manifest
+
+
+__all__ = ["load_{{ target.snake }}_manifest"]

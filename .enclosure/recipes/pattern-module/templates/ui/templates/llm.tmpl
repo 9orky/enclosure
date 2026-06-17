@@ -4,8 +4,10 @@ Use this module when working inside `{{ target.path }}`.
 
 ## Rules
 
-- Keep domain models in `domain`.
-- Keep workspace access and filesystem adapters in `infrastructure`.
-- Keep use-case orchestration in `application`.
+- Keep `__init__.py` files empty except `from __future__ import annotations`.
+- Keep exactly one application use case in each `application/*.py` file.
+- Keep exactly one domain concept in each `domain/*.py` file.
+- Keep filesystem, manifest, config, template, and workspace adapters in separate `infrastructure/*.py` files.
 - Keep CLI and presentation in `ui`.
+- Do not add export hubs or re-export symbols from package seams.
 - Use `enclosure.shared.layout.recipe_manifest_path(...)` for recipe manifests; do not hardcode manifest filenames.
