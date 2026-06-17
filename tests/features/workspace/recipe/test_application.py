@@ -607,6 +607,228 @@ class WorkspaceRecipeCheckTest(unittest.TestCase):
             violation.code for violation in report.violations
         ))
 
+    def test_recipe_bench_reports_unmapped_module(self) -> None:
+        report = _bench_preview(
+            selected_module="feature/missing",
+            roles_map={"feature/module": "role"},
+            actual_files_by_module={"feature/module": ("sample.py",)},
+        )
+
+        self.assertEqual(("module_unmapped",), tuple(
+            violation.code for violation in report.violations
+        ))
+
+    def test_recipe_bench_reports_no_residue_for_matching_modules(self) -> None:
+        report = _bench_preview(
+            selected_module="feature/module",
+            roles_map={
+                "feature/module": "role",
+                "feature/peer": "role",
+            },
+            actual_files_by_module={
+                "feature/module": ("sample.py",),
+                "feature/peer": ("sample.py",),
+            },
+        )
+
+        self.assertTrue(report.passed())
+        self.assertEqual(2, report.same_role_module_count)
+        self.assertEqual(0, report.local_residue_count)
+        self.assertEqual(0, report.local_slot_growth_count)
+        self.assertEqual(0, report.local_content_weight_count)
+        self.assertEqual(0, report.local_warp_count)
+        self.assertEqual("clean", report.classification)
+        self.assertEqual((), report.recurrence)
+        self.assertEqual(("sample.py",), report.selected.actual_files)
+        self.assertEqual(("sample.py",), report.selected.expected_files)
+
+    def test_recipe_bench_reports_unique_local_residue(self) -> None:
+        report = _bench_preview(
+            selected_module="feature/module",
+            roles_map={
+                "feature/module": "role",
+                "feature/peer": "role",
+            },
+            actual_files_by_module={
+                "feature/module": ("sample.py", "unique.py"),
+                "feature/peer": ("sample.py",),
+            },
+        )
+
+        self.assertEqual(("unique.py",), report.selected.residue_files)
+        self.assertEqual("local", report.classification)
+        self.assertEqual(1, report.recurrence[0].count)
+        self.assertEqual("local", report.recurrence[0].label)
+
+    def test_recipe_bench_counts_package_internals_as_slot_growth(self) -> None:
+        report = _bench_preview(
+            selected_module="feature/module",
+            roles_map={
+                "feature/module": "role",
+                "feature/peer": "role",
+            },
+            actual_files_by_module={
+                "feature/module": ("sample/__init__.py", "sample/private.py"),
+                "feature/peer": ("sample/__init__.py",),
+            },
+            recipes={
+                "module": _container_manifest({"role": "role"}),
+                "role": _slot_manifest(
+                    slot_lines=("    sample: package",),
+                    targets=("{{ target.path }}/sample/__init__.py",),
+                ),
+            },
+        )
+
+        self.assertEqual((), report.selected.residue_files)
+        self.assertEqual(("sample/private.py",), report.selected.slot_growth_files)
+        self.assertEqual(1, report.local_slot_growth_count)
+        self.assertEqual("local", report.classification)
+
+    def test_recipe_bench_reports_content_weight_for_large_files(self) -> None:
+        report = _bench_preview(
+            selected_module="feature/module",
+            roles_map={"feature/module": "role"},
+            actual_files_by_module={"feature/module": ("sample.py",)},
+            content_by_file={
+                "feature/module/sample.py": "\n".join(
+                    f"def function_{index}():\n    return {index}"
+                    for index in range(25)
+                ),
+            },
+        )
+
+        self.assertEqual(1, report.local_content_weight_count)
+        self.assertEqual("sample.py", report.selected.content_weights[0].path)
+        self.assertIn("symbols", report.selected.content_weights[0].reason)
+        self.assertEqual("local", report.classification)
+
+    def test_recipe_bench_counts_same_role_recurrence_and_excludes_other_roles(self) -> None:
+        report = _bench_preview(
+            selected_module="feature/module",
+            roles_map={
+                "feature/module": "role",
+                "feature/peer": "role",
+                "feature/other": "other",
+            },
+            actual_files_by_module={
+                "feature/module": ("sample.py", "common.py"),
+                "feature/peer": ("sample.py", "common.py"),
+                "feature/other": ("sample.py", "common.py"),
+            },
+            recipes={
+                "module": _container_manifest({"role": "role", "other": "other"}),
+                "role": _recipe_manifest(role="archetype", content=""),
+                "other": _recipe_manifest(role="archetype", content=""),
+            },
+        )
+
+        self.assertEqual(2, report.same_role_module_count)
+        self.assertEqual(("common.py",), report.selected.residue_files)
+        self.assertEqual(1, report.repeated_residue_count)
+        self.assertEqual(2, report.recurrence[0].count)
+        self.assertEqual(("feature/module", "feature/peer"), report.recurrence[0].modules)
+
+    def test_recipe_bench_uses_configured_skip_for_actual_files(self) -> None:
+        report = _bench_preview(
+            selected_module="feature/module",
+            roles_map={"feature/module": "role"},
+            actual_files_by_module={
+                "feature/module": ("sample.py", "cache/generated.tmp"),
+            },
+            skip=("cache/**",),
+        )
+
+        self.assertEqual(("sample.py",), report.selected.actual_files)
+        self.assertEqual((), report.selected.residue_files)
+        self.assertEqual((), report.selected.slot_growth_files)
+
+    def test_recipe_bench_html_contains_visual_sections(self) -> None:
+        report = _bench_preview(
+            selected_module="feature/module",
+            roles_map={
+                "feature/module": "role",
+                "feature/peer": "role",
+            },
+            actual_files_by_module={
+                "feature/module": ("sample.py", "common.py"),
+                "feature/peer": ("sample.py", "common.py"),
+            },
+            content_by_file={
+                "feature/module/common.py": "def smell():\n    return True\n",
+            },
+        )
+
+        html_report = application.render_recipe_bench_html(report)
+
+        self.assertIn("Bench Preview Warp Report", html_report)
+        self.assertIn("Actual Tree", html_report)
+        self.assertIn("Recipe Expected", html_report)
+        self.assertIn("Forbidden Residue", html_report)
+        self.assertIn("Slot Growth", html_report)
+        self.assertIn("Content Weight", html_report)
+        self.assertIn("Same-Role Matrix", html_report)
+        self.assertIn("Recurrence", html_report)
+        self.assertIn("feature/module", html_report)
+        self.assertIn("common.py", html_report)
+        self.assertIn("2/2 <span class=\"badge severity-high\">established</span>", html_report)
+        self.assertIn("badge severity-high", html_report)
+        self.assertIn("severity-card severity-high", html_report)
+        self.assertIn("def smell()", html_report)
+
+    def test_recipe_bench_all_reports_workspace_warp_index(self) -> None:
+        report = _bench_all_preview(
+            roles_map={
+                "feature/module": "role",
+                "feature/peer": "role",
+                "feature/other": "other",
+            },
+            actual_files_by_module={
+                "feature/module": ("sample.py", "common.py"),
+                "feature/peer": ("sample.py", "common.py"),
+                "feature/other": ("sample.py", "local.py"),
+            },
+            recipes={
+                "module": _container_manifest({"role": "role", "other": "other"}),
+                "role": _recipe_manifest(role="archetype", content=""),
+                "other": _recipe_manifest(role="archetype", content=""),
+            },
+        )
+
+        self.assertTrue(report.passed())
+        self.assertEqual(3, report.module_count)
+        self.assertEqual(2, report.role_count)
+        self.assertEqual(3, report.reports_with_residue_count)
+        self.assertEqual(3, report.reports_with_warp_count)
+        self.assertEqual(3, report.local_residue_count)
+        self.assertEqual(2, report.repeated_residue_count)
+        self.assertEqual(3, report.local_warp_count)
+        self.assertEqual("established", report.classification)
+
+    def test_recipe_bench_all_html_contains_workspace_sections(self) -> None:
+        report = _bench_all_preview(
+            roles_map={
+                "feature/module": "role",
+                "feature/peer": "role",
+            },
+            actual_files_by_module={
+                "feature/module": ("sample.py", "common.py"),
+                "feature/peer": ("sample.py", "common.py"),
+            },
+        )
+
+        html_report = application.render_recipe_bench_all_html(report)
+
+        self.assertIn("Workspace Warp Index", html_report)
+        self.assertIn("Module Index", html_report)
+        self.assertIn("Roles", html_report)
+        self.assertIn("feature/module", html_report)
+        self.assertIn("feature/peer", html_report)
+        self.assertIn("common.py", html_report)
+        self.assertIn("2/2 <span class=\"badge severity-high\">established</span>", html_report)
+        self.assertIn("severity-row severity-high", html_report)
+        self.assertIn("severity-bar severity-high", html_report)
+
 
 def _write_recipe(
     recipe_path: Path,
@@ -773,6 +995,93 @@ def _check_ladder_drift(
             return_value=project_root,
         ):
             return application.check_recipe_drifts(recipe_root=recipe_root)
+
+
+def _bench_preview(
+    *,
+    selected_module: str,
+    roles_map: dict[str, str],
+    actual_files_by_module: dict[str, tuple[str, ...]],
+    recipes: dict[str, tuple[str, str]] | None = None,
+    skip: tuple[str, ...] = (),
+    content_by_file: dict[str, str] | None = None,
+) -> application.RecipeBenchReport:
+    with tempfile.TemporaryDirectory() as temporary_directory:
+        project_root = Path(temporary_directory) / "project"
+        recipe_root = project_root / ".enclosure" / "recipes"
+        project_root.mkdir()
+        recipe_root.mkdir(parents=True)
+        for module_name, actual_files in actual_files_by_module.items():
+            module_path = project_root / "src" / "features" / module_name
+            module_path.mkdir(parents=True)
+            for actual_file in actual_files:
+                actual_path = module_path / actual_file
+                actual_path.parent.mkdir(parents=True, exist_ok=True)
+                actual_path.write_text(
+                    (content_by_file or {}).get(
+                        f"{module_name}/{actual_file}",
+                        "",
+                    ),
+                    encoding="utf-8",
+                )
+        _write_recipe_files(
+            recipe_root,
+            recipes
+            if recipes is not None
+            else {
+                "module": _container_manifest({"role": "role"}),
+                "role": _recipe_manifest(role="archetype", content=""),
+            },
+        )
+        _write_config(project_root, roles_map=roles_map, skip=skip)
+
+        with patch.object(
+            application.layout,
+            "current_project_root",
+            return_value=project_root,
+        ):
+            return application.bench_preview(
+                selected_module,
+                recipe_root=recipe_root,
+            )
+
+
+def _bench_all_preview(
+    *,
+    roles_map: dict[str, str],
+    actual_files_by_module: dict[str, tuple[str, ...]],
+    recipes: dict[str, tuple[str, str]] | None = None,
+    skip: tuple[str, ...] = (),
+) -> application.RecipeBenchAllReport:
+    with tempfile.TemporaryDirectory() as temporary_directory:
+        project_root = Path(temporary_directory) / "project"
+        recipe_root = project_root / ".enclosure" / "recipes"
+        project_root.mkdir()
+        recipe_root.mkdir(parents=True)
+        for module_name, actual_files in actual_files_by_module.items():
+            module_path = project_root / "src" / "features" / module_name
+            module_path.mkdir(parents=True)
+            for actual_file in actual_files:
+                actual_path = module_path / actual_file
+                actual_path.parent.mkdir(parents=True, exist_ok=True)
+                actual_path.write_text("", encoding="utf-8")
+        _write_recipe_files(
+            recipe_root,
+            recipes
+            if recipes is not None
+            else {
+                "module": _container_manifest({"role": "role"}),
+                "role": _recipe_manifest(role="archetype", content=""),
+            },
+        )
+        _write_config(project_root, roles_map=roles_map, skip=skip)
+
+        with patch.object(
+            application.layout,
+            "current_project_root",
+            return_value=project_root,
+        ):
+            return application.bench_all_preview(recipe_root=recipe_root)
 
 
 def _container_manifest(roles_map: dict[str, str] | None = None) -> tuple[str, str]:

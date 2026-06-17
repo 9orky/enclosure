@@ -2,32 +2,29 @@
 
 ## Purpose
 
-Inspect, validate, preview, and render recipes.
+Inspect, validate, preview, render, and bench recipes.
 
 ## When To Run
 
-- Before creating files.
-- Before hand-writing shaped files.
-- When validating recipes.
+- Before creating or hand-writing shaped files.
+- When validating recipe metadata or drift.
 - Between `enclosure workspace rules` and `enclosure health`.
 
 ## How To Read The Result
 
-- Listing shows available recipes.
-- Summary shows inputs and targets.
+- Listing shows recipes; summary shows inputs and targets.
 - Check validates metadata and rendering.
-- Dry run shows create/skip status.
-- Shell preview shows rendered content.
+- Dry run shows create/skip; shell preview shows content.
+- Bench writes module/workspace warp HTML.
 - Recipes may compose `fragment` recipes.
 
 ## Examples
 
 - First run: `enclosure workspace recipe --list`, `enclosure workspace recipe <name> --show`, then `enclosure workspace recipe <name> <path> --shell`.
-- Inspect recipes before creating files.
 - Keep ownership in `workspace.recipe.roles_map`.
+- Bench warp with `--bench <module>` or `--bench-all` plus `--html <path>`.
 - Provide required inputs as variables.
-- If dry run skips a target, preserve or edit manually.
-- If check fails, fix the recipe before generation.
+- If dry run skips or check fails, preserve existing work and fix the recipe before generation.
 
 ## Agent Tips
 

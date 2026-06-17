@@ -385,6 +385,214 @@ class RecipeDriftReport:
         return any(drift.has_drift() for drift in self.drifts)
 
 
+@dataclass(frozen=True)
+class RecipeBenchFileContent:
+    path: str
+    content: str
+    truncated: bool = False
+
+
+@dataclass(frozen=True)
+class RecipeBenchContentWeight:
+    path: str
+    line_count: int
+    symbol_count: int
+    reason: str
+
+
+@dataclass(frozen=True)
+class RecipeBenchModule:
+    module_name: str
+    actual_files: tuple[str, ...] = ()
+    expected_files: tuple[str, ...] = ()
+    residue_files: tuple[str, ...] = ()
+    slot_growth_files: tuple[str, ...] = ()
+    content_weights: tuple[RecipeBenchContentWeight, ...] = ()
+    missing_files: tuple[str, ...] = ()
+    file_contents: tuple[RecipeBenchFileContent, ...] = ()
+
+    def has_residue(self) -> bool:
+        return bool(self.residue_files)
+
+    def has_warp(self) -> bool:
+        return bool(
+            self.missing_files
+            or self.residue_files
+            or self.slot_growth_files
+            or self.content_weights
+        )
+
+
+@dataclass(frozen=True)
+class RecipeBenchRecurrence:
+    path: str
+    count: int
+    modules: tuple[str, ...]
+    label: str
+
+
+@dataclass(frozen=True)
+class RecipeBenchReport:
+    project_root: Path
+    recipe_root: Path
+    architecture_root: Path
+    selected_module: str
+    role_name: str
+    classification: str
+    same_role_modules: tuple[RecipeBenchModule, ...] = ()
+    recurrence: tuple[RecipeBenchRecurrence, ...] = ()
+    slot_growth_recurrence: tuple[RecipeBenchRecurrence, ...] = ()
+    content_weight_recurrence: tuple[RecipeBenchRecurrence, ...] = ()
+    selected: RecipeBenchModule | None = None
+    violations: tuple[RecipeCheckViolation, ...] = ()
+
+    def passed(self) -> bool:
+        return not self.violations
+
+    @property
+    def same_role_module_count(self) -> int:
+        return len(self.same_role_modules)
+
+    @property
+    def local_residue_count(self) -> int:
+        if self.selected is None:
+            return 0
+        return len(self.selected.residue_files)
+
+    @property
+    def local_slot_growth_count(self) -> int:
+        if self.selected is None:
+            return 0
+        return len(self.selected.slot_growth_files)
+
+    @property
+    def local_content_weight_count(self) -> int:
+        if self.selected is None:
+            return 0
+        return len(self.selected.content_weights)
+
+    @property
+    def local_warp_count(self) -> int:
+        if self.selected is None:
+            return 0
+        return (
+            len(self.selected.missing_files)
+            + len(self.selected.residue_files)
+            + len(self.selected.slot_growth_files)
+            + len(self.selected.content_weights)
+        )
+
+    @property
+    def repeated_residue_count(self) -> int:
+        if self.selected is None:
+            return 0
+        repeated_paths = {
+            item.path
+            for item in self.recurrence
+            if item.count > 1
+        }
+        return sum(1 for path in self.selected.residue_files if path in repeated_paths)
+
+    @property
+    def repeated_slot_growth_count(self) -> int:
+        if self.selected is None:
+            return 0
+        repeated_paths = {
+            item.path
+            for item in self.slot_growth_recurrence
+            if item.count > 1
+        }
+        return sum(
+            1
+            for path in self.selected.slot_growth_files
+            if path in repeated_paths
+        )
+
+    @property
+    def repeated_content_weight_count(self) -> int:
+        if self.selected is None:
+            return 0
+        repeated_paths = {
+            item.path
+            for item in self.content_weight_recurrence
+            if item.count > 1
+        }
+        return sum(
+            1
+            for weight in self.selected.content_weights
+            if weight.path in repeated_paths
+        )
+
+    @property
+    def repeated_warp_count(self) -> int:
+        return (
+            self.repeated_residue_count
+            + self.repeated_slot_growth_count
+            + self.repeated_content_weight_count
+        )
+
+
+@dataclass(frozen=True)
+class RecipeBenchAllReport:
+    project_root: Path
+    recipe_root: Path
+    architecture_root: Path
+    classification: str
+    reports: tuple[RecipeBenchReport, ...] = ()
+    violations: tuple[RecipeCheckViolation, ...] = ()
+
+    def passed(self) -> bool:
+        return not self.violations and all(report.passed() for report in self.reports)
+
+    @property
+    def module_count(self) -> int:
+        return len(self.reports)
+
+    @property
+    def role_count(self) -> int:
+        return len({report.role_name for report in self.reports if report.role_name})
+
+    @property
+    def local_residue_count(self) -> int:
+        return sum(report.local_residue_count for report in self.reports)
+
+    @property
+    def local_slot_growth_count(self) -> int:
+        return sum(report.local_slot_growth_count for report in self.reports)
+
+    @property
+    def local_content_weight_count(self) -> int:
+        return sum(report.local_content_weight_count for report in self.reports)
+
+    @property
+    def local_warp_count(self) -> int:
+        return sum(report.local_warp_count for report in self.reports)
+
+    @property
+    def repeated_residue_count(self) -> int:
+        return sum(report.repeated_residue_count for report in self.reports)
+
+    @property
+    def repeated_slot_growth_count(self) -> int:
+        return sum(report.repeated_slot_growth_count for report in self.reports)
+
+    @property
+    def repeated_content_weight_count(self) -> int:
+        return sum(report.repeated_content_weight_count for report in self.reports)
+
+    @property
+    def repeated_warp_count(self) -> int:
+        return sum(report.repeated_warp_count for report in self.reports)
+
+    @property
+    def reports_with_residue_count(self) -> int:
+        return sum(1 for report in self.reports if report.local_residue_count)
+
+    @property
+    def reports_with_warp_count(self) -> int:
+        return sum(1 for report in self.reports if report.local_warp_count)
+
+
 def variable_context_for(name: str, value: Any) -> Any:
     if isinstance(value, tuple):
         return value

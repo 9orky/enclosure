@@ -1,0 +1,16 @@
+Bench preview for module '{{ report.selected_module }}'.
+Role: {{ report.role_name or "unknown" }}
+Same-role modules: {{ report.same_role_module_count }}
+Local warp: {{ report.local_warp_count }}
+Forbidden residue: {{ report.local_residue_count }}
+Slot growth: {{ report.local_slot_growth_count }}
+Content weight: {{ report.local_content_weight_count }}
+Repeated warp: {{ report.repeated_warp_count }}
+Classification: {{ report.classification }}
+HTML report: {{ html_report_path|present_path(project_root) }}
+{% if report.violations %}
+Findings:
+{% for violation in report.violations %}
+- {{ violation.code }}: {{ violation.message }}
+{% endfor %}
+{% endif %}

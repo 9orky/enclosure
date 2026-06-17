@@ -80,6 +80,27 @@ def recipe_command(
             help="Compare mapped feature modules with their recipe role file trees.",
         ),
     ],
+    bench_module: Annotated[
+        str | None,
+        typer.Option(
+            "--bench",
+            help="Build an HTML bench preview warp report for a mapped module.",
+        ),
+    ],
+    bench_all_requested: Annotated[
+        bool,
+        typer.Option(
+            "--bench-all",
+            help="Build an HTML warp index for every mapped module.",
+        ),
+    ],
+    html_report_path: Annotated[
+        Path | None,
+        typer.Option(
+            "--html",
+            help="Write the bench preview HTML report to this path.",
+        ),
+    ],
     llm: Annotated[
         bool,
         typer.Option("--llm", help="Print LLM-focused guidance for this command."),
@@ -103,6 +124,51 @@ def recipe_command(
     recipe_root = layout.current_recipes_root()
     recipe_root_label = ui.present_path(recipe_root, project_root)
     variables = application.parse_variables(tuple(raw_variables or ()))
+
+    if bench_all_requested:
+        if html_report_path is None:
+            raise ValueError("--html is required with --bench-all")
+        report = application.bench_all_preview(recipe_root=recipe_root)
+        html_report_path.parent.mkdir(parents=True, exist_ok=True)
+        html_report_path.write_text(
+            application.render_recipe_bench_all_html(report),
+            encoding="utf-8",
+        )
+        ui.render(
+            None,
+            template_name="bench_all_result.tmpl",
+            context={
+                "report": report,
+                "html_report_path": html_report_path,
+            },
+        )
+        if not report.passed():
+            ui.exit_with_error()
+        return
+
+    if bench_module:
+        if html_report_path is None:
+            raise ValueError("--html is required with --bench")
+        report = application.bench_preview(
+            bench_module,
+            recipe_root=recipe_root,
+        )
+        html_report_path.parent.mkdir(parents=True, exist_ok=True)
+        html_report_path.write_text(
+            application.render_recipe_bench_html(report),
+            encoding="utf-8",
+        )
+        ui.render(
+            None,
+            template_name="bench_result.tmpl",
+            context={
+                "report": report,
+                "html_report_path": html_report_path,
+            },
+        )
+        if not report.passed():
+            ui.exit_with_error()
+        return
 
     if list_requested:
         ui.render(
@@ -210,6 +276,9 @@ ui.set_command_defaults(
         "show_requested": False,
         "check_requested": False,
         "drifts_requested": False,
+        "bench_module": None,
+        "bench_all_requested": False,
+        "html_report_path": None,
         "llm": False,
         "docs": False,
     },

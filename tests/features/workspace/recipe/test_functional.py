@@ -145,3 +145,91 @@ def test_workspace_recipe_check_reports_broken_fixture_recipe(
 
     assert result.exit_code == 1, result.output
     assert "render_failed" in result.output
+
+
+def test_workspace_recipe_cli_writes_bench_preview_html_report(
+    fixture_project,
+    use_project,
+    cli_runner,
+) -> None:
+    project = fixture_project("enclosure-workspace")
+    use_project(project)
+    module_path = project.root / "src" / "sample" / "component"
+    module_path.mkdir(parents=True)
+    (module_path / "sample.py").write_text("class Sample:\n    pass\n", encoding="utf-8")
+    (module_path / "extra.py").write_text("def smell():\n    pass\n", encoding="utf-8")
+    report_path = project.root / "bench-preview.html"
+
+    result = cli_runner.invoke(
+        app,
+        [
+            "workspace",
+            "recipe",
+            "--bench",
+            "sample/component",
+            "--html",
+            str(report_path),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Bench preview for module 'sample/component'." in result.output
+    assert "Role: component" in result.output
+    assert "Local warp:" in result.output
+    assert "Slot growth:" in result.output
+    assert "Content weight:" in result.output
+    assert "Classification:" in result.output
+    assert "HTML report: bench-preview.html" in result.output
+    assert report_path.exists()
+    html_report = report_path.read_text(encoding="utf-8")
+    assert "Bench Preview Warp Report" in html_report
+    assert "Actual Tree" in html_report
+    assert "Recipe Expected" in html_report
+    assert "Forbidden Residue" in html_report
+    assert "Slot Growth" in html_report
+    assert "Content Weight" in html_report
+    assert "Same-Role Matrix" in html_report
+    assert "Recurrence" in html_report
+    assert "extra.py" in html_report
+    assert "def smell()" in html_report
+
+
+def test_workspace_recipe_cli_writes_bench_all_html_report(
+    fixture_project,
+    use_project,
+    cli_runner,
+) -> None:
+    project = fixture_project("enclosure-workspace")
+    use_project(project)
+    module_path = project.root / "src" / "sample" / "component"
+    module_path.mkdir(parents=True)
+    (module_path / "sample.py").write_text("class Sample:\n    pass\n", encoding="utf-8")
+    (module_path / "extra.py").write_text("def smell():\n    pass\n", encoding="utf-8")
+    report_path = project.root / "warp-index.html"
+
+    result = cli_runner.invoke(
+        app,
+        [
+            "workspace",
+            "recipe",
+            "--bench-all",
+            "--html",
+            str(report_path),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Workspace warp index." in result.output
+    assert "Mapped modules: 1" in result.output
+    assert "Modules with warp:" in result.output
+    assert "Slot growth:" in result.output
+    assert "Content weight:" in result.output
+    assert "Classification:" in result.output
+    assert "HTML report: warp-index.html" in result.output
+    assert report_path.exists()
+    html_report = report_path.read_text(encoding="utf-8")
+    assert "Workspace Warp Index" in html_report
+    assert "Module Index" in html_report
+    assert "Roles" in html_report
+    assert "sample/component" in html_report
+    assert "extra.py" in html_report
