@@ -1,0 +1,10 @@
+from __future__ import annotations
+
+from . import domain, infrastructure
+
+
+def describe_{{ target.snake }}_context() -> domain.{{ target.class }}PatternContext:
+    return infrastructure.load_{{ target.snake }}_context()
+
+
+__all__ = ["describe_{{ target.snake }}_context"]

@@ -6,3 +6,4 @@ archetypes:
   - module-domain-package-cli
   - module-report-cli
   - module-workspace-cli
+  - pattern-module

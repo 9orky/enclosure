@@ -1,0 +1,3 @@
+{% raw %}{{ context.module_path }}
+Project root: {{ context.project_root|present_path(project_root) }}
+Pattern root: {{ context.pattern_root|present_path(project_root) }}{% endraw %}
