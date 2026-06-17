@@ -26,13 +26,14 @@ app = typer.Typer(
         "rules, and generate shared project scaffolding."
     ),
     invoke_without_command=True,
-    no_args_is_help=True,
+    no_args_is_help=False,
 )
 
 
 @app.callback()
 @ui.command_error_boundary
 def root_command(
+    ctx: typer.Context,
     llm: Annotated[
         bool,
         typer.Option("--llm", help="Print LLM-focused guidance for this CLI."),
@@ -47,6 +48,9 @@ def root_command(
         raise typer.Exit()
     if docs:
         ui.render_docs("docs.tmpl")
+        raise typer.Exit()
+    if ctx.invoked_subcommand is None:
+        ui.render_splash()
         raise typer.Exit()
 
 

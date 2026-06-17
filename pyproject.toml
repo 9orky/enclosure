@@ -41,6 +41,7 @@ dependencies = [
     "Jinja2>=3.1",
     "pydantic>=2.8",
     "PyYAML>=6.0",
+    "rich>=15",
     "typer>=0.12",
 ]
 

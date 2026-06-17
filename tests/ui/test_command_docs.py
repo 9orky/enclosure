@@ -9,7 +9,7 @@ from typer.testing import CliRunner
 
 from enclosure.__main__ import app
 from enclosure.features.workspace import config as workspace_config
-from enclosure.shared import config
+from enclosure.shared import config, guild
 from scripts import generate_module_docs
 
 
@@ -38,6 +38,48 @@ MINIMAL_AGENT_INSTRUCTION = (
 
 
 class CommandDocsTest(unittest.TestCase):
+    def test_root_no_args_renders_guild_splash(self) -> None:
+        runner = CliRunner()
+
+        result = runner.invoke(app, [])
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        lower_output = result.output.lower()
+        for term in guild.GUILD_GLOSSARY:
+            with self.subTest(term=term.name):
+                self.assertIn(term.name, result.output)
+                for word in glossary_description_words(term.description):
+                    self.assertIn(word, lower_output)
+        self.assertIn("for agents run with --llm", result.output)
+        self.assertNotIn("First move", result.output)
+        self.assertNotIn("guild card", result.output)
+        self.assertNotIn("Usage:", result.output)
+
+    def test_guild_glossary_is_single_sourced(self) -> None:
+        ui_source = (TEMPLATE_ROOT / "shared" / "ui.py").read_text(encoding="utf-8")
+
+        self.assertIn("guild.GUILD_GLOSSARY", ui_source)
+        copied_sources = tuple(glossary_copy_candidate_files())
+        for term in guild.GUILD_GLOSSARY:
+            with self.subTest(term=term.name):
+                self.assertNotIn(repr(term.description), ui_source)
+                copies = [
+                    path.relative_to(PROJECT_ROOT).as_posix()
+                    for path in copied_sources
+                    if term.description in path.read_text(encoding="utf-8")
+                ]
+                self.assertEqual([], copies)
+
+    def test_root_help_remains_syntax_reference(self) -> None:
+        runner = CliRunner()
+
+        result = runner.invoke(app, ["--help"])
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertIn("Usage:", result.output)
+        self.assertIn("workspace", result.output)
+        self.assertIn("architecture", result.output)
+
     def test_docs_surfaces_render_successfully(self) -> None:
         runner = CliRunner()
 
@@ -295,6 +337,30 @@ def guidance_template_files() -> tuple[Path, ...]:
     for pattern in GUIDANCE_TEMPLATE_GLOBS:
         files.extend(PROJECT_ROOT.glob(pattern))
     return tuple(sorted(set(files)))
+
+
+def glossary_copy_candidate_files() -> tuple[Path, ...]:
+    allowed_paths = {
+        PROJECT_ROOT / "src" / "enclosure" / "shared" / "guild.py",
+    }
+    files: list[Path] = []
+    for pattern in ("src/enclosure/**/*.py", "src/enclosure/**/*.tmpl", "tests/**/*.py"):
+        files.extend(PROJECT_ROOT.glob(pattern))
+    return tuple(
+        sorted(
+            path
+            for path in set(files)
+            if path not in allowed_paths and "__pycache__" not in path.parts
+        )
+    )
+
+
+def glossary_description_words(description: str) -> tuple[str, ...]:
+    return tuple(
+        word.strip(".,:;").lower()
+        for word in description.split()
+        if len(word.strip(".,:;")) > 3
+    )
 
 
 def guidance_max_template_chars() -> int:

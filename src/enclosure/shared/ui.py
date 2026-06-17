@@ -10,8 +10,13 @@ from typing import Any, ParamSpec, TypeVar, get_type_hints
 import typer
 import modwire.architecture.render
 from jinja2 import Environment, StrictUndefined
+from rich import box
+from rich.console import Console, Group
+from rich.panel import Panel
+from rich.padding import Padding
+from rich.text import Text
 
-from enclosure.shared import architecture, layout, limits
+from enclosure.shared import architecture, guild, layout, limits
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -85,6 +90,24 @@ def render_docs(template_name: str) -> None:
             },
         ).rstrip("\n")
     )
+
+
+def render_splash() -> None:
+    glossary_items: list[object] = []
+    for index, term in enumerate(guild.GUILD_GLOSSARY):
+        bottom_margin = 0 if index == len(guild.GUILD_GLOSSARY) - 1 else 1
+        glossary_items.append(Text(term.name, style="bold cyan"))
+        glossary_items.append(Padding(term.description, (0, 0, bottom_margin, 4)))
+
+    panel = Panel(
+        Group(*glossary_items),
+        title="A repo-local charter for humans and coding agents.",
+        subtitle="for agents run with --llm",
+        border_style="cyan",
+        box=box.ROUNDED,
+        padding=(1, 3),
+    )
+    Console(highlight=False).print(panel)
 
 
 def _local_template_text(template_name: str) -> str:
@@ -206,5 +229,6 @@ __all__ = [
     "render",
     "render_docs",
     "render_llm",
+    "render_splash",
     "set_command_defaults",
 ]
