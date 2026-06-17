@@ -5,8 +5,11 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from enclosure.shared import layout
-from enclosure.features.pattern.catalog import application
-from enclosure.features.pattern.catalog import domain
+from enclosure.features.pattern.catalog.application import describe
+from enclosure.features.pattern.catalog.application import preview
+from enclosure.features.pattern.catalog.application import validate
+from enclosure.features.pattern.catalog.domain import manifest
+from enclosure.features.pattern.catalog.domain import report as report_domain
 
 
 class PatternCatalogTest(unittest.TestCase):
@@ -40,8 +43,8 @@ files:
 """,
             )
 
-            patterns = application.list_patterns(pattern_root=pattern_root)
-            component = application.show_pattern("component", pattern_root=pattern_root)
+            patterns = describe.list_patterns(pattern_root=pattern_root)
+            component = describe.show_pattern("component", pattern_root=pattern_root)
 
         self.assertEqual(("component", "module"), tuple(item["name"] for item in patterns))
         self.assertIsNotNone(component)
@@ -92,33 +95,33 @@ files:
 
     def test_composed_role_merges_included_ladder_slots(self) -> None:
         patterns_by_name = {
-            "base": domain.Pattern(
+            "base": manifest.Pattern(
                 name="base",
                 root_path=Path("base"),
-                role=domain.PatternRole.ARCHETYPE,
-                ladder=domain.PatternLadder(
+                role=manifest.PatternRole.ARCHETYPE,
+                ladder=manifest.PatternLadder(
                     family="module",
                     rung="base",
                     slots=(
-                        domain.PatternSlot(
-                            name=domain.PatternSlotName("domain"),
-                            state=domain.PatternSlotState.FILE,
+                        manifest.PatternSlot(
+                            name=manifest.PatternSlotName("domain"),
+                            state=manifest.PatternSlotState.FILE,
                         ),
                     ),
                     declared=True,
                 ),
             ),
-            "support": domain.Pattern(
+            "support": manifest.Pattern(
                 name="support",
                 root_path=Path("support"),
-                role=domain.PatternRole.FRAGMENT,
-                ladder=domain.PatternLadder(
+                role=manifest.PatternRole.FRAGMENT,
+                ladder=manifest.PatternLadder(
                     family="module-slot",
                     rung="support",
                     slots=(
-                        domain.PatternSlot(
-                            name=domain.PatternSlotName("infrastructure"),
-                            state=domain.PatternSlotState.FILE,
+                        manifest.PatternSlot(
+                            name=manifest.PatternSlotName("infrastructure"),
+                            state=manifest.PatternSlotState.FILE,
                         ),
                     ),
                     declared=True,
@@ -126,9 +129,9 @@ files:
             ),
         }
 
-        pattern = application.pattern_for_role("base+support", patterns_by_name)
+        pattern = preview.pattern_for_role("base+support", patterns_by_name)
         assert pattern is not None
-        ladder = application.composed_ladder_for(pattern, patterns_by_name)
+        ladder = preview.composed_ladder_for(pattern, patterns_by_name)
 
         self.assertEqual(
             ("domain", "infrastructure"),
@@ -140,12 +143,12 @@ def _validate_catalog(
     manifests: dict[str, str],
     *,
     roles_map: dict[str, str],
-) -> domain.PatternCatalogReport:
+) -> report_domain.PatternCatalogReport:
     with TemporaryDirectory() as temporary_directory:
         pattern_root = Path(temporary_directory)
         for pattern_name, manifest in manifests.items():
             _write_pattern(pattern_root / pattern_name, manifest)
-        return application.validate_catalog(
+        return validate.validate_catalog(
             pattern_root=pattern_root,
             roles_map=roles_map,
         )

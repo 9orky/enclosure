@@ -5,14 +5,14 @@ from typing import Any
 
 from pydantic import Field, ValidationError
 
-from enclosure.shared import config, layout
+from enclosure.shared import config
 
-from . import domain
+from ..domain import manifest
 
 
 class _PatternManifest(config.StrictConfigModel):
     schema_version: int
-    role: domain.PatternRole
+    role: manifest.PatternRole
     description: str = ""
     ladder: dict[str, Any] = Field(default_factory=dict)
     includes: list[str] = Field(default_factory=list)
@@ -22,94 +22,54 @@ class _PatternManifest(config.StrictConfigModel):
     files: list[dict[str, Any]] = Field(default_factory=list)
 
 
-def current_pattern_root() -> Path:
-    return layout.current_recipes_root()
-
-
-def load_pattern_config() -> domain.PatternConfig:
-    _project_root, config_path, raw_data = config.load_project_mapping()
-    return config.section(
-        raw_data,
-        "workspace.recipe",
-        domain.PatternConfig,
-        config_path,
+def load_pattern_manifest(
+    pattern_root: Path,
+    manifest_path: Path,
+) -> manifest.Pattern:
+    raw_data = config.load_yaml_mapping(
+        manifest_path,
+        label="Pattern manifest",
+        error_type=ValueError,
     )
-
-
-class FilePatternRepository:
-    def __init__(self, root_path: Path) -> None:
-        self.root_path = Path(root_path)
-
-    def find_all(self) -> tuple[domain.Pattern, ...]:
-        if not self.root_path.is_dir():
-            return ()
-
-        return tuple(
-            self._load_pattern(pattern_root, layout.recipe_manifest_path(pattern_root))
-            for pattern_root in sorted(
-                self._iter_pattern_roots(),
-                key=lambda path: path.name,
-            )
-        )
-
-    def get_by_name(self, name: str) -> domain.Pattern:
-        pattern_root = self.root_path / name
-        manifest_path = layout.recipe_manifest_path(pattern_root)
-        if not manifest_path.is_file():
-            raise LookupError(name)
-
-        return self._load_pattern(pattern_root, manifest_path)
-
-    def _iter_pattern_roots(self):
-        for child in self.root_path.iterdir():
-            if child.name.startswith("."):
-                continue
-            if child.is_dir() and layout.recipe_manifest_path(child).is_file():
-                yield child
-
-    def _load_pattern(self, pattern_root: Path, manifest_path: Path) -> domain.Pattern:
-        raw_data = config.load_yaml_mapping(
-            manifest_path,
-            label="Pattern manifest",
-            error_type=ValueError,
-        )
-        return _pattern_from_manifest(pattern_root, manifest_path, raw_data)
+    return _pattern_from_manifest(pattern_root, manifest_path, raw_data)
 
 
 def _pattern_from_manifest(
     pattern_root: Path,
     manifest_path: Path,
     raw_data: dict[str, Any],
-) -> domain.Pattern:
+) -> manifest.Pattern:
     try:
-        manifest = _PatternManifest.model_validate(raw_data)
+        parsed_manifest = _PatternManifest.model_validate(raw_data)
     except ValidationError as exc:
         raise ValueError(f"Invalid Pattern manifest: {exc}") from exc
 
-    if manifest.schema_version != 1:
+    if parsed_manifest.schema_version != 1:
         raise ValueError(f"Unsupported Pattern schema_version in {manifest_path}")
 
-    return domain.Pattern(
+    return manifest.Pattern(
         name=pattern_root.name,
         root_path=pattern_root,
-        description=manifest.description,
-        role=manifest.role,
-        ladder=_pattern_ladder_from(manifest.ladder),
-        includes=_pattern_includes_from(manifest.includes),
-        archetypes=_pattern_archetypes_from(manifest.archetypes),
-        roles_map=manifest.roles_map,
-        inputs=tuple(_input_specs_from(manifest.inputs)),
-        files=tuple(_pattern_files_from(manifest.files)),
+        description=parsed_manifest.description,
+        role=parsed_manifest.role,
+        ladder=_pattern_ladder_from(parsed_manifest.ladder),
+        includes=_pattern_includes_from(parsed_manifest.includes),
+        archetypes=_pattern_archetypes_from(parsed_manifest.archetypes),
+        roles_map=parsed_manifest.roles_map,
+        inputs=tuple(_input_specs_from(parsed_manifest.inputs)),
+        files=tuple(_pattern_files_from(parsed_manifest.files)),
     )
 
 
-def _input_specs_from(raw_inputs: Any) -> tuple[domain.PatternInputSpec, ...]:
+def _input_specs_from(
+    raw_inputs: Any,
+) -> tuple[manifest.PatternInputSpec, ...]:
     if raw_inputs is None:
         return ()
     if not isinstance(raw_inputs, dict):
         raise ValueError("Pattern inputs must be a mapping")
 
-    specs: list[domain.PatternInputSpec] = []
+    specs: list[manifest.PatternInputSpec] = []
     for name, raw_spec in raw_inputs.items():
         if raw_spec is None:
             raw_spec = {}
@@ -117,7 +77,7 @@ def _input_specs_from(raw_inputs: Any) -> tuple[domain.PatternInputSpec, ...]:
             raise ValueError("Pattern inputs must be named mappings")
 
         specs.append(
-            domain.PatternInputSpec(
+            manifest.PatternInputSpec(
                 name=name,
                 value_type=str(raw_spec.get("type", "string") or "string"),
                 required=bool(raw_spec.get("required", False)),
@@ -132,13 +92,15 @@ def _input_specs_from(raw_inputs: Any) -> tuple[domain.PatternInputSpec, ...]:
     return tuple(specs)
 
 
-def _pattern_files_from(raw_files: Any) -> tuple[domain.PatternFile, ...]:
+def _pattern_files_from(
+    raw_files: Any,
+) -> tuple[manifest.PatternFile, ...]:
     if raw_files is None:
         return ()
     if not isinstance(raw_files, list):
         raise ValueError("Pattern files must be a list")
 
-    files: list[domain.PatternFile] = []
+    files: list[manifest.PatternFile] = []
     for raw_file in raw_files:
         if not isinstance(raw_file, dict):
             raise ValueError("Pattern files must be mappings")
@@ -146,7 +108,12 @@ def _pattern_files_from(raw_files: Any) -> tuple[domain.PatternFile, ...]:
         target = raw_file.get("target")
         if not isinstance(source, str) or not isinstance(target, str):
             raise ValueError("Pattern files require source and target")
-        files.append(domain.PatternFile(domain.RelativePath(Path(source)), target))
+        files.append(
+            manifest.PatternFile(
+                manifest.RelativePath(Path(source)),
+                target,
+            )
+        )
     return tuple(files)
 
 
@@ -158,9 +125,11 @@ def _pattern_includes_from(raw_includes: Any) -> tuple[str, ...]:
     return _string_list(raw_includes, "Pattern includes must be strings")
 
 
-def _pattern_ladder_from(raw_ladder: Any) -> domain.PatternLadder:
+def _pattern_ladder_from(
+    raw_ladder: Any,
+) -> manifest.PatternLadder:
     if raw_ladder == {}:
-        return domain.PatternLadder()
+        return manifest.PatternLadder()
     if not isinstance(raw_ladder, dict):
         raise ValueError("Pattern ladder must be a mapping")
 
@@ -173,7 +142,7 @@ def _pattern_ladder_from(raw_ladder: Any) -> domain.PatternLadder:
         raise ValueError("Pattern ladder slots must be a mapping")
 
     slots = tuple(_pattern_slot_from(name, value) for name, value in raw_slots.items())
-    return domain.PatternLadder(
+    return manifest.PatternLadder(
         family=family,
         rung=rung,
         slots=slots,
@@ -181,7 +150,10 @@ def _pattern_ladder_from(raw_ladder: Any) -> domain.PatternLadder:
     )
 
 
-def _pattern_slot_from(raw_name: Any, raw_slot: Any) -> domain.PatternSlot:
+def _pattern_slot_from(
+    raw_name: Any,
+    raw_slot: Any,
+) -> manifest.PatternSlot:
     if not isinstance(raw_name, str):
         raise ValueError("Pattern ladder slot names must be strings")
 
@@ -205,14 +177,14 @@ def _pattern_slot_from(raw_name: Any, raw_slot: Any) -> domain.PatternSlot:
     if not isinstance(raw_state, str):
         raise ValueError(f"Pattern ladder slot requires state: {raw_name}")
     try:
-        state = domain.PatternSlotState(raw_state)
+        state = manifest.PatternSlotState(raw_state)
     except ValueError as exc:
         raise ValueError(
             f"Unsupported Pattern ladder state for {raw_name}: {raw_state}"
         ) from exc
 
-    return domain.PatternSlot(
-        name=domain.PatternSlotName(raw_name),
+    return manifest.PatternSlot(
+        name=manifest.PatternSlotName(raw_name),
         state=state,
         files=files,
         packages=packages,
@@ -233,8 +205,4 @@ def _string_list(value: Any, message: str) -> tuple[str, ...]:
     return tuple(value)
 
 
-__all__ = [
-    "FilePatternRepository",
-    "current_pattern_root",
-    "load_pattern_config",
-]
+__all__ = ["load_pattern_manifest"]

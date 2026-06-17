@@ -6,7 +6,7 @@ import typer
 
 from enclosure.shared import ui
 
-from .. import application
+from ..application import describe
 
 app = typer.Typer(
     help="Run the catalog Pattern module command.",
@@ -36,7 +36,7 @@ def catalog_command(
     ui.render(
         None,
         template_name="result.tmpl",
-        context={"patterns": application.list_current_patterns()},
+        context={"patterns": describe.list_current_patterns()},
     )
 
 

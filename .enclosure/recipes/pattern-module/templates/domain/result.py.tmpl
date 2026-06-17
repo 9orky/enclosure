@@ -3,12 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from .reference import {{ target.class }}Reference
+from . import reference
 
 
 @dataclass(frozen=True)
 class {{ target.class }}Result:
-    reference: {{ target.class }}Reference
+    reference: reference.{{ target.class }}Reference
     changed_paths: tuple[Path, ...]
 
 

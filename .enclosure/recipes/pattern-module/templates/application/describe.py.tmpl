@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from ..domain.report import {{ target.class }}Report
-from ..infrastructure.workspace import current_module_path
+from ..domain import report
+from ..infrastructure import workspace
 
 
-def describe_{{ target.snake }}() -> {{ target.class }}Report:
-    module_path = current_module_path()
-    return {{ target.class }}Report(
+def describe_{{ target.snake }}() -> report.{{ target.class }}Report:
+    module_path = workspace.current_module_path()
+    return report.{{ target.class }}Report(
         module_path=module_path,
         findings=(),
     )

@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from enclosure.shared import config
+import enclosure.shared.config
 
-from ..domain.config import {{ target.class }}Config
+from ..domain import config
 
 
-def load_{{ target.snake }}_config() -> {{ target.class }}Config:
-    _project_root, config_path, raw_data = config.load_project_mapping()
-    return config.section(
+def load_{{ target.snake }}_config() -> config.{{ target.class }}Config:
+    _project_root, config_path, raw_data = enclosure.shared.config.load_project_mapping()
+    return enclosure.shared.config.section(
         raw_data,
         "workspace.recipe",
-        {{ target.class }}Config,
+        config.{{ target.class }}Config,
         config_path,
     )
 

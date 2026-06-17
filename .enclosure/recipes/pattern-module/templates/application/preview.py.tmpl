@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from ..domain.reference import {{ target.class }}Reference
-from ..domain.result import {{ target.class }}Result
+from ..domain import reference, result
 
 
-def preview_{{ target.snake }}(reference: {{ target.class }}Reference) -> {{ target.class }}Result:
-    return {{ target.class }}Result(
-        reference=reference,
+def preview_{{ target.snake }}(target_reference: reference.{{ target.class }}Reference) -> result.{{ target.class }}Result:
+    return result.{{ target.class }}Result(
+        reference=target_reference,
         changed_paths=(),
     )
 
