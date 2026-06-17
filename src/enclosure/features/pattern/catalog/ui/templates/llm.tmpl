@@ -1,10 +1,11 @@
-# Catalog LLM Guide
+# Pattern Catalog LLM Guide
 
-Use this module when working inside `src/enclosure/features/pattern/catalog`.
+Use this module when work touches Pattern manifests, roles, includes, ladders,
+or `workspace.recipe.roles_map`.
 
 ## Rules
 
-- Keep domain models in `domain`.
-- Keep workspace access and filesystem adapters in `infrastructure`.
-- Keep use-case orchestration in `application`.
-- Keep CLI and presentation in `ui`.
+- Keep Pattern manifest data and validation types in `domain.py`.
+- Keep YAML/config/workspace loading in `infrastructure.py`.
+- Keep catalog queries and validation orchestration in `application.py`.
+- Do not move rendering, file materialization, drift, or bench logic here.

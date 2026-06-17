@@ -1,6 +1,6 @@
 schema_version: 1
 role: archetype
-description: Pattern feature module with compact file slots, one UI package, and no implementation logic in package seams.
+description: Pattern feature module with compact file slots, empty package seams, no export hubs, and no optional-argument boilerplate.
 ladder:
   family: module
   rung: pattern-module

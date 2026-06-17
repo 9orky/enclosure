@@ -1,3 +1,7 @@
-{{ context.module_path }}
-Project root: {{ context.project_root|present_path(project_root) }}
-Pattern root: {{ context.pattern_root|present_path(project_root) }}
+{% raw %}{% if patterns %}
+Available Patterns:
+{% for pattern in patterns -%}
+- {{ pattern.name }} ({{ pattern.role }}){{ " - " ~ pattern.description if pattern.description else "" }}
+{% endfor %}{% else %}
+No Patterns found.
+{% endif %}{% endraw %}

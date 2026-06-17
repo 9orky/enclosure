@@ -1,17 +1,3 @@
 from __future__ import annotations
 
-from enclosure.shared import layout
-
-from . import domain
-
-
-def load_{{ target.snake }}_context() -> domain.{{ target.class }}PatternContext:
-    project_root = layout.current_project_root()
-    return domain.{{ target.class }}PatternContext(
-        project_root=project_root,
-        pattern_root=layout.current_recipes_root(),
-        module_path="{{ target.path }}",
-    )
-
-
-__all__ = ["load_{{ target.snake }}_context"]
+__all__: list[str] = []

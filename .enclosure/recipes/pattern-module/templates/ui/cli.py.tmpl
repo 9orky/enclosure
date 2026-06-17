@@ -6,8 +6,6 @@ import typer
 
 from enclosure.shared import ui
 
-from .. import application
-
 app = typer.Typer(
     help="Run the {{ target.name }} Pattern module command.",
     invoke_without_command=True,
@@ -33,11 +31,7 @@ def {{ target.snake }}_command(
         ui.render_docs("docs.tmpl")
         return
 
-    ui.render(
-        None,
-        template_name="result.tmpl",
-        context={"context": application.describe_{{ target.snake }}_context()},
-    )
+    ui.render(None, template_name="result.tmpl", context={})
 
 
 ui.set_command_defaults({{ target.snake }}_command, {"llm": False, "docs": False})

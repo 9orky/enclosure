@@ -36,7 +36,7 @@ def catalog_command(
     ui.render(
         None,
         template_name="result.tmpl",
-        context={"context": application.describe_catalog_context()},
+        context={"patterns": application.list_current_patterns()},
     )
 
 
