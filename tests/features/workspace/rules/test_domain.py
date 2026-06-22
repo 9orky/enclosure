@@ -208,42 +208,46 @@ child_paths:
         self.assertFalse(plan.found)
         self.assertEqual(("structure",), plan.available_tags)
 
-    def test_path_inference_selects_structure_python_and_layers(self) -> None:
+    def test_path_inference_selects_structure_without_language_tags(self) -> None:
         selections = domain.infer_rule_tag_selections(
-            paths=(
-                Path(
-                    "src/enclosure/features/workspace/rules/domain/graph.py",
+            path_facts=(
+                domain.RulePathFacts(
+                    relative_path="src/enclosure/features/workspace/rules/domain.py",
+                    is_architecture_path=True,
+                    is_configured_source_file=True,
                 ),
             ),
             task="",
-            project_root=Path("."),
-            architecture_root="src/enclosure/features",
         )
 
         self.assertEqual(
-            ("structure", "python", "layers"),
+            ("structure",),
             domain.selected_tags(selections),
         )
 
-    def test_path_inference_selects_typescript_module_and_layers(self) -> None:
+    def test_path_inference_selects_configured_module_and_layers(self) -> None:
         selections = domain.infer_rule_tag_selections(
-            paths=(Path("src/features/orders/application/index.ts"),),
+            path_facts=(
+                domain.RulePathFacts(
+                    relative_path="src/features/orders/application/main.ts",
+                    is_architecture_path=True,
+                    is_configured_source_file=True,
+                    matches_module=True,
+                    matches_layer=True,
+                ),
+            ),
             task="",
-            project_root=Path("."),
-            architecture_root="src/features",
         )
 
         self.assertEqual(
-            ("structure", "typescript", "module", "layers"),
+            ("structure", "module", "layers"),
             domain.selected_tags(selections),
         )
 
     def test_task_inference_selects_refactoring_tags(self) -> None:
         selections = domain.infer_rule_tag_selections(
-            paths=(),
+            path_facts=(),
             task="refactoring",
-            project_root=Path("."),
-            architecture_root="src/enclosure/features",
         )
 
         self.assertEqual(
@@ -253,10 +257,8 @@ child_paths:
 
     def test_task_inference_selects_calibration_tags(self) -> None:
         selections = domain.infer_rule_tag_selections(
-            paths=(),
+            path_facts=(),
             task="calibration",
-            project_root=Path("."),
-            architecture_root="src/enclosure/features",
         )
 
         self.assertEqual(
@@ -266,10 +268,8 @@ child_paths:
 
     def test_task_inference_selects_module_start_tag(self) -> None:
         selections = domain.infer_rule_tag_selections(
-            paths=(),
+            path_facts=(),
             task="start coding module",
-            project_root=Path("."),
-            architecture_root="src/enclosure/features",
         )
 
         self.assertEqual(("module-start",), domain.selected_tags(selections))

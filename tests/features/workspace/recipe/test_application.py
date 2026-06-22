@@ -692,16 +692,32 @@ class WorkspaceRecipeCheckTest(unittest.TestCase):
             roles_map={"feature/module": "role"},
             actual_files_by_module={"feature/module": ("sample.py",)},
             content_by_file={
-                "feature/module/sample.py": "\n".join(
-                    f"def function_{index}():\n    return {index}"
-                    for index in range(25)
-                ),
+                "feature/module/sample.py": "\n".join("value" for _index in range(300)),
             },
         )
 
         self.assertEqual(1, report.local_content_weight_count)
         self.assertEqual("sample.py", report.selected.content_weights[0].path)
-        self.assertIn("symbols", report.selected.content_weights[0].reason)
+        self.assertIn("300 lines", report.selected.content_weights[0].reason)
+        self.assertEqual(0, report.selected.content_weights[0].symbol_count)
+        self.assertEqual("local", report.classification)
+
+    def test_recipe_bench_reports_content_weight_for_non_python_files(self) -> None:
+        report = _bench_preview(
+            selected_module="feature/module",
+            roles_map={"feature/module": "role"},
+            actual_files_by_module={"feature/module": ("sample.ts",)},
+            content_by_file={
+                "feature/module/sample.ts": "\n".join(
+                    "export const value = 1;" for _index in range(300)
+                ),
+            },
+        )
+
+        self.assertEqual(1, report.local_content_weight_count)
+        self.assertEqual("sample.ts", report.selected.content_weights[0].path)
+        self.assertIn("300 lines", report.selected.content_weights[0].reason)
+        self.assertEqual(0, report.selected.content_weights[0].symbol_count)
         self.assertEqual("local", report.classification)
 
     def test_recipe_bench_counts_same_role_recurrence_and_excludes_other_roles(self) -> None:

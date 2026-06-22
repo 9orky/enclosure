@@ -32,8 +32,9 @@ escalation_paths:
 
 ## Rules
 
-- Plan around compact module files: `domain.py`, `infrastructure.py`, `application.py`, `ui.py`.
-- Phase order is `domain -> infrastructure -> application -> ui`.
+- Plan around compact rendered layer files for `domain`, `infrastructure`,
+  `application`, and `ui`.
+- Phase order follows configured dependency direction from inner to outer layer.
 - Omit phases for responsibilities the module does not need.
 - UI phases consume the shared current-workspace SSOT; do not plan UI options
   for alternate project roots or architecture config paths.

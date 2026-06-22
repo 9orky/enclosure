@@ -38,8 +38,8 @@ child_paths:
 
 - Architecture rules rely mostly on glob patterns.
 - `architecture.root` maps compact patterns onto real source paths.
-- Example: with `architecture.root: src/enclosure/features`, `*/*/ui` means
-  `src/enclosure/features/*/*/ui`; full paths still work.
+- Example: with `architecture.root: src`, `*/ui` means `src/*/ui`;
+  full paths still work.
 - Best trick: define tags as small reusable globs, then write boundaries in terms of those anchors.
 - Keep patterns architecture-sized: describe capabilities, modules, layers, and
   seams instead of long filesystem boilerplate.

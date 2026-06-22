@@ -31,7 +31,7 @@ class RenderTest(unittest.TestCase):
         output = echo.call_args.args[0]
         self.assertIn("architecture:", output)
         self.assertIn("workspace:", output)
-        self.assertIn("# Local architecture contract for this repository.", output)
+        self.assertIn("# Generic enclosure architecture contract template.", output)
 
     def test_render_docs_renders_local_template(self) -> None:
         with (

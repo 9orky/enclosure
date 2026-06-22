@@ -32,9 +32,10 @@ Reference shape: `architecture/boundaries`.
 
 ## Rules
 
-- Prefer compact root files: `domain.py`, `infrastructure.py`, `application.py`, `ui.py`.
-- Add only the files whose responsibilities exist.
-- `__init__.py` is the public module seam.
+- Prefer compact rendered layer files for `domain`, `infrastructure`,
+  `application`, and `ui` responsibilities.
+- Add only the rendered files whose responsibilities exist.
+- The configured module API path is the public module seam.
 - Keep file shape aligned with [SHAPE.md](SHAPE.md).
 - Use [MODULE_LADDER.md](MODULE_LADDER.md) when a recipe shape grows from a file slot into a package slot.
 - Leave legacy layer folders in place until that module is intentionally refactored.

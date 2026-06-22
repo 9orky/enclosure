@@ -143,8 +143,9 @@ A typical architecture contract describes:
 
 ```yaml
 architecture:
-  root: src/enclosure/features
-  exclusions: [.venv/**, .enclosure/**, tests/**]
+  language: typescript
+  root: src
+  exclusions: [.enclosure/**, tests/**]
   boundaries:
     tags:
       - { name: feature, match: "*" }

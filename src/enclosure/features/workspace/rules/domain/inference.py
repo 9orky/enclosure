@@ -1,25 +1,6 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from pydantic import BaseModel, ConfigDict
-
-_SOURCE_LANGUAGE_BY_SUFFIX = {
-    ".js": ("javascript", "JavaScript"),
-    ".jsx": ("javascript", "JavaScript"),
-    ".php": ("php", "PHP"),
-    ".py": ("python", "Python"),
-    ".ts": ("typescript", "TypeScript"),
-    ".tsx": ("typescript", "TypeScript"),
-}
-_PACKAGE_SEAM_NAMES = {
-    "__init__.py",
-    "index.js",
-    "index.jsx",
-    "index.php",
-    "index.ts",
-    "index.tsx",
-}
 
 
 class RuleTagSelection(BaseModel):
@@ -27,6 +8,20 @@ class RuleTagSelection(BaseModel):
 
     tag: str
     reason: str
+
+
+class RulePathFacts(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    relative_path: str
+    is_workspace_rules_path: bool = False
+    is_workspace_recipe_path: bool = False
+    is_architecture_contract_path: bool = False
+    is_test_path: bool = False
+    is_architecture_path: bool = False
+    is_configured_source_file: bool = False
+    matches_module: bool = False
+    matches_layer: bool = False
 
 
 def explicit_rule_tag_selections(tags: tuple[str, ...]) -> tuple[RuleTagSelection, ...]:
@@ -41,20 +36,12 @@ def explicit_rule_tag_selections(tags: tuple[str, ...]) -> tuple[RuleTagSelectio
 
 def infer_rule_tag_selections(
     *,
-    paths: tuple[Path, ...],
+    path_facts: tuple[RulePathFacts, ...],
     task: str,
-    project_root: Path,
-    architecture_root: str,
 ) -> tuple[RuleTagSelection, ...]:
     selections: list[RuleTagSelection] = []
-    for path in paths:
-        selections.extend(
-            _path_tag_selections(
-                path,
-                project_root=project_root,
-                architecture_root=architecture_root,
-            )
-        )
+    for facts in path_facts:
+        selections.extend(_path_tag_selections(facts))
     selections.extend(_task_tag_selections(task))
     return _unique_selections(tuple(selections))
 
@@ -64,101 +51,60 @@ def selected_tags(selections: tuple[RuleTagSelection, ...]) -> tuple[str, ...]:
 
 
 def _path_tag_selections(
-    path: Path,
-    *,
-    project_root: Path,
-    architecture_root: str,
+    facts: RulePathFacts,
 ) -> tuple[RuleTagSelection, ...]:
-    relative_path = _relative_project_path(path, project_root)
-    parts = relative_path.parts
-    if not parts:
+    label = facts.relative_path.strip()
+    if not label:
         return ()
 
     selections: list[RuleTagSelection] = []
-    label = relative_path.as_posix()
-    if parts[0] == ".enclosure":
-        selections.extend(_enclosure_path_selections(parts, label))
-    elif parts[0] in {"test", "tests"}:
+    if facts.is_workspace_rules_path:
+        selections.append(
+            RuleTagSelection(
+                tag="rules",
+                reason=f"`{label}` is a workspace rule document path.",
+            )
+        )
+    if facts.is_architecture_contract_path:
+        selections.append(
+            RuleTagSelection(
+                tag="architecture",
+                reason=f"`{label}` is the architecture contract.",
+            )
+        )
+    if facts.is_workspace_recipe_path:
+        selections.append(
+            RuleTagSelection(
+                tag="execution",
+                reason=f"`{label}` is a workspace recipe path.",
+            )
+        )
+    if facts.is_test_path:
         selections.append(
             RuleTagSelection(
                 tag="verification",
                 reason=f"`{label}` is a test path.",
             )
         )
-    elif _is_architecture_path(relative_path, architecture_root):
-        selections.extend(_architecture_path_selections(relative_path, architecture_root))
-    return tuple(selections)
-
-
-def _enclosure_path_selections(
-    parts: tuple[str, ...],
-    label: str,
-) -> tuple[RuleTagSelection, ...]:
-    if len(parts) >= 2 and parts[1] == "rules":
-        return (
-            RuleTagSelection(
-                tag="rules",
-                reason=f"`{label}` is a workspace rule document path.",
-            ),
-        )
-    if len(parts) >= 2 and parts[1].startswith("enclosure."):
-        return (
-            RuleTagSelection(
-                tag="architecture",
-                reason=f"`{label}` is the architecture contract.",
-            ),
-        )
-    if len(parts) >= 2 and parts[1] == "recipes":
-        return (
-            RuleTagSelection(
-                tag="execution",
-                reason=f"`{label}` is a workspace recipe path.",
-            ),
-        )
-    return ()
-
-
-def _architecture_path_selections(
-    path: Path,
-    architecture_root: str,
-) -> tuple[RuleTagSelection, ...]:
-    label = path.as_posix()
-    root = Path(architecture_root)
-    try:
-        architecture_relative_path = path.relative_to(root)
-    except ValueError:
-        architecture_relative_path = path
-
-    selections = [
-        RuleTagSelection(
-            tag="structure",
-            reason=f"`{label}` is under architecture.root `{architecture_root}`.",
-        )
-    ]
-    language = _SOURCE_LANGUAGE_BY_SUFFIX.get(path.suffix)
-    if language is not None:
-        tag, label_name = language
+    if facts.is_architecture_path:
         selections.append(
             RuleTagSelection(
-                tag=tag,
-                reason=f"`{label}` is a {label_name} source file.",
+                tag="structure",
+                reason=f"`{label}` is under architecture.root.",
             )
         )
-    if any(part in _PACKAGE_SEAM_NAMES for part in architecture_relative_path.parts):
+    if facts.matches_module:
         selections.append(
             RuleTagSelection(
                 tag="module",
-                reason=f"`{label}` touches a package seam.",
+                reason=f"`{label}` matches a configured module or module API tag.",
             )
-    )
-    layer_names = {"domain", "infrastructure", "application", "ui"}
-    if any(part in layer_names for part in architecture_relative_path.parts) or (
-        path.suffix in _SOURCE_LANGUAGE_BY_SUFFIX and path.stem in layer_names
-    ):
+        )
+    if facts.matches_layer:
         selections.append(
             RuleTagSelection(
                 tag="layers",
-                reason=f"`{label}` includes a known feature-layer segment.",
+                reason=f"`{label}` matches a configured architecture layer tag.",
             )
         )
     return tuple(selections)
@@ -200,24 +146,6 @@ def _task_tag_selections(task: str) -> tuple[RuleTagSelection, ...]:
     )
 
 
-def _relative_project_path(path: Path, project_root: Path) -> Path:
-    candidate = Path(path).expanduser()
-    if candidate.is_absolute():
-        try:
-            return candidate.resolve(strict=False).relative_to(project_root)
-        except ValueError:
-            return candidate
-    return candidate
-
-
-def _is_architecture_path(path: Path, architecture_root: str) -> bool:
-    try:
-        path.relative_to(Path(architecture_root))
-        return True
-    except ValueError:
-        return False
-
-
 def _unique_selections(
     selections: tuple[RuleTagSelection, ...],
 ) -> tuple[RuleTagSelection, ...]:
@@ -247,6 +175,7 @@ def _normalize_tags(tags: tuple[str, ...]) -> tuple[str, ...]:
 
 
 __all__ = [
+    "RulePathFacts",
     "RuleTagSelection",
     "explicit_rule_tag_selections",
     "infer_rule_tag_selections",

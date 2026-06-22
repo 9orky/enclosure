@@ -34,7 +34,7 @@ child_paths:
 
 ## Stop Or Descend
 
-- Read [MODULE.md](MODULE.md) for Python package seams.
+- Read [MODULE.md](MODULE.md) for configured module seams.
 - Read [SHAPE.md](SHAPE.md) for local signature and import-shape flags.
 - Read [FEATURE.md](FEATURE.md) for feature-root conventions.
 - Read [FEATURE_LAYERS.md](FEATURE_LAYERS.md) for the local layer set.

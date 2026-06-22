@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import ast
 import html
 from collections import Counter
 from collections.abc import Mapping
@@ -1473,22 +1472,7 @@ def _content_metrics_for(path: Path) -> tuple[int, int] | None:
         content = path.read_text(encoding="utf-8")
     except UnicodeDecodeError:
         return None
-    line_count = len(content.splitlines())
-    symbol_count = 0
-    if path.suffix == ".py":
-        try:
-            tree = ast.parse(content)
-        except SyntaxError:
-            tree = None
-        if tree is not None:
-            symbol_count = sum(
-                isinstance(
-                    node,
-                    ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef,
-                )
-                for node in ast.walk(tree)
-            )
-    return line_count, symbol_count
+    return len(content.splitlines()), 0
 
 
 def _content_weight_reason(

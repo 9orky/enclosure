@@ -46,10 +46,11 @@ global recipe requirement.
 
 - Prefer fixed slot fragments plus `includes` over new archetypes for every
   slot combination.
-- `file`: require `<slot>.py`; forbid `<slot>/`.
-- `package`: require `<slot>/__init__.py`; forbid `<slot>.py`; allow private internals.
-- `split-files`: require `<slot>/__init__.py` plus declared child files.
-- `split-packages`: require `<slot>/__init__.py` plus declared child packages.
+- `file`: require the rendered slot file; forbid the rendered slot container.
+- `package`: require the rendered package seam; forbid the rendered slot file;
+  allow private internals.
+- `split-files`: require the rendered package seam plus declared child files.
+- `split-packages`: require the rendered package seam plus declared child packages.
 
 ## Checks
 

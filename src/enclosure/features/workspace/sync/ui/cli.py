@@ -55,6 +55,13 @@ def init_command(
             help="Print human-focused documentation for this command.",
         ),
     ],
+    source_kind: Annotated[
+        str,
+        typer.Option(
+            "--language",
+            help="Set the source extractor when source detection is ambiguous.",
+        ),
+    ] = "",
 ) -> None:
     if llm:
         ui.render_llm("llm.tmpl")
@@ -63,7 +70,7 @@ def init_command(
         ui.render_docs("docs.tmpl")
         return
 
-    result = application.bootstrap_project()
+    result = application.bootstrap_project(source_kind=source_kind)
     ui.render(result, template_name="bootstrap_result.tmpl", context={})
 
 
@@ -126,7 +133,7 @@ def migrate_command(
 
 
 ui.set_command_defaults(sync_command, {"llm": False, "docs": False})
-ui.set_command_defaults(init_command, {"llm": False, "docs": False})
+ui.set_command_defaults(init_command, {"llm": False, "docs": False, "source_kind": ""})
 ui.set_command_defaults(update_command, {"llm": False, "docs": False})
 ui.set_command_defaults(migrate_command, {"llm": False, "docs": False})
 

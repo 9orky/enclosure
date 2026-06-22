@@ -48,7 +48,7 @@ escalation_paths:
 - Start procedure: run `enclosure architecture health --vv --top -1` or inspect
   the freshest equivalent report, locate the owning stream, compare with a
   nearby consistent sibling, use the mapped recipe for new modules or slots, and
-  implement in `domain -> infrastructure -> application -> ui` order.
+  implement in configured inner-to-outer layer order.
 
 ## Checks
 

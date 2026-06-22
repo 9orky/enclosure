@@ -21,7 +21,7 @@ Use the CLI to derive the route:
 ```sh
 enclosure workspace rules route --task calibration
 enclosure workspace rules route --tag structure
-enclosure workspace rules route --path src/enclosure/features/workspace/rules/domain/graph.py
+enclosure workspace rules route --path src/orders/catalog/domain
 ```
 
 ## Shared Then Local

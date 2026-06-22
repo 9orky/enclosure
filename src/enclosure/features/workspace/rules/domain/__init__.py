@@ -24,6 +24,7 @@ from .graph import (
     validate_rule_graph,
 )
 from .inference import (
+    RulePathFacts,
     RuleTagSelection,
     explicit_rule_tag_selections,
     infer_rule_tag_selections,
@@ -46,6 +47,7 @@ __all__ = [
     "RuleReadPlan",
     "RuleReadStep",
     "RuleReference",
+    "RulePathFacts",
     "RuleSchemaReport",
     "RuleDocumentSchema",
     "RuleSchemaPolicy",

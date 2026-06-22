@@ -4,24 +4,25 @@ from importlib.resources import files
 
 import pytest
 import yaml
-from modwire import supported_languages
+from modwire import supported_languages as supported_source_kinds
 
 from enclosure.__main__ import app
 from enclosure.shared import layout
+from tests.support.projects import FixtureProject
 
 
 def _packaged_instruction(name: str) -> str:
     return files("enclosure").joinpath("resources", name).read_text(encoding="utf-8")
 
 
-@pytest.mark.parametrize("language", supported_languages())
-def test_workspace_sync_init_creates_contract_for_supported_language_fixture(
+@pytest.mark.parametrize("source_kind", supported_source_kinds())
+def test_workspace_sync_init_creates_contract_for_supported_source_fixture(
     fixture_project,
     use_project,
     cli_runner,
-    language: str,
+    source_kind: str,
 ) -> None:
-    project = fixture_project(f"minimal-{language}")
+    project = fixture_project(f"minimal-{source_kind}")
     use_project(project)
 
     result = cli_runner.invoke(app, ["workspace", "sync", "init"])
@@ -41,6 +42,51 @@ def test_workspace_sync_init_creates_contract_for_supported_language_fixture(
     assert project.agent_instructions_path.read_text(
         encoding="utf-8"
     ) == _packaged_instruction("AGENTS.md")
+    generated_config = yaml.safe_load(project.config_path.read_text(encoding="utf-8"))
+    assert generated_config["architecture"]["language"] == source_kind
+    assert generated_config["architecture"]["root"] == "src"
+    assert generated_config["workspace"]["recipe"]["roles_map"] == {}
+
+
+def test_workspace_sync_init_requires_source_kind_for_ambiguous_source_project(
+    tmp_path,
+    use_project,
+    cli_runner,
+) -> None:
+    root = tmp_path / "mixed"
+    (root / "src").mkdir(parents=True)
+    (root / "src" / "app.py").write_text("VALUE = 1\n", encoding="utf-8")
+    (root / "src" / "app.ts").write_text("export const value = 1;\n", encoding="utf-8")
+    project = FixtureProject(name="mixed", root=root)
+    use_project(project)
+
+    result = cli_runner.invoke(app, ["workspace", "sync", "init"])
+
+    assert result.exit_code == 1, result.output
+    assert "Ambiguous source extractor" in result.output
+    assert "--language <language>" in result.output
+
+
+def test_workspace_sync_init_accepts_explicit_source_kind_for_ambiguous_source_project(
+    tmp_path,
+    use_project,
+    cli_runner,
+) -> None:
+    root = tmp_path / "mixed"
+    (root / "src").mkdir(parents=True)
+    (root / "src" / "app.py").write_text("VALUE = 1\n", encoding="utf-8")
+    (root / "src" / "app.ts").write_text("export const value = 1;\n", encoding="utf-8")
+    project = FixtureProject(name="mixed", root=root)
+    use_project(project)
+
+    result = cli_runner.invoke(
+        app,
+        ["workspace", "sync", "init", "--language", "typescript"],
+    )
+
+    assert result.exit_code == 0, result.output
+    generated_config = yaml.safe_load(project.config_path.read_text(encoding="utf-8"))
+    assert generated_config["architecture"]["language"] == "typescript"
 
 
 def test_workspace_sync_update_preserves_local_recipes_without_resource_recipe_seed(

@@ -31,9 +31,9 @@ Use `architecture/boundaries` and `architecture/clusters` as current reference m
 
 ## Rules
 
-- Feature roots stay small: `__init__.py`, optional `cli.py`, and owned modules.
+- Feature roots stay small: configured public seams and owned modules only.
 - Behavior lives in modules such as `architecture/boundaries`, not in the feature root.
-- Cross-feature imports use public seams, preferably `__init__.py` or feature `cli.py`.
+- Cross-feature imports use configured public seams.
 
 ## Checks
 

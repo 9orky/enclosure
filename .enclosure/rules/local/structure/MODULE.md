@@ -11,15 +11,14 @@ discovered_from:
 narrows_paths:
   - ../../shared/structure/MODULE.md
 audience: agent
-purpose: Record this repository's Python package seam after the shared module rule is in scope.
+purpose: Record this repository's module seam rule after the shared module rule is in scope.
 applies_when:
   - The shared module rule is already in scope.
-  - The target is an importable Python package in this repository.
+  - The target is an importable module unit in this repository.
 tags:
   - local
   - structure
   - module
-  - python
 read_directly: false
 tightens_paths:
   - ../../shared/structure/MODULE.md
@@ -32,9 +31,9 @@ escalation_paths:
 ## Rules
 
 - Package root is the public seam.
-- `__init__.py` exports only names used by real consumers.
-- Keep root entrypoints such as `cli.py` explicit.
-- Cross-file imports bring in modules through package seams, joined and unaliased.
+- The configured module API seam exports only names used by real consumers.
+- Keep root entrypoints explicit.
+- Cross-file imports bring in modules through configured seams, joined and unaliased.
 
 ## Checks
 

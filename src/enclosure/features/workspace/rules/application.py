@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from modwire.architecture import TagMatcher
+from modwire.extractors.loader import load_extractor
+
+from enclosure.features.architecture import flow
 from enclosure.shared import layout
 import enclosure.features.architecture.config
 import enclosure.features.workspace.config
@@ -90,10 +94,12 @@ def build_rule_read_plan(
     tag_selections = (
         domain.explicit_rule_tag_selections(tuple(tags))
         + domain.infer_rule_tag_selections(
-            paths=tuple(paths),
+            path_facts=_path_facts(
+                tuple(paths),
+                project_root=project_root,
+                architecture_settings=architecture_settings,
+            ),
             task=task,
-            project_root=project_root,
-            architecture_root=architecture_settings.architecture_root,
         )
     )
     selected_tags = domain.selected_tags(tag_selections)
@@ -203,6 +209,136 @@ def _report_from_check(
 
 def _is_local_path(path: Path) -> bool:
     return bool(path.parts and path.parts[0] == domain.RuleDocumentScope.LOCAL.value)
+
+
+def _path_facts(
+    paths: tuple[Path, ...],
+    *,
+    project_root: Path,
+    architecture_settings: object,
+) -> tuple[domain.RulePathFacts, ...]:
+    matcher = TagMatcher(architecture_settings)
+    architecture_root = getattr(architecture_settings, "architecture_root", "")
+    source_suffixes = _source_suffixes(getattr(architecture_settings, "language", ""))
+    module_tag_names = _module_tag_names(architecture_settings)
+    module_api_tag_names = _module_api_tag_names(architecture_settings)
+    layer_tag_names = _layer_tag_names(architecture_settings)
+    return tuple(
+        _path_fact(
+            path,
+            project_root=project_root,
+            architecture_root=architecture_root,
+            source_suffixes=source_suffixes,
+            matcher=matcher,
+            module_tag_names=module_tag_names,
+            module_api_tag_names=module_api_tag_names,
+            layer_tag_names=layer_tag_names,
+        )
+        for path in paths
+    )
+
+
+def _path_fact(
+    path: Path,
+    *,
+    project_root: Path,
+    architecture_root: str,
+    source_suffixes: tuple[str, ...],
+    matcher: TagMatcher,
+    module_tag_names: tuple[str, ...],
+    module_api_tag_names: tuple[str, ...],
+    layer_tag_names: tuple[str, ...],
+) -> domain.RulePathFacts:
+    relative_path = _relative_project_path(path, project_root)
+    parts = relative_path.parts
+    label = relative_path.as_posix()
+    is_architecture_path = _is_architecture_path(relative_path, architecture_root)
+    return domain.RulePathFacts(
+        relative_path=label,
+        is_workspace_rules_path=len(parts) >= 2
+        and parts[0] == ".enclosure"
+        and parts[1] == "rules",
+        is_workspace_recipe_path=len(parts) >= 2
+        and parts[0] == ".enclosure"
+        and parts[1] == "recipes",
+        is_architecture_contract_path=len(parts) >= 2
+        and parts[0] == ".enclosure"
+        and parts[1].startswith("enclosure."),
+        is_test_path=bool(parts and parts[0] in {"test", "tests"}),
+        is_architecture_path=is_architecture_path,
+        is_configured_source_file=relative_path.suffix in source_suffixes,
+        matches_module=is_architecture_path
+        and _matches_any(matcher, label, (*module_tag_names, *module_api_tag_names)),
+        matches_layer=is_architecture_path
+        and _matches_any(matcher, label, layer_tag_names),
+    )
+
+
+def _relative_project_path(path: Path, project_root: Path) -> Path:
+    candidate = Path(path).expanduser()
+    if candidate.is_absolute():
+        try:
+            return candidate.resolve(strict=False).relative_to(project_root)
+        except ValueError:
+            return candidate
+    return candidate
+
+
+def _is_architecture_path(path: Path, architecture_root: str) -> bool:
+    try:
+        path.relative_to(Path(architecture_root))
+        return True
+    except ValueError:
+        return False
+
+
+def _source_suffixes(language: str) -> tuple[str, ...]:
+    if not language:
+        return ()
+    return tuple(load_extractor(language).file_extensions)
+
+
+def _module_tag_names(architecture_settings: object) -> tuple[str, ...]:
+    tag_names = _configured_tag_names(architecture_settings)
+    return tuple(
+        tag_name
+        for tag_name in flow.configured_module_tags(architecture_settings)
+        if tag_name in tag_names
+    )
+
+
+def _module_api_tag_names(architecture_settings: object) -> tuple[str, ...]:
+    return tuple(
+        tag_name
+        for tag_name in _configured_tag_names(architecture_settings)
+        if tag_name == "api" or tag_name.endswith("_api")
+    )
+
+
+def _layer_tag_names(architecture_settings: object) -> tuple[str, ...]:
+    tag_names = _configured_tag_names(architecture_settings)
+    names: list[str] = []
+    for realm in flow.configured_realms(architecture_settings):
+        names.extend(realm.layers)
+    return tuple(
+        dict.fromkeys(tag_name for tag_name in names if tag_name in tag_names)
+    )
+
+
+def _configured_tag_names(architecture_settings: object) -> set[str]:
+    return {
+        getattr(rule, "name", "")
+        for rule in getattr(getattr(architecture_settings, "rules", object()), "tags", ())
+        if getattr(rule, "name", "")
+    }
+
+
+def _matches_any(
+    matcher: TagMatcher,
+    path: str,
+    tag_names: tuple[str, ...],
+) -> bool:
+    return any(matcher.match(path, tag_name) is not None for tag_name in tag_names)
 
 
 __all__ = [

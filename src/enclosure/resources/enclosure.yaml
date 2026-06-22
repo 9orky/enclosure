@@ -1,9 +1,8 @@
-# Local architecture contract for this repository.
+# Generic enclosure architecture contract template.
 
 architecture:
-  language: python
-  root: src/enclosure/features
-  exclusions: [.venv/**, .enclosure/**, tests/**, libraries/**]
+  root: .
+  exclusions: [.enclosure/**, tests/**, libraries/**]
 
   shape:
     max_classes_per_file: -1
@@ -25,28 +24,13 @@ architecture:
     allowed_imports_crossing_types: [module, symbol]
 
   boundaries:
-    tags:
-      - { name: feature, match: &feature "*", except: [], exclude: [] }
-      - { name: module, match: &module "*/*", except: ["*/__init__"], exclude: [] }
-      - { name: module_api, match: &module_api "*/*/__init__", except: [], exclude: [] }
-      - { name: domain, match: &domain "*/*/domain", except: [], exclude: [] }
-      - { name: infrastructure, match: &infrastructure "*/*/infrastructure", except: [], exclude: [] }
-      - { name: application, match: &application "*/*/application", except: [], exclude: [] }
-      - { name: ui, match: &ui "*/*/ui", except: [], exclude: [] }
-
-    rules:
-      - { source: *feature, disallow: [*feature], allow: [*module_api], allow_same_match: true }
-      - { source: *module, disallow: [*module], allow: [*module_api], allow_same_match: true }
-      - { source: "*/config/domain", disallow: [*module], allow: [*domain], allow_same_match: true }
-      - { source: *domain, disallow: [*application, *infrastructure, *ui], allow: [], allow_same_match: false }
-      - { source: *infrastructure, disallow: [*application, *ui], allow: [], allow_same_match: false }
-      - { source: *application, disallow: [*ui], allow: [], allow_same_match: false }
-      - { source: *ui, disallow: [*infrastructure], allow: [], allow_same_match: false }
+    tags: []
+    rules: []
 
     flow:
-      layers: [ui, application, infrastructure, domain]
-      module_tag: feature
-      analyzers: [backward-flow, no-cycles]
+      layers: []
+      module_tag: ""
+      analyzers: []
 
   map:
     top: 20
@@ -61,28 +45,11 @@ architecture:
 
 workspace:
   guidance:
-    max_template_chars: 2400
+    max_template_chars: 1200
   recipe:
-    skip:
-      - "**/__pycache__/**"
-      - "__pycache__/**"
-    roles_map:
-      architecture/boundaries: module-report-cli
-      architecture/clusters: module-report-cli
-      architecture/coherence: module-domain-package-cli
-      architecture/config: module-config-support
-      architecture/health: module-report-cli
-      architecture/map: module-report-cli
-      architecture/pressure: module-report-cli
-      architecture/shape: module-report-cli
-      health/report: module-report-cli
-      workspace/config: module-config-support
-      workspace/health: module-report-cli
-      workspace/plan: module-workspace-cli
-      workspace/recipe: module-workspace-cli
-      workspace/rules: module-domain-package-cli
-      workspace/sync: module-workspace-cli
+    skip: []
+    roles_map: {}
   rules:
     local:
-      max_content_chars: 2400
+      max_content_chars: 1200
   sync: {}

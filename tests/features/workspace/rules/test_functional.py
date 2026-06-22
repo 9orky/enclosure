@@ -3,6 +3,8 @@ from __future__ import annotations
 from importlib.resources import files
 from pathlib import Path
 
+import yaml
+
 from enclosure.__main__ import app
 from enclosure.features.workspace.rules import application, domain, infrastructure
 
@@ -129,8 +131,41 @@ def test_workspace_rules_route_infers_tags_from_path(
     )
 
     assert result.exit_code == 0, result.output
-    assert "Selected tags: structure, python, layers" in result.output
+    assert "Selected tags: structure" in result.output
+    assert "python" not in result.output
     assert "Tag selection" in result.output
+
+
+def test_workspace_rules_route_uses_configured_architecture_tags_for_path(
+    fixture_project,
+    use_project,
+    cli_runner,
+) -> None:
+    project = fixture_project("enclosure-workspace")
+    use_project(project)
+    raw_config = yaml.safe_load(project.config_path.read_text(encoding="utf-8"))
+    raw_config["architecture"]["boundaries"]["tags"] = [
+        {"name": "module", "match": "*/*", "except": [], "exclude": []},
+        {"name": "domain", "match": "*/*/domain", "except": [], "exclude": []},
+    ]
+    raw_config["architecture"]["boundaries"]["flow"]["layers"] = ["domain"]
+    raw_config["architecture"]["boundaries"]["flow"]["module_tag"] = "module"
+    project.config_path.write_text(yaml.safe_dump(raw_config), encoding="utf-8")
+
+    result = cli_runner.invoke(
+        app,
+        [
+            "workspace",
+            "rules",
+            "route",
+            "--path",
+            "src/example/module/domain.py",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Selected tags: structure, module, layers" in result.output
+    assert "python" not in result.output
 
 
 def test_workspace_rules_route_infers_tags_from_task(

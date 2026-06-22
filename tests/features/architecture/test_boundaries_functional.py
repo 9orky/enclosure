@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+import shutil
+
+import pytest
 
 from enclosure.__main__ import app
 from enclosure.shared import layout as project_layout
@@ -26,6 +29,31 @@ def test_boundaries_cli_renders_architectural_violations(
     assert result.exit_code == 1, result.output
     assert "Architectural Violations Detected" in result.output
     assert "Error: 'BoundariesReport' object is not iterable" not in result.output
+
+
+@pytest.mark.parametrize(
+    ("source_kind", "runtime"),
+    (("typescript", "node"), ("php", "php")),
+)
+def test_boundaries_cli_runs_for_non_python_source_fixtures(
+    fixture_project,
+    use_project,
+    cli_runner,
+    source_kind: str,
+    runtime: str,
+) -> None:
+    if shutil.which(runtime) is None:
+        pytest.skip(f"{runtime} runtime is not available")
+    project = fixture_project(f"minimal-{source_kind}")
+    use_project(project)
+
+    sync = cli_runner.invoke(app, ["workspace", "sync", "init"])
+    result = cli_runner.invoke(app, ["architecture", "boundaries"])
+
+    assert sync.exit_code == 0, sync.output
+    assert result.exit_code == 0, result.output
+    assert "Architecture Boundaries Passed" in result.output
+    assert "Error:" not in result.output
 
 
 def write_project(project_root: Path, files: dict[str, str]) -> None:

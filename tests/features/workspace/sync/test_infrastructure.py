@@ -4,6 +4,8 @@ import unittest
 from importlib.resources import files
 from pathlib import Path
 
+import yaml
+
 from enclosure.features.workspace.sync import domain, infrastructure
 
 
@@ -42,9 +44,12 @@ class WorkspaceSyncGeneratedAssetValidationTest(unittest.TestCase):
 
 
 def _packaged_config_content() -> str:
-    return files("enclosure").joinpath("resources", "enclosure.yaml").read_text(
+    raw_text = files("enclosure").joinpath("resources", "enclosure.yaml").read_text(
         encoding="utf-8"
     )
+    raw_data = yaml.safe_load(raw_text)
+    raw_data["architecture"]["language"] = "python"
+    return yaml.dump(raw_data, sort_keys=False)
 
 
 if __name__ == "__main__":

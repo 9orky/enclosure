@@ -7,6 +7,10 @@ from importlib.resources import files
 from pathlib import Path
 
 import yaml
+from modwire.extractors.loader import (
+    load_extractor,
+    supported_languages as supported_source_kinds,
+)
 
 import enclosure.features.architecture.config
 import enclosure.features.workspace.config
@@ -44,15 +48,24 @@ class _MigratedConfig:
 
 
 class FileRepository:
-    def load(self, path: Path) -> domain.Workspace:
+    def load(self, path: Path, *, source_kind: str = "") -> domain.Workspace:
         project_root = Path(path).resolve()
         workspace_layout = layout.EnclosureProjectLayout()
         shared_rule_documents = self._load_shared_rule_documents()
-        config_content = _packaged_text("enclosure.yaml")
+        packaged_config_content = _packaged_text("enclosure.yaml")
+        selected_extractor = source_kind or _existing_config_extractor(
+            workspace_layout.config_path(project_root, None)
+        )
+        config_content = _bootstrap_config_content(
+            project_root,
+            packaged_config_content,
+            source_kind=selected_extractor,
+        )
         migrated_config = self._migrated_config(
             project_root,
             workspace_layout,
             config_content,
+            fallback_config_content=config_content,
         )
         bootstrap_instruction_content = _packaged_text("copilot-instructions.md")
         agent_instruction_content = _packaged_text("AGENTS.md")
@@ -138,11 +151,13 @@ class FileRepository:
         project_root: Path,
         workspace_layout: layout.EnclosureProjectLayout,
         packaged_config_content: str,
+        *,
+        fallback_config_content: str,
     ) -> "_MigratedConfig":
         config_path = workspace_layout.config_path(project_root, None)
         if not config_path.is_file():
             return _MigratedConfig(
-                content=packaged_config_content,
+                content=fallback_config_content,
                 changed=False,
                 warnings=(),
             )
@@ -298,6 +313,112 @@ def _load_generated_yaml_mapping(
     if not isinstance(raw_data, dict):
         raise ValueError(f"{label} must contain a mapping at the top level: {path}")
     return raw_data
+
+
+def _existing_config_extractor(config_path: Path) -> str:
+    if not config_path.is_file():
+        return ""
+    try:
+        raw_data = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError):
+        return ""
+    if not isinstance(raw_data, dict):
+        return ""
+    contract_section = raw_data.get("architecture")
+    if not isinstance(contract_section, dict):
+        return ""
+    extractor = contract_section.get("language")
+    return extractor if isinstance(extractor, str) else ""
+
+
+def _bootstrap_config_content(
+    project_root: Path,
+    packaged_config_content: str,
+    *,
+    source_kind: str,
+) -> str:
+    raw_data = _load_generated_yaml_mapping(
+        packaged_config_content,
+        label="Generated config asset",
+        path=Path("resources/enclosure.yaml"),
+    )
+    selected_extractor = _selected_extractor(project_root, source_kind)
+    contract_section = _mapping_section(raw_data, "architecture")
+    workspace = _mapping_section(raw_data, "workspace")
+    recipe = _mapping_section(workspace, "recipe")
+
+    contract_section["language"] = selected_extractor
+    contract_section["root"] = "src" if (project_root / "src").is_dir() else "."
+    contract_section["exclusions"] = [".enclosure/**"]
+    recipe["skip"] = []
+    recipe["roles_map"] = {}
+    return _dump_migrated_config(raw_data)
+
+
+def _selected_extractor(project_root: Path, requested_source_kind: str) -> str:
+    normalized_source_kind = requested_source_kind.strip().lower()
+    if normalized_source_kind:
+        if normalized_source_kind not in supported_source_kinds():
+            supported = ", ".join(supported_source_kinds())
+            raise ValueError(
+                f"Unsupported source extractor: {requested_source_kind}. "
+                f"Supported: {supported}"
+            )
+        return normalized_source_kind
+
+    counts = _supported_extractor_source_counts(project_root)
+    if len(counts) == 1:
+        return next(iter(counts))
+    if not counts:
+        supported = ", ".join(supported_source_kinds())
+        raise ValueError(
+            "Could not detect a source extractor. "
+            f"Run `enclosure workspace sync init --language <language>`. "
+            f"Supported: {supported}"
+        )
+    choices = ", ".join(
+        f"{extractor}={count}" for extractor, count in sorted(counts.items())
+    )
+    raise ValueError(
+        "Ambiguous source extractor. "
+        f"Detected supported source files: {choices}. "
+        "Run `enclosure workspace sync init --language <language>`."
+    )
+
+
+def _supported_extractor_source_counts(project_root: Path) -> dict[str, int]:
+    suffixes_by_extractor = {
+        extractor: tuple(load_extractor(extractor).file_extensions)
+        for extractor in supported_source_kinds()
+    }
+    counts = {extractor: 0 for extractor in suffixes_by_extractor}
+    for path in _iter_project_files(project_root):
+        for extractor, suffixes in suffixes_by_extractor.items():
+            if path.suffix in suffixes:
+                counts[extractor] += 1
+    return {
+        extractor: count
+        for extractor, count in counts.items()
+        if count > 0
+    }
+
+
+def _iter_project_files(project_root: Path) -> Iterable[Path]:
+    excluded_roots = {".enclosure", ".git", ".dev", ".venv", "build", "dist"}
+    for path in project_root.rglob("*"):
+        if not path.is_file():
+            continue
+        relative_parts = path.relative_to(project_root).parts
+        if relative_parts and relative_parts[0] in excluded_roots:
+            continue
+        yield path
+
+
+def _mapping_section(data: dict[object, object], key: str) -> dict[object, object]:
+    value = data.get(key)
+    if not isinstance(value, dict):
+        raise ValueError(f"Generated config asset section must be a mapping: {key}")
+    return value
 
 
 def _merge_missing_config_values(

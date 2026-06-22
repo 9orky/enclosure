@@ -30,15 +30,15 @@ escalation_paths:
 
 `architecture/boundaries` and `architecture/clusters` are the model:
 
-- `domain.py`: config models, report types, local exceptions; no app or IO imports.
-- `infrastructure.py`: adapters and loading; may import domain types.
-- `application.py`: use-case orchestration; may import domain and infrastructure seams.
-- `ui.py`: CLI/presentation; may import application and public domain errors/types.
+- `domain`: config models, report types, local exceptions; no app or IO imports.
+- `infrastructure`: adapters and loading; may import domain types.
+- `application`: use-case orchestration; may import domain and infrastructure seams.
+- `ui`: command/presentation composition; may import application and public domain errors/types.
 
 ## Rules
 
 - Use only these layer names for governed modules.
-- Prefer one file per layer.
+- Prefer one rendered file per layer.
 - Split a layer into a folder only after stable internal responsibilities appear.
 - Direction is `ui -> application -> infrastructure -> domain`.
 - `application` may use domain types directly.

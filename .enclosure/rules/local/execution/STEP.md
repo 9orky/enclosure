@@ -33,11 +33,12 @@ escalation_paths:
 ## Rules
 
 - Keep each step owned by one file/layer.
-- Execute in approved order: `domain -> infrastructure -> application -> ui`.
+- Execute in approved inner-to-outer layer order.
 - Do not reach forward into a later layer to finish an earlier step.
 - When the step reaches UI, use the shared current-workspace SSOT instead of
   adding or forwarding alternate project-root/config inputs.
-- Add `__init__.py` and Typer app wiring as soon as they can honestly expose completed behavior.
+- Add public seam and command wiring as soon as they can honestly expose
+  completed behavior.
 - Prefer verification through public CLI/module seams.
 
 ## Checks
