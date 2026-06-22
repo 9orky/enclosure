@@ -128,6 +128,7 @@ def recipe_command(
     if bench_all_requested:
         if html_report_path is None:
             raise ValueError("--html is required with --bench-all")
+        _validate_html_report_path(html_report_path)
         report = application.bench_all_preview(recipe_root=recipe_root)
         html_report_path.parent.mkdir(parents=True, exist_ok=True)
         html_report_path.write_text(
@@ -149,6 +150,7 @@ def recipe_command(
     if bench_module:
         if html_report_path is None:
             raise ValueError("--html is required with --bench")
+        _validate_html_report_path(html_report_path)
         report = application.bench_preview(
             bench_module,
             recipe_root=recipe_root,
@@ -283,6 +285,11 @@ ui.set_command_defaults(
         "docs": False,
     },
 )
+
+
+def _validate_html_report_path(html_report_path: Path) -> None:
+    if html_report_path.name.startswith("-"):
+        raise ValueError("--html must be a file path, not an option flag")
 
 
 __all__ = ["app"]

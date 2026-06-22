@@ -8,7 +8,7 @@
 architecture:
   language: python
   root: src/enclosure/features
-  exclusions: [.venv/**, .enclosure/**, tests/**, libraries/**]
+  exclusions: [.venv/**, .enclosure/**, tests/**, libraries/**, __init__.py]
 
   shape:
     max_classes_per_file: -1
@@ -33,7 +33,7 @@ architecture:
 
   boundaries:
     tags:
-      - { name: feature, match: &feature "*", except: [], exclude: [] }
+      - { name: context, match: &context "*", except: ["__init__", "*/*/*"], exclude: [] }
       - { name: module, match: &module "*/*", except: ["*/__init__"], exclude: [] }
       - { name: module_api, match: &module_api "*/*/__init__", except: [], exclude: [] }
       - { name: domain, match: &domain "*/*/domain", except: [], exclude: [] }
@@ -42,9 +42,8 @@ architecture:
       - { name: ui, match: &ui "*/*/ui", except: [], exclude: [] }
 
     rules:
-      - { source: *feature, disallow: [*feature], allow: [*module_api], allow_same_match: true }
+      - { source: *context, disallow: [*context], allow: [*module_api], allow_same_match: false }
       - { source: *module, disallow: [*module], allow: [*module_api], allow_same_match: true }
-      - { source: "*/config/domain", disallow: [*module], allow: [*domain], allow_same_match: true }
       - { source: *domain, disallow: [*application, *infrastructure, *ui], allow: [], allow_same_match: false }
       - { source: *infrastructure, disallow: [*application, *ui], allow: [], allow_same_match: false }
       - { source: *application, disallow: [*ui], allow: [], allow_same_match: false }
@@ -52,7 +51,9 @@ architecture:
 
     flow:
       layers: [ui, application, infrastructure, domain]
-      module_tag: module
+      realms:
+        - { name: context, module_tag: context, layers: [] }
+        - { name: module, module_tag: module }
       analyzers: [backward-flow, no-cycles]
 
   map:

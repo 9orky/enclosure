@@ -5,6 +5,7 @@ from importlib import import_module
 from . import domain
 
 ArchitectureHealthReport = domain.ArchitectureHealthReport
+HealthConfig = domain.HealthConfig
 
 
 def build_health_report() -> domain.ArchitectureHealthReport:
@@ -18,6 +19,7 @@ def build_health_report_for_top(top: int | None) -> domain.ArchitectureHealthRep
 
 __all__ = [
     "ArchitectureHealthReport",
+    "HealthConfig",
     "build_health_report",
     "build_health_report_for_top",
 ]

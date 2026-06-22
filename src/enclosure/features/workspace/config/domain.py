@@ -4,9 +4,9 @@ from pathlib import Path
 
 from pydantic import Field, field_validator
 
-import enclosure.features.workspace.recipe.domain
-import enclosure.features.workspace.sync.domain
-from enclosure.features.workspace.rules.domain.config import RulesConfig
+import enclosure.features.workspace.recipe
+import enclosure.features.workspace.rules
+import enclosure.features.workspace.sync
 from enclosure.shared import config
 
 
@@ -23,9 +23,9 @@ class GuidanceConfig(config.StrictConfigModel):
 
 class WorkspaceConfig(config.StrictConfigModel):
     guidance: GuidanceConfig = Field(default_factory=GuidanceConfig)
-    recipe: enclosure.features.workspace.recipe.domain.RecipeConfig
-    rules: RulesConfig
-    sync: enclosure.features.workspace.sync.domain.SyncConfig
+    recipe: enclosure.features.workspace.recipe.RecipeConfig
+    rules: enclosure.features.workspace.rules.RulesConfig
+    sync: enclosure.features.workspace.sync.SyncConfig
 
     @classmethod
     def validate_mapping(

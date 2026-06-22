@@ -395,7 +395,7 @@ def validation_command(command: list[str]) -> list[str]:
             continue
         command_path.append(token)
 
-    return [*command_path, *options, "--help"]
+    return [*command_path, "--help"]
 
 
 if __name__ == "__main__":

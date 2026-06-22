@@ -49,6 +49,10 @@ escalation_paths:
   the freshest equivalent report, locate the owning stream, compare with a
   nearby consistent sibling, use the mapped recipe for new modules or slots, and
   implement in configured inner-to-outer layer order.
+- When a command requires an HTML or report output path, write it to an explicit
+  throwaway artifact path such as `.enclosure/.cache/reports/<name>.html` or a
+  `/tmp` path. Never use an option token such as `--help`, `--docs`, `--llm`, or
+  any other flag as the value for `--html` or another output-path option.
 
 ## Checks
 
@@ -58,3 +62,5 @@ escalation_paths:
   out explicitly as accepted remaining work.
 - The final explanation names the module stream and the focused verification
   command, not only the global health status.
+- No root-level report artifact such as `--help` was created by a command that
+  expected an output path.

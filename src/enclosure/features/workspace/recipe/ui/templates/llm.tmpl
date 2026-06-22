@@ -6,29 +6,30 @@ Inspect, validate, preview, render, and bench recipes.
 
 ## When To Run
 
-- Before creating or hand-writing shaped files.
-- When validating recipe metadata or drift.
-- Between `enclosure workspace rules` and `enclosure health`.
+- Before creating shaped files.
+- When validating recipe drift.
+- Between rules and health.
 
 ## How To Read The Result
 
-- Listing shows recipes; summary shows inputs and targets.
+- Listing shows recipes; summary shows inputs.
 - Check validates metadata and rendering.
-- Dry run shows create/skip; shell preview shows content.
-- Bench writes module/workspace warp HTML.
-- Recipes may compose `fragment` recipes.
+- Dry run shows create/skip.
+- Bench writes warp HTML.
+- Recipes may compose fragments.
 
 ## Examples
 
-- First run: `enclosure workspace recipe --list`, `enclosure workspace recipe <name> --show`, then `enclosure workspace recipe <name> <path> --shell`.
+- First run: `--list`, `<name> --show`, then `<name> <path> --shell`.
 - Keep ownership in `workspace.recipe.roles_map`.
-- Bench warp with `--bench <module>` or `--bench-all` plus `--html <path>`.
+- Bench with `--html .enclosure/.cache/reports/<name>.html` or `/tmp/<name>.html`.
+- Never pass `--help`, `--docs`, or `--llm` as `--html`.
 - Provide required inputs as variables.
-- If dry run skips or check fails, preserve existing work and fix the recipe before generation.
+- Fix skipped dry runs or failed checks before generation.
 
 ## Agent Tips
 
 - Prefer local recipes over inventing scaffolding.
 - Inspect a recipe before rendering it.
 - Use `--shell` as the convention oracle.
-- Run `enclosure workspace recipe --check` or dry run before writing.
+- Run `--check` or dry run before writing.

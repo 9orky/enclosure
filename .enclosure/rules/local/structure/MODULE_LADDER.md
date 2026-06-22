@@ -57,3 +57,7 @@ global recipe requirement.
 - Recipe drift should be clean for mapped modules.
 - Extra files under declared package slots are not drift.
 - Extra root files outside declared slots remain drift.
+- Recipe bench HTML is an observed artifact, not a source file. If generated,
+  it must use a real report path such as `.enclosure/.cache/reports/<name>.html`
+  or `/tmp/<name>.html`; command flags like `--help` are never valid output
+  filenames.
