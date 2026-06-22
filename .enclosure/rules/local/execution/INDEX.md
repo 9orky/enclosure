@@ -17,6 +17,7 @@ tightens_paths:
 entrypoint: true
 read_strategy: progressive
 child_paths:
+  - MODULE_START.md
   - BIG_PICTURE.md
   - STEP.md
 ---
@@ -30,6 +31,8 @@ child_paths:
 
 ## Stop Or Descend
 
+- Read [MODULE_START.md](MODULE_START.md) before starting feature-module code
+  or refactoring a module stream.
 - Read [BIG_PICTURE.md](BIG_PICTURE.md) for local planning order.
 - Read [STEP.md](STEP.md) for local implementation order.
 - Stop when shared execution rules are enough.

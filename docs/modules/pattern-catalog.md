@@ -1,0 +1,12 @@
+<!-- Generated from feature ui/templates/docs.tmpl files. Do not edit by hand. -->
+
+# Pattern Catalog Docs
+
+Use this module to inspect Pattern manifests, roles, includes, ladders, and
+module-to-Pattern role mappings.
+
+## When To Use It
+
+- When listing or showing available Patterns.
+- When validating Pattern catalog ownership.
+- When checking role-map references before drift or bench work.

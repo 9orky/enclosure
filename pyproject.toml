@@ -37,7 +37,7 @@ classifiers = [
     "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = [
-    "modwire>=2.2.0",
+    "modwire>=2.3.0",
     "Jinja2>=3.1",
     "pydantic>=2.8",
     "PyYAML>=6.0",
@@ -72,7 +72,7 @@ dev = [
 cache-dir = ".dev/uv_cache"
 
 [tool.uv.sources]
-modwire = { git = "https://github.com/9orky/modwire.git", tag = "v2.2.0" }
+modwire = { git = "https://github.com/9orky/modwire.git", tag = "v2.3.0" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

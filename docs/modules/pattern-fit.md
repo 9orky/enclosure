@@ -1,0 +1,10 @@
+<!-- Generated from feature ui/templates/docs.tmpl files. Do not edit by hand. -->
+
+# Fit Docs
+
+Use this Pattern module for the fit part of the Pattern feature.
+
+## When To Use It
+
+- When work belongs to `src/enclosure/features/pattern/fit`.
+- When the module should keep the full Pattern package shape.

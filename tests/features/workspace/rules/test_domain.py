@@ -264,6 +264,16 @@ child_paths:
             domain.selected_tags(selections),
         )
 
+    def test_task_inference_selects_module_start_tag(self) -> None:
+        selections = domain.infer_rule_tag_selections(
+            paths=(),
+            task="start coding module",
+            project_root=Path("."),
+            architecture_root="src/enclosure/features",
+        )
+
+        self.assertEqual(("module-start",), domain.selected_tags(selections))
+
     def test_rule_graph_reports_invalid_direct_read_and_unreachable_doc(self) -> None:
         documents = (
             _document(
