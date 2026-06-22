@@ -93,5 +93,5 @@ workspace:
       workspace/sync: module-workspace-cli
   rules:
     local:
-      max_content_chars: 2400
+      max_content_chars: 1200
   sync: {}
