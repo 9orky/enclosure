@@ -22,14 +22,14 @@ architecture:
     max_lines_count_per_function: -1
     max_lines_count_per_method: -1
     max_lines_count_per_class: -1
-    # untouchable
+    # untouchable for agent begin
     allow_optional_function_args: false
     allow_optional_method_args: false
     allow_optional_class_properties: false
     allow_imports_aliases: false
     enforce_joined_imports: true
     allowed_imports_crossing_types: [module]
-    # untouchable end
+    # untouchable for agent end
 
   boundaries:
     tags:

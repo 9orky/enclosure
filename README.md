@@ -31,6 +31,7 @@ An agent can search files, but it does not automatically know:
 ## What It Supports
 
 - **Context architecture with rules**: `.enclosure/rules/` gives agents progressive, task-specific reading paths for ownership, boundaries, dependency direction, execution, testing, and refactoring.
+- **Method papers for learning and review**: `docs/methods/` explains the operating model behind the contract, including recipe algebra, shell preview, dependency graph reasoning, and verification.
 - **Local architectural contract**: `.enclosure/enclosure.yaml` declares roots, exclusions, tags, layer flow, dependency rules, file-shape rules, and report limits.
 - **Boundary validation**: `enclosure architecture boundaries` checks imports against configured ownership and layer rules.
 - **Shape validation**: `enclosure architecture shape` checks configured limits for files, symbols, imports, arguments, and line counts.
