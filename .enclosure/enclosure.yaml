@@ -52,7 +52,7 @@ architecture:
 
     flow:
       layers: [ui, application, infrastructure, domain]
-      module_tag: feature
+      module_tag: module
       analyzers: [backward-flow, no-cycles]
 
   map:

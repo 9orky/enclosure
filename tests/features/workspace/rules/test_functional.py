@@ -6,7 +6,8 @@ from pathlib import Path
 import yaml
 
 from enclosure.__main__ import app
-from enclosure.features.workspace.rules import application, domain, infrastructure
+from enclosure.features.workspace.rules import application, infrastructure
+from enclosure.features.workspace.rules.domain import documents, graph, metadata, policy
 
 
 def test_workspace_rules_accepts_valid_fixture_workspace(
@@ -33,9 +34,9 @@ def test_workspace_rules_accepts_valid_fixture_workspace(
 def test_packaged_shared_rule_foundation_is_valid() -> None:
     rules_root = files("enclosure").joinpath("resources", "rules")
     document_files = infrastructure.file_repository.find(rules_root)
-    policy = domain.RuleSchemaPolicy.default()
+    rule_schema_policy = policy.RuleSchemaPolicy.default()
     known_paths = {document_file.path for document_file in document_files}
-    documents: list[domain.RuleDocument] = []
+    checked_documents: list[documents.RuleDocument] = []
     issues: list[str] = []
 
     assert len(document_files) >= 18
@@ -44,13 +45,13 @@ def test_packaged_shared_rule_foundation_is_valid() -> None:
 
     for document_file in document_files:
         try:
-            document_check = policy.inspect_document(document_file)
-        except domain.RuleDocumentParseError as exc:
+            document_check = rule_schema_policy.inspect_document(document_file)
+        except metadata.RuleDocumentParseError as exc:
             issues.append(f"{document_file.path.as_posix()}: {exc}")
             continue
 
-        documents.append(document_check.document)
-        violations = document_check.violations + policy.validate_references(
+        checked_documents.append(document_check.document)
+        violations = document_check.violations + rule_schema_policy.validate_references(
             document=document_check.document,
             known_paths=known_paths,
         )
@@ -63,7 +64,7 @@ def test_packaged_shared_rule_foundation_is_valid() -> None:
     issues.extend(
         f"{finding.path.as_posix()}: "
         f"{finding.violation.code}: {finding.violation.message}"
-        for finding in domain.validate_rule_graph(tuple(documents))
+        for finding in graph.validate_rule_graph(tuple(checked_documents))
     )
 
     assert not issues, "\n".join(issues)

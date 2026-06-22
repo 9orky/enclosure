@@ -5,22 +5,22 @@ from pathlib import Path
 
 from pydantic import TypeAdapter
 
-from . import domain
+from .domain import documents
 
 
-class FileRepository(domain.RuleDocumentRepository):
+class FileRepository(documents.RuleDocumentRepository):
     def __init__(self) -> None:
-        self._document_adapter = TypeAdapter(domain.RuleDocumentFile)
+        self._document_adapter = TypeAdapter(documents.RuleDocumentFile)
 
     def find(
         self,
         rules_root: Path,
-    ) -> tuple[domain.RuleDocumentFile, ...]:
+    ) -> tuple[documents.RuleDocumentFile, ...]:
         if not rules_root.is_dir():
             raise FileNotFoundError(f"Workspace rules directory not found: {rules_root}")
         return self._find_in(rules_root)
 
-    def _find_in(self, rules_root) -> tuple[domain.RuleDocumentFile, ...]:
+    def _find_in(self, rules_root) -> tuple[documents.RuleDocumentFile, ...]:
         return tuple(
             self._document_adapter.validate_python(
                 {

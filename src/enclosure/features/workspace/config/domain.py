@@ -5,13 +5,13 @@ from pathlib import Path
 from pydantic import Field, field_validator
 
 import enclosure.features.workspace.recipe.domain
-import enclosure.features.workspace.rules.domain
 import enclosure.features.workspace.sync.domain
+from enclosure.features.workspace.rules.domain.config import RulesConfig
 from enclosure.shared import config
 
 
 class GuidanceConfig(config.StrictConfigModel):
-    max_template_chars: int = 2400
+    max_template_chars: int = 1200
 
     @field_validator("max_template_chars")
     @classmethod
@@ -24,7 +24,7 @@ class GuidanceConfig(config.StrictConfigModel):
 class WorkspaceConfig(config.StrictConfigModel):
     guidance: GuidanceConfig = Field(default_factory=GuidanceConfig)
     recipe: enclosure.features.workspace.recipe.domain.RecipeConfig
-    rules: enclosure.features.workspace.rules.domain.RulesConfig
+    rules: RulesConfig
     sync: enclosure.features.workspace.sync.domain.SyncConfig
 
     @classmethod

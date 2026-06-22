@@ -3,20 +3,24 @@ from __future__ import annotations
 from importlib import import_module
 from pathlib import Path
 
-from . import domain
+_config = import_module("enclosure.features.workspace.rules.domain.config")
+_documents = import_module("enclosure.features.workspace.rules.domain.documents")
+_graph = import_module("enclosure.features.workspace.rules.domain.graph")
+_metadata = import_module("enclosure.features.workspace.rules.domain.metadata")
+_policy = import_module("enclosure.features.workspace.rules.domain.policy")
 
-RuleDocumentCheck = domain.RuleDocumentCheck
-RuleDocumentFile = domain.RuleDocumentFile
-RuleDocumentParseError = domain.RuleDocumentParseError
-RuleReadPlan = domain.RuleReadPlan
-RuleReadStep = domain.RuleReadStep
-RuleSchemaReport = domain.RuleSchemaReport
-RuleSchemaPolicy = domain.RuleSchemaPolicy
-RuleSchemaViolation = domain.RuleSchemaViolation
-RulesConfig = domain.RulesConfig
+RuleDocumentCheck = _documents.RuleDocumentCheck
+RuleDocumentFile = _documents.RuleDocumentFile
+RuleDocumentParseError = _metadata.RuleDocumentParseError
+RuleReadPlan = _graph.RuleReadPlan
+RuleReadStep = _graph.RuleReadStep
+RuleSchemaReport = _documents.RuleSchemaReport
+RuleSchemaPolicy = _policy.RuleSchemaPolicy
+RuleSchemaViolation = _documents.RuleSchemaViolation
+RulesConfig = _config.RulesConfig
 
 
-def build_rule_schema_report() -> domain.RuleSchemaReport:
+def build_rule_schema_report() -> RuleSchemaReport:
     application = import_module("enclosure.features.workspace.rules.application")
     return application.build_rule_schema_report()
 
@@ -26,7 +30,7 @@ def build_rule_read_plan(
     *,
     paths: tuple[Path, ...] = (),
     task: str = "",
-) -> domain.RuleReadPlan:
+) -> RuleReadPlan:
     application = import_module("enclosure.features.workspace.rules.application")
     return application.build_rule_read_plan(tags, paths=paths, task=task)
 

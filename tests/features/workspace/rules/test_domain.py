@@ -3,13 +3,14 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from enclosure.features.workspace.rules import domain
+from enclosure.features.workspace.rules.domain import config as rules_config
+from enclosure.features.workspace.rules.domain import documents, graph, inference, policy
 
 
 class WorkspaceRulesTest(unittest.TestCase):
     def test_local_policy_uses_local_body_contract(self) -> None:
-        policy = domain.RuleSchemaPolicy.default()
-        document_file = domain.RuleDocumentFile(
+        rule_schema_policy = policy.RuleSchemaPolicy.default()
+        document_file = documents.RuleDocumentFile(
             path=Path("local/structure/MODULE.md"),
             content="""---
 doc_class: policy
@@ -46,18 +47,18 @@ escalation_paths: []
 """,
         )
 
-        check = policy.inspect_document(document_file)
+        check = rule_schema_policy.inspect_document(document_file)
 
         self.assertEqual((), check.violations)
-        self.assertEqual(domain.RuleDocumentScope.LOCAL, check.document.scope)
+        self.assertEqual(documents.RuleDocumentScope.LOCAL, check.document.scope)
 
     def test_local_content_threshold_reports_oversized_body(self) -> None:
-        policy = domain.RuleSchemaPolicy.from_config(
-            domain.RulesConfig(
-                local=domain.LocalRulesConfig(max_content_chars=8),
+        rule_schema_policy = policy.RuleSchemaPolicy.from_config(
+            rules_config.RulesConfig(
+                local=rules_config.LocalRulesConfig(max_content_chars=8),
             )
         )
-        document_file = domain.RuleDocumentFile(
+        document_file = documents.RuleDocumentFile(
             path=Path("local/structure/MODULE.md"),
             content="""---
 doc_class: policy
@@ -84,14 +85,14 @@ read_directly: false
 """,
         )
 
-        violations = policy.validate_file(document_file)
+        violations = rule_schema_policy.validate_file(document_file)
 
         self.assertEqual(1, len(violations))
         self.assertEqual("local-content-too-large", violations[0].code)
 
     def test_local_navigation_references_resolve_across_local_and_shared(self) -> None:
-        policy = domain.RuleSchemaPolicy.default()
-        document_file = domain.RuleDocumentFile(
+        rule_schema_policy = policy.RuleSchemaPolicy.default()
+        document_file = documents.RuleDocumentFile(
             path=Path("local/structure/INDEX.md"),
             content="""---
 doc_class: navigational
@@ -127,9 +128,9 @@ child_paths:
 - Stop at the shallowest local supplement.
 """,
         )
-        check = policy.inspect_document(document_file)
+        check = rule_schema_policy.inspect_document(document_file)
 
-        violations = policy.validate_references(
+        violations = rule_schema_policy.validate_references(
             document=check.document,
             known_paths={
                 Path("local/structure/INDEX.md"),
@@ -177,7 +178,7 @@ child_paths:
             ),
         )
 
-        plan = domain.build_rule_read_plan(documents, ("structure",))
+        plan = graph.build_rule_read_plan(documents, ("structure",))
 
         self.assertEqual(
             (
@@ -192,7 +193,7 @@ child_paths:
         self.assertTrue(plan.steps[-1].local_supplement)
 
     def test_rule_route_reports_unknown_tags_with_available_tags(self) -> None:
-        plan = domain.build_rule_read_plan(
+        plan = graph.build_rule_read_plan(
             (
                 _document(
                     Path("shared/structure/INDEX.md"),
@@ -209,9 +210,9 @@ child_paths:
         self.assertEqual(("structure",), plan.available_tags)
 
     def test_path_inference_selects_structure_without_language_tags(self) -> None:
-        selections = domain.infer_rule_tag_selections(
+        selections = inference.infer_rule_tag_selections(
             path_facts=(
-                domain.RulePathFacts(
+                inference.RulePathFacts(
                     relative_path="src/enclosure/features/workspace/rules/domain.py",
                     is_architecture_path=True,
                     is_configured_source_file=True,
@@ -222,13 +223,13 @@ child_paths:
 
         self.assertEqual(
             ("structure",),
-            domain.selected_tags(selections),
+            inference.selected_tags(selections),
         )
 
     def test_path_inference_selects_configured_module_and_layers(self) -> None:
-        selections = domain.infer_rule_tag_selections(
+        selections = inference.infer_rule_tag_selections(
             path_facts=(
-                domain.RulePathFacts(
+                inference.RulePathFacts(
                     relative_path="src/features/orders/application/main.ts",
                     is_architecture_path=True,
                     is_configured_source_file=True,
@@ -241,38 +242,38 @@ child_paths:
 
         self.assertEqual(
             ("structure", "module", "layers"),
-            domain.selected_tags(selections),
+            inference.selected_tags(selections),
         )
 
     def test_task_inference_selects_refactoring_tags(self) -> None:
-        selections = domain.infer_rule_tag_selections(
+        selections = inference.infer_rule_tag_selections(
             path_facts=(),
             task="refactoring",
         )
 
         self.assertEqual(
             ("change", "refactoring"),
-            domain.selected_tags(selections),
+            inference.selected_tags(selections),
         )
 
     def test_task_inference_selects_calibration_tags(self) -> None:
-        selections = domain.infer_rule_tag_selections(
+        selections = inference.infer_rule_tag_selections(
             path_facts=(),
             task="calibration",
         )
 
         self.assertEqual(
             ("execution", "calibration"),
-            domain.selected_tags(selections),
+            inference.selected_tags(selections),
         )
 
     def test_task_inference_selects_module_start_tag(self) -> None:
-        selections = domain.infer_rule_tag_selections(
+        selections = inference.infer_rule_tag_selections(
             path_facts=(),
             task="start coding module",
         )
 
-        self.assertEqual(("module-start",), domain.selected_tags(selections))
+        self.assertEqual(("module-start",), inference.selected_tags(selections))
 
     def test_rule_graph_reports_invalid_direct_read_and_unreachable_doc(self) -> None:
         documents = (
@@ -288,7 +289,7 @@ child_paths:
 
         codes = {
             finding.violation.code
-            for finding in domain.validate_rule_graph(documents)
+            for finding in graph.validate_rule_graph(documents)
         }
 
         self.assertIn("invalid-direct-read", codes)
@@ -302,7 +303,7 @@ child_paths:
 
         codes = {
             finding.violation.code
-            for finding in domain.validate_rule_graph((document,))
+            for finding in graph.validate_rule_graph((document,))
         }
 
         self.assertIn("local-rule-without-shared-anchor", codes)
@@ -319,15 +320,15 @@ child_paths:
 
         codes = {
             finding.violation.code
-            for finding in domain.validate_rule_graph((document,))
+            for finding in graph.validate_rule_graph((document,))
         }
 
         self.assertIn("unsupported-read-strategy", codes)
         self.assertIn("unusable-navigation-route", codes)
 
-def _document(path: Path, content: str) -> domain.RuleDocument:
-    return domain.RuleDocument.from_file(
-        domain.RuleDocumentFile(
+def _document(path: Path, content: str) -> documents.RuleDocument:
+    return documents.RuleDocument.from_file(
+        documents.RuleDocumentFile(
             path=path,
             content=content,
         )

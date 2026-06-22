@@ -8,11 +8,7 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
-from .metadata import (
-    RuleDocumentParseError,
-    body_content_from,
-    metadata_from,
-)
+from .metadata import body_content_from, metadata_from
 from .references import (
     RuleReference,
     all_references_from,
@@ -110,29 +106,35 @@ class RuleDocument(BaseModel):
 
     @classmethod
     def from_file(cls, document_file: RuleDocumentFile) -> RuleDocument:
-        metadata = metadata_from(document_file.content)
+        document_metadata = metadata_from(document_file.content)
         return cls(
             path=document_file.path,
-            document_class=RuleDocumentClass.from_literal(metadata.doc_class),
-            scope=RuleDocumentScope.from_literal(metadata.scope),
-            purpose=metadata.purpose,
-            applies_when=metadata.applies_when,
-            tags=metadata.tags,
-            read_directly=metadata.read_directly,
-            entrypoint=getattr(metadata, "entrypoint", False),
-            read_strategy=getattr(metadata, "read_strategy", ""),
-            stage=getattr(metadata, "stage", ""),
+            document_class=RuleDocumentClass.from_literal(document_metadata.doc_class),
+            scope=RuleDocumentScope.from_literal(document_metadata.scope),
+            purpose=document_metadata.purpose,
+            applies_when=document_metadata.applies_when,
+            tags=document_metadata.tags,
+            read_directly=document_metadata.read_directly,
+            entrypoint=getattr(document_metadata, "entrypoint", False),
+            read_strategy=getattr(document_metadata, "read_strategy", ""),
+            stage=getattr(document_metadata, "stage", ""),
             observed_section_headings=section_headings_from(document_file.content),
             has_navigation_targets=has_navigation_targets(
                 document_file.content,
-                metadata,
+                document_metadata,
             ),
             content_char_count=document_file.content_char_count,
-            child_references=child_references_from(document_file.path, metadata),
-            tightens_references=tightens_references_from(document_file.path, metadata),
+            child_references=child_references_from(
+                document_file.path,
+                document_metadata,
+            ),
+            tightens_references=tightens_references_from(
+                document_file.path,
+                document_metadata,
+            ),
             escalation_references=escalation_references_from(
                 document_file.path,
-                metadata,
+                document_metadata,
             ),
             markdown_references=markdown_references_from(
                 document_file.path,
@@ -140,7 +142,7 @@ class RuleDocument(BaseModel):
             ),
             references=all_references_from(
                 document_file.path,
-                metadata,
+                document_metadata,
                 document_file.content,
             ),
         )
@@ -215,11 +217,9 @@ __all__ = [
     "RuleDocumentCheck",
     "RuleDocumentClass",
     "RuleDocumentFile",
-    "RuleDocumentParseError",
     "RuleDocumentReport",
     "RuleDocumentRepository",
     "RuleDocumentScope",
-    "RuleReference",
     "RuleSchemaReport",
     "RuleSchemaViolation",
     "RuleSchemaViolationReport",
