@@ -4,20 +4,20 @@ from typing import Annotated
 
 import typer
 
-import enclosure.features.architecture.boundaries.ui
-import enclosure.features.architecture.clusters.ui
-import enclosure.features.architecture.coherence.ui
-import enclosure.features.architecture.health.ui
-import enclosure.features.architecture.map.ui
-import enclosure.features.architecture.pressure.ui
-import enclosure.features.architecture.shape.ui
-import enclosure.features.health.report.ui
-import enclosure.features.workspace.health.ui
-import enclosure.features.workspace.plan.ui
-import enclosure.features.workspace.recipe.ui
-import enclosure.features.workspace.rules.ui
-import enclosure.features.workspace.sync.ui
-from enclosure.shared import ui
+from .features.architecture.boundaries import ui as architecture_boundaries_ui
+from .features.architecture.clusters import ui as architecture_clusters_ui
+from .features.architecture.coherence import ui as architecture_coherence_ui
+from .features.architecture.health import ui as architecture_health_ui
+from .features.architecture.map import ui as architecture_map_ui
+from .features.architecture.pressure import ui as architecture_pressure_ui
+from .features.architecture.shape import ui as architecture_shape_ui
+from .features.health.report import ui as health_report_ui
+from .features.workspace.health import ui as workspace_health_ui
+from .features.workspace.plan import ui as workspace_plan_ui
+from .features.workspace.recipe import ui as workspace_recipe_ui
+from .features.workspace.rules import ui as workspace_rules_ui
+from .features.workspace.sync import ui as workspace_sync_ui
+from .shared import ui
 
 app = typer.Typer(
     name="enclosure",
@@ -98,11 +98,11 @@ def workspace_command(
         raise typer.Exit()
 
 
-workspace_app.add_typer(enclosure.features.workspace.sync.ui.app, name="sync")
-_add_callback_app(workspace_app, enclosure.features.workspace.health.ui.app, name="health")
-_add_callback_app(workspace_app, enclosure.features.workspace.plan.ui.app, name="plan")
-_add_callback_app(workspace_app, enclosure.features.workspace.recipe.ui.app, name="recipe")
-workspace_app.add_typer(enclosure.features.workspace.rules.ui.app, name="rules")
+workspace_app.add_typer(workspace_sync_ui.app, name="sync")
+_add_callback_app(workspace_app, workspace_health_ui.app, name="health")
+_add_callback_app(workspace_app, workspace_plan_ui.app, name="plan")
+_add_callback_app(workspace_app, workspace_recipe_ui.app, name="recipe")
+workspace_app.add_typer(workspace_rules_ui.app, name="rules")
 
 architecture_app = typer.Typer(
     help="Inspect a repository's architecture agreement and dependency map.",
@@ -139,44 +139,44 @@ def architecture_command(
 
 _add_callback_app(
     architecture_app,
-    enclosure.features.architecture.boundaries.ui.app,
+    architecture_boundaries_ui.app,
     name="boundaries",
 )
 _add_callback_app(
     architecture_app,
-    enclosure.features.architecture.clusters.ui.app,
+    architecture_clusters_ui.app,
     name="clusters",
 )
 _add_callback_app(
     architecture_app,
-    enclosure.features.architecture.coherence.ui.app,
+    architecture_coherence_ui.app,
     name="coherence",
 )
 _add_callback_app(
     architecture_app,
-    enclosure.features.architecture.map.ui.app,
+    architecture_map_ui.app,
     name="map",
 )
 _add_callback_app(
     architecture_app,
-    enclosure.features.architecture.pressure.ui.app,
+    architecture_pressure_ui.app,
     name="pressure",
 )
 _add_callback_app(
     architecture_app,
-    enclosure.features.architecture.health.ui.app,
+    architecture_health_ui.app,
     name="health",
 )
 _add_callback_app(
     architecture_app,
-    enclosure.features.architecture.shape.ui.app,
+    architecture_shape_ui.app,
     name="shape",
 )
 
 app.add_typer(workspace_app, name="workspace")
 app.add_typer(architecture_app, name="architecture")
-_add_callback_app(app, enclosure.features.workspace.plan.ui.app, name="plan")
-_add_callback_app(app, enclosure.features.health.report.ui.app, name="health")
+_add_callback_app(app, workspace_plan_ui.app, name="plan")
+_add_callback_app(app, health_report_ui.app, name="health")
 
 ui.set_command_defaults(root_command, {"llm": False, "docs": False})
 ui.set_command_defaults(workspace_command, {"llm": False, "docs": False})

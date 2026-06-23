@@ -6,7 +6,7 @@ from pathlib import PurePosixPath
 from modwire import CodeMap
 from modwire.architecture import TagMatcher
 
-from enclosure.features.architecture import flow
+from .... import architecture
 
 from . import models
 
@@ -64,7 +64,9 @@ def stream_rule(config: object) -> object | None:
         getattr(rule, "name", ""): rule for rule in getattr(config.rules, "tags", ())
     }
     realms = tuple(
-        realm for realm in flow.configured_realms(config) if realm.module_tag in tag_rules
+        realm
+        for realm in architecture.flow.configured_realms(config)
+        if realm.module_tag in tag_rules
     )
     for realm in realms:
         if realm.layers:
@@ -78,7 +80,7 @@ def public_seam_rule(config: object, stream_rule: object) -> object | None:
     tag_rules = {
         getattr(rule, "match", ""): rule for rule in getattr(config.rules, "tags", ())
     }
-    for pattern in flow.public_seam_patterns(
+    for pattern in architecture.flow.public_seam_patterns(
         config,
         getattr(stream_rule, "match", ""),
     ):

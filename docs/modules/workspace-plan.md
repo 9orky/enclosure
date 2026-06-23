@@ -2,7 +2,7 @@
 
 # Workspace Plan Docs
 
-Use `enclosure workspace plan <name>` to create a user-owned planning document in `.enclosure/plans/`.
+Use `enclosure plan` to inspect the current plan folder. Use `enclosure plan <name>` to create a user-owned planning document in `.enclosure/plans/<name>/`.
 
 ## When To Use It
 
@@ -12,8 +12,9 @@ Use `enclosure workspace plan <name>` to create a user-owned planning document i
 
 ## How To Respond
 
+- Keep exactly one current plan folder in `.enclosure/plans/`.
 - Fill in the plan before implementation begins.
-- Keep plans in `.enclosure/plans/` as local project context.
+- Keep plan files inside `.enclosure/plans/<name>/`.
 - Use `--show` to preview the scaffold without writing.
 - Use `--force` only when replacing an existing draft intentionally.
 

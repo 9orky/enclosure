@@ -5,7 +5,7 @@ from pathlib import Path
 from modwire.architecture import TagMatcher
 from modwire.extractors.loader import load_extractor
 
-from enclosure.features.architecture import flow
+from ... import architecture
 from enclosure.shared.config import settings
 
 from . import infrastructure
@@ -305,13 +305,15 @@ def _module_tag_names(architecture_settings: object) -> tuple[str, ...]:
     tag_names = _configured_tag_names(architecture_settings)
     return tuple(
         tag_name
-        for tag_name in flow.configured_module_tags(architecture_settings)
+        for tag_name in architecture.flow.configured_module_tags(architecture_settings)
         if tag_name in tag_names
     )
 
 
 def _public_seam_tag_names(architecture_settings: object) -> tuple[str, ...]:
-    public_patterns = set(flow.public_seam_patterns(architecture_settings, ""))
+    public_patterns = set(
+        architecture.flow.public_seam_patterns(architecture_settings, "")
+    )
     return tuple(
         getattr(rule, "name", "")
         for rule in getattr(getattr(architecture_settings, "rules", object()), "tags", ())
@@ -323,7 +325,7 @@ def _public_seam_tag_names(architecture_settings: object) -> tuple[str, ...]:
 def _layer_tag_names(architecture_settings: object) -> tuple[str, ...]:
     tag_names = _configured_tag_names(architecture_settings)
     names: list[str] = []
-    for realm in flow.configured_realms(architecture_settings):
+    for realm in architecture.flow.configured_realms(architecture_settings):
         names.extend(realm.layers)
     return tuple(
         dict.fromkeys(tag_name for tag_name in names if tag_name in tag_names)

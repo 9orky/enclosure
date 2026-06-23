@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from enclosure.features.architecture import flow
+from .... import architecture
 from .. import domain
 
 
@@ -84,7 +84,7 @@ def _actual_module_paths(
 def _recipe_subject_tag_names(architecture_settings: object) -> tuple[str, ...]:
     return tuple(
         realm.module_tag
-        for realm in flow.configured_realms(architecture_settings)
+        for realm in architecture.flow.configured_realms(architecture_settings)
         if realm.layers
     )
 

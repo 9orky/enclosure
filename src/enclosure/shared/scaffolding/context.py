@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from enclosure.shared import naming
+from .. import naming
 
 from .composition import _ScaffoldComposer
 from .errors import ScaffoldError

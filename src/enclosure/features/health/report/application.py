@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import enclosure.features.architecture.health
-import enclosure.features.workspace.health
 from enclosure.shared.config import settings
 
+from ... import architecture, workspace
 from . import domain
 
 
@@ -19,7 +18,7 @@ def build_health_report_for_top(top: int | None) -> domain.HealthReport:
 
     try:
         workspace_report = (
-            enclosure.features.workspace.health.build_workspace_health_report()
+            workspace.health.build_workspace_health_report()
         )
     except Exception as exc:
         findings.append(
@@ -33,7 +32,7 @@ def build_health_report_for_top(top: int | None) -> domain.HealthReport:
 
     try:
         architecture_report = (
-            enclosure.features.architecture.health.build_health_report_for_top(top)
+            architecture.health.build_health_report_for_top(top)
         )
     except Exception as exc:
         findings.append(

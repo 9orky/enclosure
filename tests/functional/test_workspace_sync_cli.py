@@ -106,6 +106,84 @@ def test_sync_migrate_preserves_project_owned_recipe_roles_map(
     assert "pressure:" in config_text
 
 
+def test_sync_migrate_does_not_rewrite_config_for_empty_compat_defaults(
+    tmp_path: Path,
+) -> None:
+    project_root = copy_fixture(tmp_path, "clean_architecture")
+    config_path = project_root / ".enclosure" / "enclosure.yaml"
+    config_path.write_text(
+        dedent(
+            """
+            # Preserve comments and compact YAML when only empty compatibility
+            # defaults are missing.
+            architecture:
+              language: python
+              root: src/enclosure/features
+              exclusions: [__init__.py]
+              shape:
+                max_classes_per_file: -1
+                max_interfaces_per_file: -1
+                max_types_per_file: -1
+                max_abstract_classes_per_file: -1
+                max_functions_per_file: 1
+                max_methods_per_class: -1
+                max_declared_args_per_function: -1
+                max_declared_args_per_method: -1
+                max_lines_count_per_function: -1
+                max_lines_count_per_method: -1
+                max_lines_count_per_class: -1
+                allow_optional_function_args: false
+                allow_optional_method_args: false
+                allow_optional_class_properties: false
+                allow_imports_aliases: false
+                enforce_joined_imports: true
+                allowed_imports_crossing_types: [module]
+              boundaries:
+                tags:
+                  - { name: _t_module, match: "*/*", except: ["*/__init__"], exclude: [] }
+                  - { name: _t_domain, match: "*/*/domain", except: [], exclude: [] }
+                  - { name: _t_application, match: "*/*/application", except: [], exclude: [] }
+                rules:
+                  - { source: "*/*/domain", disallow: ["*/*/application"], allow: [], allow_same_match: false }
+                flow:
+                  layers: [_t_application, _t_domain]
+                  realms:
+                    - { name: _r_module, module_tag: _t_module }
+                  analyzers: [backward-flow, no-cycles]
+              map:
+                top: -1
+              pressure:
+                top: 10
+              clusters:
+                group_depth: 5
+                top: 20
+                files_top: 5
+              health:
+                top: 5
+            workspace:
+              guidance:
+                max_template_chars: 1200
+              recipe:
+                skip: []
+                roles_map: {}
+              rules:
+                local:
+                  max_content_chars: 1200
+              sync: {}
+            """
+        ).lstrip(),
+        encoding="utf-8",
+    )
+    before = config_path.read_text(encoding="utf-8")
+
+    result = run_cli(project_root, "workspace", "sync", "migrate")
+    after = config_path.read_text(encoding="utf-8")
+
+    assert result.returncode == 0, result.stderr
+    assert ".enclosure/enclosure.yaml" not in result.stdout
+    assert after == before
+
+
 def _write_file(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(dedent(content).lstrip(), encoding="utf-8")

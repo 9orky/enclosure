@@ -12,12 +12,17 @@ from modwire.extractors.loader import (
     supported_languages as supported_source_kinds,
 )
 
-import enclosure.features.workspace.rules
+from .. import rules
 
 from . import domain
 
 _PROJECT_OWNED_CONFIG_MAPS = {
     ("workspace", "recipe", "roles_map"),
+}
+
+_MIGRATION_DEFAULTS_TO_SKIP = {
+    ("architecture", "boundaries", "flow", "module_tag"),
+    ("architecture", "boundaries", "flow", "module_tags"),
 }
 
 
@@ -252,9 +257,9 @@ def _validate_generated_instruction(name: str, content: str) -> None:
 def _validate_generated_rule_documents(
     documents: tuple[domain.SharedRuleDocument, ...],
 ) -> None:
-    policy = enclosure.features.workspace.rules.RuleSchemaPolicy.default()
+    policy = rules.RuleSchemaPolicy.default()
     document_files = tuple(
-        enclosure.features.workspace.rules.RuleDocumentFile(
+        rules.RuleDocumentFile(
             path=document.shared_rule_path.value,
             content=document.content,
         )
@@ -265,7 +270,7 @@ def _validate_generated_rule_documents(
     for document_file in document_files:
         try:
             document_check = policy.inspect_document(document_file)
-        except enclosure.features.workspace.rules.RuleDocumentParseError as exc:
+        except rules.RuleDocumentParseError as exc:
             raise ValueError(
                 "Invalid generated rule asset "
                 f"{document_file.path.as_posix()}: {exc}"
@@ -431,6 +436,8 @@ def _merge_missing_config_values(
     for key, default_value in defaults.items():
         current_path = (*path, str(key))
         if key not in target:
+            if current_path in _MIGRATION_DEFAULTS_TO_SKIP:
+                continue
             target[key] = copy.deepcopy(default_value)
             changed = True
             continue

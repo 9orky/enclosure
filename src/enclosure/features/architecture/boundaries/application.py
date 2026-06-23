@@ -4,9 +4,9 @@ from modwire import CodeMap
 from modwire.architecture import TagMatcher
 from modwire.graph import DependencyGraph
 
-from enclosure.features.architecture import flow
 from enclosure.shared import architecture_code
 
+from ... import architecture
 from . import domain
 
 
@@ -25,7 +25,7 @@ def evaluate_boundaries(
     code_map: CodeMap,
     config: object,
 ) -> tuple[object, ...]:
-    return flow.evaluate_policy(
+    return architecture.flow.evaluate_policy(
         _internal_dependency_graph(
             code_map,
             config,
@@ -40,7 +40,7 @@ def _internal_dependency_graph(
 ) -> DependencyGraph:
     tracked_ids = set(code_map.source_ids())
     public_target_patterns = _public_target_patterns(config)
-    public_seam_patterns = flow.public_seam_patterns(config, "")
+    public_seam_patterns = architecture.flow.public_seam_patterns(config, "")
     matcher = TagMatcher(config)
     graph = DependencyGraph()
     for source_id in sorted(tracked_ids):

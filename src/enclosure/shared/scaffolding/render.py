@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from enclosure.shared import templates
+from .. import templates
 
 from .composition import _ScaffoldComposer
 from .context import _ScaffoldContextFactory

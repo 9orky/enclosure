@@ -179,6 +179,7 @@ enclosure architecture shape
 enclosure architecture clusters
 enclosure architecture coherence
 
+enclosure workspace sync migrate
 enclosure workspace rules
 enclosure workspace rules route --help
 enclosure workspace rules route --task calibration
@@ -204,6 +205,9 @@ Skip it if the repository has no stable architecture yet or if you want a hosted
 ## Release Notes
 
 See [CHANGELOG.md](https://github.com/9orky/enclosure/blob/main/docs/repo/CHANGELOG.md).
+
+For existing projects upgrading local `.enclosure/` contracts from 2.x to 3.x,
+see [Migrating Local Contracts From 2.x To 3.x](https://github.com/9orky/enclosure/blob/main/docs/repo/MIGRATING-2-to-3.md).
 
 ## Contributing
 

@@ -25,7 +25,7 @@ escalation_paths:
 
 ## Protocol Position
 
-- Run calibration before phase planning when the project contract is not already clear.
+- Run calibration before `PLAN.md` when the project contract is not already clear.
 - Use calibration to discover and confirm rules, not to implement code.
 - Continue to big-picture planning only after human approval of unresolved contract choices.
 
@@ -33,8 +33,8 @@ escalation_paths:
 
 - Route: read the shallowest matching shared rule branch, then local supplements.
 - Calibrate: identify architecture root, ownership, module shape, slots, seams, dependency direction, recipe ladder, and verification seam.
-- Frame: turn approved calibration decisions into phase-level planning.
-- Contract: turn approved phases into narrow step contracts.
+- Frame: turn approved calibration decisions into the phase-level `PLAN.md`.
+- Contract: turn approved phases into narrow `PLAN_STEP_0X.md` step contracts.
 - Execute: adapt locally only while approved owner, seam, direction, and goal stay intact.
 - Reconcile: compare the result with the route, ladder, boundaries, shape, health, and tests.
 - Codify: propose durable project discoveries as narrow local rule supplements.
@@ -42,8 +42,8 @@ escalation_paths:
 ## Human Gates
 
 - Calibration gate: approve discovered project contract before changing local guidance.
-- Plan gate: approve phases before step detail exists.
-- Step gate: approve each step contract before implementation.
+- Plan gate: approve `PLAN.md` phases before step artifacts exist.
+- Step gate: approve each `PLAN_STEP_0X.md` before implementation.
 - Drift gate: stop when ownership, seam, dependency direction, or recipe shape assumptions break.
 - Contract-change gate: approve contract edits before changing the workspace contract, recipes, or rule files.
 - Codification gate: approve turning one-time discovery into local rules.
@@ -82,6 +82,6 @@ escalation_paths:
 
 ## Handoff Checks
 
-- Planning receives only approved calibration decisions.
+- `PLAN.md` receives only approved calibration decisions.
 - Local rule proposals narrow a shared rule and name their shared anchor.
 - Checks include the configured post-change health check, workspace rules when rule or workspace contract files change, and the architecture checks affected by the decision.

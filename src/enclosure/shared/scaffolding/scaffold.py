@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, ClassVar
 
-from enclosure.shared import naming
+from .. import naming
 
 from .errors import ScaffoldError
 from .relative_path import _ScaffoldRelativePath, _ScaffoldRelativePathNormalizer

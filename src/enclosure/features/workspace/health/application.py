@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import enclosure.features.workspace.recipe
-import enclosure.features.workspace.rules
+from .. import recipe, rules
 from enclosure.shared.config import settings
 
 from . import domain
@@ -34,7 +33,7 @@ def build_workspace_health_report() -> domain.WorkspaceHealthReport:
 
     rules_report = None
     try:
-        rules_report = enclosure.features.workspace.rules.build_rule_schema_report()
+        rules_report = rules.build_rule_schema_report()
     except Exception as exc:
         findings.append(
             domain.WorkspaceHealthFinding(
@@ -47,7 +46,7 @@ def build_workspace_health_report() -> domain.WorkspaceHealthReport:
 
     recipe_report = None
     try:
-        recipe_report = enclosure.features.workspace.recipe.check_recipes(
+        recipe_report = recipe.check_recipes(
             recipe_root=recipes_dir,
             recipe_name=None,
             target_path=None,
@@ -65,7 +64,7 @@ def build_workspace_health_report() -> domain.WorkspaceHealthReport:
 
     recipe_drift_report = None
     try:
-        recipe_drift_report = enclosure.features.workspace.recipe.check_recipe_drifts(
+        recipe_drift_report = recipe.check_recipe_drifts(
             recipe_root=recipes_dir,
         )
     except Exception:

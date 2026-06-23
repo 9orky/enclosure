@@ -11,8 +11,8 @@ from modwire import (
     supported_languages,
 )
 
-from enclosure.shared.config import settings
-from enclosure.shared.config.errors import ConfigError
+from .config import settings
+from .config.errors import ConfigError
 
 
 @dataclass(frozen=True)

@@ -16,7 +16,7 @@ from rich.panel import Panel
 from rich.padding import Padding
 from rich.text import Text
 
-from enclosure.shared import architecture, guild, limits
+from . import architecture, guild, limits
 
 P = ParamSpec("P")
 R = TypeVar("R")
