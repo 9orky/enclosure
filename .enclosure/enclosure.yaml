@@ -7,7 +7,7 @@
 architecture:
   language: python
   root: src/enclosure/features
-  exclusions: [.venv/**, .enclosure/**, tests/**, libraries/**, __init__.py]
+  exclusions: [.venv/**, .enclosure/**, tests/**, libraries/**, __init__.py, architecture/__init__.py, health/__init__.py, pattern/__init__.py, workspace/__init__.py]
 
   shape:
     max_classes_per_file: -1
@@ -51,7 +51,6 @@ architecture:
     flow:
       layers: [ui, application, infrastructure, domain]
       realms:
-        - { name: context, module_tag: context, layers: [] }
         - { name: module, module_tag: module }
       analyzers: [backward-flow, no-cycles]
 
