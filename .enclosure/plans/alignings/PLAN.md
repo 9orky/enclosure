@@ -1,97 +1,209 @@
 # Alignings
 
-Status: Pending Acceptance
+Status: In Progress - Partially Complete
 
-## Problem Or Goal
+## File Tree
 
-Remove local dumpster coupling to `.dev` and stop reusable rules, docs, and
-helpers from leaking Enclosure's own architecture layout as if it were generic
-project guidance.
+```text
+.enclosure/
+  enclosure.yaml
+  .cache/
+    modwire/
+  plans/
+    alignings/
+      PLAN.md
+      PLAN_STEP_01.md
+      PLAN_STEP_02.md
+      PLAN_STEP_03.md
+      PLAN_STEP_04.md
+      PLAN_STEP_05.md
+  rules/
+    local/
+    shared/
+  recipes/
+    module/
+    module-config-support/
+    module-domain-package-cli/
+    module-report-cli/
+    module-workspace-cli/
+    pattern-module/
+    slot-infrastructure-file/
+docs/
+  modules/
+    workspace-recipe.md
+src/
+  enclosure/
+    shared/
+      config/
+        metadata.py
+      architecture_code.py
+    features/
+      workspace/
+        recipe/
+          ui/
+            templates/
+              docs.tmpl
+              llm.tmpl
+tests/
+  features/
+    workspace/
+      recipe/
+        test_generation.py
+```
 
-## Architect Audit Inputs
+## Goal
 
-- Architect 1 audited `.dev` references. Source/tooling references existed in
-  runtime config, architecture extraction defaults, workspace sync detection,
-  package metadata, and local tool caches. Generated Modwire cache files also
-  embedded `.dev/**`.
-- Architect 2 audited architecture leakage. The main findings were hard-coded
-  product commands in shared rules, local rules naming `architecture/boundaries`
-  and `architecture/clusters` as model modules, concrete `src/enclosure/features`
-  paths in generic docs/tests, product vocabulary in shared ownership rules, and
-  recipe templates coupled to `enclosure.shared`.
+Separate Enclosure-managed workspace state from project implementation
+environment state, and stop reusable rules, docs, helpers, and local dual-use
+recipes from leaking Enclosure's own runtime architecture as generic project
+guidance.
 
-## Accepted Clarification
+The reusable-rule language cleanup is complete. The managed-cache cleanup is
+partially complete but needs correction: `.enclosure/.cache` is only for
+Enclosure-owned managed-project cache such as Modwire, and architecture
+exclusions must come only from the project contract. The remaining work is
+recipe alignment: local recipes should keep generating working, pluggable code
+for humans and agents, but reusable recipes should not render code that imports
+Enclosure product internals unless the recipe is explicitly classified as
+Enclosure-product-only.
 
-- A freshly installed Enclosure workspace starts with an empty recipes folder.
-- Recipes are local, user-and-agent authored scaffolds. They are dual-use:
-  agents use them to generate valid code quickly, and users can use them to
-  generate the boring parts when an agent is gone or unavailable.
-- Generated code should be working, pluggable code. That makes patterns visible
-  to agents, reduces drift, and keeps the same scaffold useful for humans.
-- Therefore recipe alignment is not "product-local vs generic default." The
-  target is local reusable recipes whose templates do not leak Enclosure's own
-  runtime architecture unless the local recipe intentionally generates Enclosure
-  product code.
+## Phases
 
-## Completed Alignments
+### 1. Managed Cache And Configured Exclusions
 
-- Removed the `ConfigMetadata.dev_dir` affordance.
-- Removed `.dev/**` from default architecture extraction exclusions.
-- Removed `.dev` from workspace sync source-detection exclusions.
-- Moved uv, pytest, ruff, and Makefile report caches to `.enclosure/.cache`.
-- Removed `prune .dev` from package manifest rules.
-- Deleted generated Modwire cache files that embedded `.dev/**`.
-- Rewrote local rules to reference the configured contract and recipes instead
-  of naming `architecture/boundaries` or `architecture/clusters` as models.
-- Rewrote shared rule language to use configured health, recipe preview, and
-  workspace-contract terms instead of product command names.
-- Replaced shared "owning enclosure" vocabulary with "owning boundary".
-- Removed concrete `src/enclosure/features/...` examples from generic docs and
-  neutralized recipe-generation test fixture paths.
-- Replaced the benchmark's hard-coded Enclosure source root rewrite with a
-  generic architecture-root rewrite.
+Status: Needs Correction
 
-## Remaining Intentional Local Contract
+Step Artifact: `PLAN_STEP_01.md`
 
-- `.enclosure/enclosure.yaml` still names `src/enclosure/features` and mapped
-  modules such as `architecture/boundaries`, `architecture/clusters`, and
-  `workspace/sync`. This is the executable local contract, not a reusable rule
-  or documentation leak.
+Objective: Remove Enclosure runtime/config dependency on `.dev` and remove
+hard-coded architecture exclusion assumptions.
 
-## Remaining Alignment Work
+Owner: runtime config and Modwire cache setup.
 
-- Define recipe guidance around local dual-use scaffolds: user-operable,
-  agent-friendly, working, and pluggable.
-- Classify existing recipes that import `enclosure.shared`,
-  `enclosure.shared.config.settings`, or `enclosure.shared.scaffolding` as
-  Enclosure-product recipes unless they are rewritten to use local extension
-  points or recipe variables.
-- For reusable local recipes, parameterize product/runtime imports and keep the
-  rendered code functional without depending on Enclosure internals.
-- Regenerate checked-in module docs after template changes when a generation
-  command is available and approved.
-- Keep `.enclosure/.cache` as generated local-only output; do not promote cache
-  reports into packaged docs or shared rules.
+Inputs: `ConfigMetadata`, architecture extraction, workspace sync source
+detection, package metadata, and generated Modwire caches.
 
-## Verification Checklist
+Outputs: `.enclosure/.cache/modwire` for Enclosure-owned code extraction cache;
+project environment/tool caches are outside this alignment; architecture
+exclusions come only from `.enclosure/enclosure.yaml`.
 
-- [x] `rg` finds no `.dev` folder references except unrelated version/domain
-      strings such as `.dev0` or `szpak.dev`.
-- [x] Targeted `rg` finds `architecture/boundaries`, `architecture/clusters`,
-      and `workspace/sync` only in the local contract and this plan.
-- [x] `enclosure workspace rules` passes after rule edits.
-- [x] `uv run pytest tests/features/workspace/recipe/test_generation.py` passes
-      after fixture path changes.
-- [x] `enclosure health` was run; workspace checks pass, but existing
-      architecture findings remain: recipe drift, shape violations, pressure,
-      coherence, and cluster findings.
+Acceptance: Enclosure runtime/config code never treats `.dev` as managed
+workspace state, and architecture extraction has no hard-coded default
+exclusions.
 
-## Notes For The Implementing Agent
+### 2. Reusable Rule And Documentation Language
 
-- Treat `.enclosure/enclosure.yaml` as the local contract unless the user
-  explicitly asks to change the project architecture itself.
-- Do not reintroduce `.dev` as a cache or output location. Use
-  `.enclosure/.cache` or a caller-provided temporary path.
-- Keep shared rules generic. Concrete Enclosure CLI examples belong in product
-  docs or local supplements, not in packaged shared policy.
-- Wait for human acceptance before editing recipe templates or recipe metadata.
+Status: Done
+
+Step Artifact: `PLAN_STEP_02.md`
+
+Objective: Keep packaged shared rules generic while preserving this repository's
+local architecture contract.
+
+Owner: `.enclosure/rules/**`, packaged `src/enclosure/resources/rules/**`, and
+generic docs/tests.
+
+Inputs: architect audit findings for hard-coded product commands, local rule
+model names, concrete `src/enclosure/features` examples, and product ownership
+vocabulary.
+
+Outputs: shared rule language uses configured health, recipe preview,
+workspace-contract, and owning-boundary terms; local rules point to the
+configured contract instead of treating Enclosure modules as generic models.
+
+Acceptance: targeted `rg` finds `architecture/boundaries`,
+`architecture/clusters`, and `workspace/sync` only in the executable local
+contract or in alignment planning material.
+
+### 3. Recipe Classification And Guidance
+
+Status: Ready
+
+Step Artifact: `PLAN_STEP_03.md`
+
+Objective: Decide which checked-in recipes are reusable local scaffolds and which
+are Enclosure-product recipes.
+
+Owner: `.enclosure/recipes/*/recipe.yaml` and recipe guidance.
+
+Inputs: existing manifests, template imports, accepted clarification that a new
+workspace starts with an empty recipe folder, and the dual-use recipe contract.
+
+Outputs: each recipe either avoids Enclosure product internals or clearly states
+that it intentionally generates Enclosure product code.
+
+Acceptance: every recipe that renders `enclosure.shared`, `enclosure.shared.config`,
+or `enclosure.shared.scaffolding` has an explicit product-only reason, or the
+template is scheduled for generic rewriting.
+
+### 4. Reusable Recipe Template Alignment
+
+Status: Ready
+
+Step Artifact: `PLAN_STEP_04.md`
+
+Objective: Rewrite reusable templates so generated code remains working without
+depending on Enclosure internals.
+
+Owner: recipe manifests and templates under `.enclosure/recipes/**`.
+
+Inputs: existing scaffold variable support, `target.*` template context, recipe
+manifest inputs, and current Typer-based CLI shape.
+
+Outputs: infrastructure templates use target-local or standard-library workspace
+discovery; UI templates render docs/results without `enclosure.shared.ui`; pattern
+templates use local defaults or declared variables instead of `settings.query`.
+
+Acceptance: `rg -n "enclosure\\.shared" .enclosure/recipes` returns no hits for
+recipes classified as reusable.
+
+### 5. Regeneration And Verification
+
+Status: Ready
+
+Step Artifact: `PLAN_STEP_05.md`
+
+Objective: Refresh checked-in generated docs after template changes and prove the
+remaining alignment did not regress recipe behavior.
+
+Owner: generated module docs, recipe tests, workspace validation commands.
+
+Inputs: updated recipes, generation commands, and existing workspace health
+findings.
+
+Outputs: regenerated docs/templates where applicable and focused tests for the
+new generic rendered-code shape.
+
+Acceptance: `enclosure workspace recipe --check`, `enclosure workspace rules`,
+and focused recipe tests pass. `enclosure health` may still report existing
+architecture findings unrelated to this alignment: recipe drift, shape,
+pressure, coherence, and cluster findings.
+
+## Acceptance
+
+- `.dev` is not Enclosure-managed workspace state and is not referenced by
+  Enclosure runtime/config, reusable rules, reusable docs, or recipes.
+- `.enclosure/.cache` is scoped to Enclosure-managed cache data such as Modwire.
+- Architecture extraction exclusions come only from the project contract; no
+  default exclusions are assumed.
+- `.enclosure/enclosure.yaml` remains the executable local contract and may name
+  `src/enclosure/features`, `architecture/boundaries`,
+  `architecture/clusters`, and `workspace/sync`.
+- Shared rules and packaged reusable docs do not present Enclosure product
+  modules, commands, or source roots as generic architecture guidance.
+- Local reusable recipes are user-operable, agent-friendly, working, and
+  pluggable without Enclosure product imports in rendered code.
+- Product-only recipes, if any remain, are explicitly classified before their
+  Enclosure imports are accepted.
+
+## Open Questions
+
+- Should all currently checked-in `.enclosure/recipes` be treated as reusable
+  local recipes? Default answer for implementation: yes, unless a product-only
+  recipe is named before Phase 4 starts.
+- Should reusable CLI templates keep Typer as the generated command framework?
+  Default answer for implementation: yes, because current recipes already render
+  Typer commands and the dependency is explicit in generated code.
+- Which regeneration command should be used for checked-in module docs after
+  recipe template changes? Default answer for implementation: use the existing
+  Enclosure workspace recipe/docs commands when available and approved.
