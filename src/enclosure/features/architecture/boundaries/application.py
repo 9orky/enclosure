@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from modwire import CodeMap, architecture as modwire_architecture, graph
+from modwire import CodeMap, architecture, graph
 
 from enclosure.shared import architecture_code
 
-from ... import architecture
+from ...architecture import flow
 from . import domain
 
 
@@ -23,7 +23,7 @@ def evaluate_boundaries(
     code_map: CodeMap,
     config: object,
 ) -> tuple[object, ...]:
-    return architecture.flow.evaluate_policy(
+    return flow.evaluate_policy(
         _internal_dependency_graph(
             code_map,
             config,
@@ -38,8 +38,8 @@ def _internal_dependency_graph(
 ) -> graph.DependencyGraph:
     tracked_ids = set(code_map.source_ids())
     public_target_patterns = _public_target_patterns(config)
-    public_seam_patterns = architecture.flow.public_seam_patterns(config, "")
-    matcher = modwire_architecture.TagMatcher(config)
+    public_seam_patterns = flow.public_seam_patterns(config, "")
+    matcher = architecture.TagMatcher(config)
     graph_builder = graph.DependencyGraph()
     for source_id in sorted(tracked_ids):
         graph_builder.add_node(source_id)
@@ -68,7 +68,7 @@ def _internal_dependency_graph(
 def _is_same_public_seam_reexport(
     source_id: str,
     target_id: str,
-    matcher: modwire_architecture.TagMatcher,
+    matcher: architecture.TagMatcher,
     public_seam_patterns: tuple[str, ...],
 ) -> bool:
     for pattern in public_seam_patterns:
@@ -87,7 +87,7 @@ def _is_same_public_seam_reexport(
 def _tracked_target_id(
     target_id: str,
     tracked_ids: set[str],
-    matcher: modwire_architecture.TagMatcher,
+    matcher: architecture.TagMatcher,
     public_target_patterns: tuple[str, ...],
 ) -> str | None:
     if target_id in tracked_ids:
@@ -109,7 +109,7 @@ def _tracked_target_id(
 def _is_public_target_for_import(
     target_id: str,
     source_id: str,
-    matcher: modwire_architecture.TagMatcher,
+    matcher: architecture.TagMatcher,
     public_target_patterns: tuple[str, ...],
 ) -> bool:
     target_parts = _path_parts(target_id)

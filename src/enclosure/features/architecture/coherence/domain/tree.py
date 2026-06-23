@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from pathlib import Path
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 
-from modwire import CodeMap
-from modwire.architecture import TagMatcher
+from modwire import CodeMap, architecture
 
-from .... import architecture
+from enclosure.features.architecture import flow
 
 from . import models
 
@@ -19,7 +17,7 @@ def map_files(
     api_rule: object | None,
     layer_rules: dict[str, object],
 ) -> dict[str, models.FileMap]:
-    matcher = TagMatcher(config)
+    matcher = architecture.TagMatcher(config)
     file_maps: dict[str, models.FileMap] = {}
     for source_id in sorted(code_map.extraction_result.files):
         stream = matched_tag_path(source_id, matcher, stream_rule)
@@ -66,7 +64,7 @@ def stream_rule(config: object) -> object | None:
     }
     realms = tuple(
         realm
-        for realm in architecture.flow.configured_realms(config)
+        for realm in flow.configured_realms(config)
         if realm.module_tag in tag_rules
     )
     for realm in realms:
@@ -81,7 +79,7 @@ def public_seam_rule(config: object, stream_rule: object) -> object | None:
     tag_rules = {
         getattr(rule, "match", ""): rule for rule in getattr(config.rules, "tags", ())
     }
-    for pattern in architecture.flow.public_seam_patterns(
+    for pattern in flow.public_seam_patterns(
         config,
         getattr(stream_rule, "match", ""),
     ):
@@ -156,14 +154,22 @@ def node_target(
     )
 
 
-def matched_tag_path(source_id: str, matcher: TagMatcher, rule: object) -> str:
+def matched_tag_path(
+    source_id: str,
+    matcher: architecture.TagMatcher,
+    rule: object,
+) -> str:
     match = matcher.match(source_id, getattr(rule, "name", ""))
     if match is None:
         return ""
     return matcher.display_path(match.captured_path)
 
 
-def is_api_match(source_id: str, matcher: TagMatcher, api_rule: object | None) -> bool:
+def is_api_match(
+    source_id: str,
+    matcher: architecture.TagMatcher,
+    api_rule: object | None,
+) -> bool:
     if api_rule is None:
         return False
     return bool(matched_tag_path(source_id, matcher, api_rule))
@@ -178,7 +184,7 @@ def virtual_api_streams(
     if api_rule is None:
         return set()
 
-    matcher = TagMatcher(config)
+    matcher = architecture.TagMatcher(config)
     streams: set[str] = set()
     for stream in stream_files_by_name:
         candidate = f"{stream}/__init__"
@@ -191,7 +197,7 @@ def virtual_api_streams(
 
 def layer_match(
     source_id: str,
-    matcher: TagMatcher,
+    matcher: architecture.TagMatcher,
     layer_rules_by_name: dict[str, object],
 ) -> tuple[str, str]:
     for layer, rule in layer_rules_by_name.items():

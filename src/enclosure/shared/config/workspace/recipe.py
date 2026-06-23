@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from fnmatch import fnmatch
 
-from pydantic import Field
-from pydantic import field_validator
+from pydantic import Field, field_validator
 
 from .. import base
 

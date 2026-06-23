@@ -7,10 +7,7 @@ from importlib.resources import files
 from pathlib import Path
 
 import yaml
-from modwire.extractors.loader import (
-    load_extractor,
-    supported_languages as supported_source_kinds,
-)
+from modwire.extractors.loader import load_extractor, supported_languages
 
 from .. import rules
 
@@ -355,8 +352,8 @@ def _workspace_control_exclusion() -> str:
 def _selected_extractor(project_root: Path, requested_source_kind: str) -> str:
     normalized_source_kind = requested_source_kind.strip().lower()
     if normalized_source_kind:
-        if normalized_source_kind not in supported_source_kinds():
-            supported = ", ".join(supported_source_kinds())
+        if normalized_source_kind not in supported_languages():
+            supported = ", ".join(supported_languages())
             raise ValueError(
                 f"Unsupported source extractor: {requested_source_kind}. "
                 f"Supported: {supported}"
@@ -367,7 +364,7 @@ def _selected_extractor(project_root: Path, requested_source_kind: str) -> str:
     if len(counts) == 1:
         return next(iter(counts))
     if not counts:
-        supported = ", ".join(supported_source_kinds())
+        supported = ", ".join(supported_languages())
         raise ValueError(
             "Could not detect a source extractor. "
             f"Run `enclosure workspace sync init --language <language>`. "
@@ -386,7 +383,7 @@ def _selected_extractor(project_root: Path, requested_source_kind: str) -> str:
 def _supported_extractor_source_counts(project_root: Path) -> dict[str, int]:
     suffixes_by_extractor = {
         extractor: tuple(load_extractor(extractor).file_extensions)
-        for extractor in supported_source_kinds()
+        for extractor in supported_languages()
     }
     counts = {extractor: 0 for extractor in suffixes_by_extractor}
     for path in _iter_project_files(project_root):

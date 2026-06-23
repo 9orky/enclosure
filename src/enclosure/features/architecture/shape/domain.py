@@ -3,9 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from modwire import CodeMap
-from modwire import ShapeConfig as ModwireShapeConfig
-from modwire import evaluate_shape as evaluate_modwire_shape
+import modwire
 from modwire.shape.rules import FileCountRule, SymbolShapeRule
 
 from enclosure.shared import architecture
@@ -53,14 +51,14 @@ class ShapeReport:
 
 
 def evaluate_shape(
-    code_map: CodeMap,
+    code_map: modwire.CodeMap,
     config: object,
 ) -> tuple[ShapeViolation, ...]:
     shape = config.shape
     owners = _symbol_owners(code_map)
     violations = [
         normalized
-        for violation in evaluate_modwire_shape(
+        for violation in modwire.evaluate_shape(
             code_map,
             _modwire_shape_config(shape),
             rules=(FileCountRule(), SymbolShapeRule()),
@@ -73,8 +71,8 @@ def evaluate_shape(
     return tuple(violations)
 
 
-def _modwire_shape_config(shape: object) -> ModwireShapeConfig:
-    return ModwireShapeConfig(
+def _modwire_shape_config(shape: object) -> modwire.ShapeConfig:
+    return modwire.ShapeConfig(
         max_classes_per_file=shape.max_classes_per_file,
         max_interfaces_per_file=shape.max_interfaces_per_file,
         max_types_per_file=shape.max_types_per_file,
@@ -155,7 +153,9 @@ def _normalize_violation(
     )
 
 
-def _symbol_owners(code_map: CodeMap) -> dict[tuple[str, str, str], tuple[str, str]]:
+def _symbol_owners(
+    code_map: modwire.CodeMap,
+) -> dict[tuple[str, str, str], tuple[str, str]]:
     owners: dict[tuple[str, str, str], tuple[str, str]] = {}
     for source_id, source_file in code_map.extraction_result.files.items():
         for class_definition in source_file.classes:
@@ -204,7 +204,7 @@ def _add_abstract_class_owners(
 
 
 def _import_violations(
-    code_map: CodeMap,
+    code_map: modwire.CodeMap,
     shape: object,
 ) -> tuple[ShapeViolation, ...]:
     violations: list[ShapeViolation] = []
@@ -213,8 +213,6 @@ def _import_violations(
         reported_aliased_imports: set[tuple[str, str]] = set()
         reported_imports: set[tuple[str, str, str]] = set()
         for source_import in source_file.imports:
-            if not source_import.file_barrier_crossed:
-                continue
             if source_import.is_aliased and not shape.allow_imports_aliases:
                 violation_key = (source_id, source_import.normalized_path)
                 if violation_key not in reported_aliased_imports:
@@ -229,6 +227,8 @@ def _import_violations(
                             symbol_name=source_import.normalized_path,
                         )
                     )
+            if not source_import.file_barrier_crossed:
+                continue
             if source_import.crossing_type in allowed_import_crossing_types:
                 continue
             violation_key = (
@@ -255,16 +255,17 @@ def _import_violations(
     return tuple(violations)
 
 
-def _joined_import_violations(code_map: CodeMap) -> tuple[ShapeViolation, ...]:
+def _joined_import_violations(
+    code_map: modwire.CodeMap,
+) -> tuple[ShapeViolation, ...]:
     violations: list[ShapeViolation] = []
     for source_id, source_file in code_map.extraction_result.files.items():
         imports_by_join_key = {}
         for source_import in source_file.imports:
-            if not source_import.join_key:
+            join_key = source_import.join_key or source_import.normalized_path
+            if not join_key:
                 continue
-            imports_by_join_key.setdefault(source_import.join_key, []).append(
-                source_import
-            )
+            imports_by_join_key.setdefault(join_key, []).append(source_import)
         for join_key, imports in sorted(imports_by_join_key.items()):
             if len(imports) <= 1:
                 continue

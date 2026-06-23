@@ -68,6 +68,31 @@ def test_shape_import_flags_can_be_relaxed_without_hiding_other_violations(
     assert "allowed_imports_crossing_types" not in result.stdout
 
 
+def test_shape_reports_aliased_imports_without_file_barrier(tmp_path: Path) -> None:
+    project_root = copy_fixture(tmp_path, "clean_architecture")
+    domain_path = (
+        project_root
+        / "src/enclosure/features/sales/report/domain.py"
+    )
+    domain_path.write_text(
+        "\n".join(
+            [
+                "from pathlib import Path as FilesystemPath",
+                "",
+                "",
+                "def total():",
+                "    return FilesystemPath('x')",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_cli(project_root, "architecture", "shape")
+
+    assert result.returncode == 1
+    assert "- sales/report/domain:pathlib allow_imports_aliases actual 1, limit 0" in result.stdout
+
+
 def test_shape_reports_split_imports_without_file_barrier(tmp_path: Path) -> None:
     project_root = copy_fixture(tmp_path, "clean_architecture")
     domain_path = (
@@ -92,3 +117,31 @@ def test_shape_reports_split_imports_without_file_barrier(tmp_path: Path) -> Non
 
     assert result.returncode == 1
     assert "- sales/report/domain:enclosure/shared enforce_joined_imports actual 2, limit 1" in result.stdout
+
+
+def test_shape_reports_split_imports_without_modwire_join_key(
+    tmp_path: Path,
+) -> None:
+    project_root = copy_fixture(tmp_path, "clean_architecture")
+    domain_path = (
+        project_root
+        / "src/enclosure/features/sales/report/domain.py"
+    )
+    domain_path.write_text(
+        "\n".join(
+            [
+                "from pathlib import Path",
+                "from pathlib import PurePosixPath",
+                "",
+                "",
+                "def total():",
+                "    return (Path, PurePosixPath)",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_cli(project_root, "architecture", "shape")
+
+    assert result.returncode == 1
+    assert "- sales/report/domain:pathlib enforce_joined_imports actual 2, limit 1" in result.stdout

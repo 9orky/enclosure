@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from dataclasses import dataclass
-from dataclasses import field
-from pathlib import PurePosixPath
-from pathlib import Path
+from dataclasses import dataclass, field
+from pathlib import Path, PurePosixPath
 
 from modwire import CodeMap
 

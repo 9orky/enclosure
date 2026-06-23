@@ -4,7 +4,7 @@ from typing import Annotated
 
 import typer
 
-from enclosure.shared import ui, verbosity as report_verbosity
+from enclosure.shared import ui, verbosity
 
 from .. import application
 
@@ -56,13 +56,13 @@ def health_command(
         return
 
     report = application.build_health_report_for_top(top)
-    verbosity = report_verbosity.report_verbosity_from_flags(v=v, vv=vv, vvv=vvv)
+    report_verbosity = verbosity.report_verbosity_from_flags(v=v, vv=vv, vvv=vvv)
     ui.render(
         report,
         template_name="report.tmpl",
         context={
             "project_root": report.project_root,
-            "verbosity": verbosity.value,
+            "verbosity": report_verbosity.value,
         },
     )
     ui.exit_if_findings(report.blocking_findings)
