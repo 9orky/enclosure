@@ -1,6 +1,6 @@
 # Module Recipe Consistency
 
-Status: Draft
+Status: In Progress
 
 ## File Tree
 
@@ -55,6 +55,7 @@ argument violations, symbol imports, and a few oversized owned files.
 
 1. Normalize recipe contracts.
    Step doc: `PLAN_STEP_01.md`.
+   Status: Complete.
    Outcome: recipes express the intended small set of reusable module shapes.
 
 2. Refactor `pattern/fit`.

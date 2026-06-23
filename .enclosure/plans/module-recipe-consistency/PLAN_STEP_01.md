@@ -1,6 +1,6 @@
 # Step 01 - Normalize Recipe Contracts
 
-Status: Draft
+Status: Complete
 
 ## Implementation Tree
 
@@ -182,8 +182,10 @@ Expected:
 - Recipe manifests render.
 - `pattern/catalog` is not drift solely because optional concept files are
   absent.
+- Later-step drift may remain for `pattern/fit`, `workspace/plan`, and
+  `workspace/sync`.
 
 ## Completion
 
-Complete when recipe contracts still describe a small reusable catalog and no
-runtime code has been changed in this step.
+Completed with recipe contracts still describing a small reusable catalog and
+no runtime code changed in this step.
