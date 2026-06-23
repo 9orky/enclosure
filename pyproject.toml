@@ -55,6 +55,7 @@ Changelog = "https://github.com/9orky/enclosure/blob/main/docs/repo/CHANGELOG.md
 [project.optional-dependencies]
 dev = [
     "build>=1.2",
+    "pytest>=8.0",
     "ruff>=0.8",
     "twine>=5.1",
 ]
@@ -62,6 +63,7 @@ dev = [
 [dependency-groups]
 dev = [
     "build>=1.2",
+    "pytest>=8.0",
     "ruff>=0.8",
     "twine>=5.1",
 ]
@@ -74,6 +76,10 @@ modwire = { git = "https://github.com/9orky/modwire.git", tag = "v2.3.0" }
 
 [tool.ruff]
 cache-dir = ".dev/ruff"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+cache_dir = ".dev/pytest"
 
 [project.scripts]
 enclosure = "enclosure.__main__:main"

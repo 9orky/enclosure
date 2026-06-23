@@ -15,7 +15,7 @@ generate-module-docs:
 	uv run python scripts/generate_module_docs.py
 
 test:
-	PYTHONDONTWRITEBYTECODE=1 uv run enclosure health
+	PYTHONDONTWRITEBYTECODE=1 uv run --group dev python -m pytest tests
 
 warp:
 	mkdir -p $(dir $(WARP_REPORT))

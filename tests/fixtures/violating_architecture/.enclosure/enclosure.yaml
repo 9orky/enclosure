@@ -1,0 +1,26 @@
+architecture:
+  language: python
+  root: src/enclosure/features
+  exclusions: [__init__.py]
+  shape:
+    max_functions_per_file: 1
+    allow_optional_function_args: false
+    allow_optional_method_args: false
+    allow_optional_class_properties: false
+    allow_imports_aliases: false
+    enforce_joined_imports: true
+    allowed_imports_crossing_types: [module]
+  boundaries:
+    tags:
+      - { name: module, match: "*/*", except: ["*/__init__"], exclude: [] }
+      - { name: domain, match: "*/*/domain", except: [], exclude: [] }
+      - { name: application, match: "*/*/application", except: [], exclude: [] }
+    rules:
+      - { source: "*/*/domain", disallow: ["*/*/application"], allow: [], allow_same_match: false }
+    flow:
+      layers: [application, domain]
+      realms:
+        - { name: module, module_tag: module }
+      analyzers: [backward-flow, no-cycles]
+  map:
+    top: -1
