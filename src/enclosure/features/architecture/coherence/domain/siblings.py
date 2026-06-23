@@ -59,7 +59,7 @@ def tree_signature(files: tuple[models.FileMap, ...]) -> tuple[str, ...]:
     entries: set[str] = set()
     for file in files:
         if file.is_api:
-            entries.add("api")
+            entries.add("public_seam")
         elif file.layer:
             entries.add(file.layer)
         else:

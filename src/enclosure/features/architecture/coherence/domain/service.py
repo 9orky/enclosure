@@ -14,13 +14,13 @@ def describe_coherence(
     config: object,
     top: int,
 ) -> models.DescribedCoherence:
-    stream_rule = tree.tag_rule(config, "module")
+    stream_rule = tree.stream_rule(config)
     if stream_rule is None:
         finding = models.CoherenceFinding(
             stream="",
             axis="configuration",
-            subject="module tag",
-            detail="No feature-module stream tag configured.",
+            subject="stream tag",
+            detail="No configured flow realm has a matching boundary tag.",
             evidence="architecture.boundaries.tags",
             impact=0,
         )
@@ -31,7 +31,7 @@ def describe_coherence(
             findings=limits.apply_limit((finding,), top),
         )
 
-    api_rule = tree.tag_rule(config, "module_api")
+    api_rule = tree.public_seam_rule(config, stream_rule)
     layer_rules = tree.layer_rules(config)
     layer_indexes = {name: index for index, name in enumerate(layer_rules)}
     file_maps = tree.map_files(code_map, config, stream_rule, api_rule, layer_rules)
@@ -69,8 +69,8 @@ def findings(
             models.CoherenceFinding(
                 stream="",
                 axis="configuration",
-                subject="module_api tag",
-                detail="No module API seam tag configured.",
+                subject="public seam tag",
+                detail="No boundary tag matches the configured public seam allowances.",
                 evidence="architecture.boundaries.tags",
                 impact=0,
             )

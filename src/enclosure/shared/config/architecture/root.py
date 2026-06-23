@@ -12,11 +12,9 @@ from .shape import ShapeConfig
 
 
 class ArchitectureConfig(StrictConfigModel):
-    language: str = "python"
+    language: str = ""
     root: str = "."
-    exclusions: list[str] = Field(
-        default_factory=lambda: [".enclosure/**", "tests/**", "libraries/**"]
-    )
+    exclusions: list[str] = Field(default_factory=list)
     boundaries: BoundariesConfig = Field(default_factory=BoundariesConfig)
     clusters: ClustersConfig = Field(default_factory=ClustersConfig)
     health: HealthConfig = Field(default_factory=HealthConfig)

@@ -40,6 +40,7 @@ def _internal_dependency_graph(
 ) -> DependencyGraph:
     tracked_ids = set(code_map.source_ids())
     public_target_patterns = _public_target_patterns(config)
+    public_seam_patterns = flow.public_seam_patterns(config, "")
     matcher = TagMatcher(config)
     graph = DependencyGraph()
     for source_id in sorted(tracked_ids):
@@ -47,7 +48,12 @@ def _internal_dependency_graph(
     for edge in code_map.graph.edges:
         if edge.from_id not in tracked_ids:
             continue
-        if _is_same_module_api_reexport(edge.from_id, edge.to_id, matcher):
+        if _is_same_public_seam_reexport(
+            edge.from_id,
+            edge.to_id,
+            matcher,
+            public_seam_patterns,
+        ):
             continue
         target_id = _tracked_target_id(
             edge.to_id,
@@ -61,19 +67,23 @@ def _internal_dependency_graph(
     return graph
 
 
-def _is_same_module_api_reexport(
+def _is_same_public_seam_reexport(
     source_id: str,
     target_id: str,
     matcher: TagMatcher,
+    public_seam_patterns: tuple[str, ...],
 ) -> bool:
-    match = matcher.match(source_id, "module_api")
-    if match is None:
-        return False
-    module_path = "/".join(str(value) for value in match.wildcard_values)
-    if not module_path:
-        return False
-    target_path = matcher.display_path(target_id)
-    return target_path == module_path or target_path.startswith(f"{module_path}/")
+    for pattern in public_seam_patterns:
+        match = matcher.match_pattern(source_id, pattern)
+        if match is None:
+            continue
+        module_path = "/".join(str(value) for value in match.wildcard_values)
+        if not module_path:
+            continue
+        target_path = matcher.display_path(target_id)
+        if target_path == module_path or target_path.startswith(f"{module_path}/"):
+            return True
+    return False
 
 
 def _tracked_target_id(

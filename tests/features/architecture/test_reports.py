@@ -52,7 +52,9 @@ def test_architecture_reports_share_scan_and_health_counts() -> None:
     assert tuple(health_report.coherence_findings) == coherence_report.findings
 
 
-def test_architecture_map_and_clusters_cover_every_checked_file() -> None:
+def test_architecture_map_and_clusters_cover_every_checked_file(
+    configured_module_names: tuple[str, ...],
+) -> None:
     map_report = architecture_map.build_map_report_for_top(-1)
     clusters_report = clusters.build_clusters_report_for_limits(-1, -1)
 
@@ -67,17 +69,9 @@ def test_architecture_map_and_clusters_cover_every_checked_file() -> None:
     assert len(cluster_files) == clusters_report.files_checked
     assert len(module_files) == len(set(module_files))
     assert len(cluster_files) == len(set(cluster_files))
-    assert {
-        "architecture/boundaries",
-        "architecture/clusters",
-        "architecture/coherence",
-        "architecture/health",
-        "architecture/map",
-        "architecture/pressure",
-        "architecture/shape",
-        "health/report",
-        "workspace/health",
-    }.issubset({module.name for module in map_report.modules})
+    configured_modules = set(configured_module_names)
+    discovered_modules = {module.name for module in map_report.modules}
+    assert configured_modules.issubset(discovered_modules)
 
 
 def _scan_tuple(report: object) -> tuple[int, int, int]:

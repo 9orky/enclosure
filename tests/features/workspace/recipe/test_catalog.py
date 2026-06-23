@@ -8,12 +8,15 @@ import enclosure.features.workspace.recipe as recipe
 RECIPE_ROOT = Path(".enclosure/recipes")
 
 
-def test_package_facade_lists_shows_and_checks_real_recipe_catalog() -> None:
+def test_package_facade_lists_shows_and_checks_real_recipe_catalog(
+    configured_recipe_names: tuple[str, ...],
+) -> None:
     recipes = recipe.list_recipes(recipe_root=RECIPE_ROOT)
+    recipe_name = configured_recipe_names[0]
 
-    assert "module-workspace-cli" in {item["name"] for item in recipes}
+    assert recipe_name in {item["name"] for item in recipes}
     assert recipe.show_recipe(
-        "module-workspace-cli",
+        recipe_name,
         recipe_root=RECIPE_ROOT,
     )["role"] == "archetype"
 

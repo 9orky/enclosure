@@ -58,6 +58,17 @@ def configured_module_tags(config: object) -> tuple[str, ...]:
     return tuple(realm.module_tag for realm in configured_realms(config))
 
 
+def public_seam_patterns(
+    config: object,
+    source_pattern: str,
+) -> tuple[str, ...]:
+    source_patterns = (source_pattern,) if source_pattern else ()
+    specific_patterns = _allowed_patterns(config, source_patterns)
+    if specific_patterns:
+        return specific_patterns
+    return _allowed_patterns(config, ())
+
+
 def evaluate_policy(graph: object, config: object) -> tuple[object, ...]:
     evaluator = ArchitecturePolicyEvaluator()
     violations: list[object] = list(
@@ -134,9 +145,22 @@ def _dedupe_violations(violations: tuple[object, ...]) -> tuple[object, ...]:
     return tuple(unique)
 
 
+def _allowed_patterns(
+    config: object,
+    source_patterns: tuple[str, ...],
+) -> tuple[str, ...]:
+    patterns: list[str] = []
+    for rule in getattr(getattr(config, "rules", object()), "boundaries", ()):
+        if source_patterns and getattr(rule, "source", "") not in source_patterns:
+            continue
+        patterns.extend(getattr(rule, "allow", ()) or ())
+    return tuple(dict.fromkeys(patterns))
+
+
 __all__ = [
     "ArchitectureRealm",
     "configured_module_tags",
     "configured_realms",
     "evaluate_policy",
+    "public_seam_patterns",
 ]

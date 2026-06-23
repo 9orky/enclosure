@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from pathlib import Path
 
+from enclosure.features.architecture import flow
+from enclosure.shared.config import settings
 from enclosure.shared.scaffolding import RenderedScaffoldFile, Scaffold, ScaffoldError
 from .. import domain, infrastructure
 from . import catalog
@@ -41,6 +43,7 @@ class RecipeDriftService:
             recipes_by_name=recipes_by_name,
         )
         drifts: list[domain.RecipeDrift] = []
+        architecture_settings = settings.query("architecture")
         for module_name, role_name in sorted(roles_map.items()):
             role_recipe = catalog.recipe_for_role(role_name, recipes_by_name)
             module_path = subject_root / module_name
@@ -101,6 +104,7 @@ class RecipeDriftService:
             subject_root,
             project_root=project_root,
             config=self._workspace.config(),
+            architecture_settings=architecture_settings,
         ):
             if module_name not in roles_map:
                 drifts.append(
@@ -302,16 +306,45 @@ def actual_module_names(
     *,
     project_root: Path,
     config: domain.RecipeGenerationConfig,
+    architecture_settings: object,
 ) -> tuple[str, ...]:
     return tuple(
         module_path.relative_to(architecture_root).as_posix()
-        for module_path in sorted(architecture_root.glob("*/*"))
+        for module_path in _actual_module_paths(
+            architecture_root,
+            architecture_settings,
+        )
         if module_path.is_dir()
         and actual_files_for(
             module_path,
             project_root=project_root,
             config=config,
         )
+    )
+
+
+def _actual_module_paths(
+    architecture_root: Path,
+    architecture_settings: object,
+) -> tuple[Path, ...]:
+    tag_rules = {
+        getattr(rule, "name", ""): rule
+        for rule in getattr(getattr(architecture_settings, "rules", object()), "tags", ())
+    }
+    paths: list[Path] = []
+    for tag_name in _recipe_subject_tag_names(architecture_settings):
+        tag_rule = tag_rules.get(tag_name)
+        if tag_rule is None:
+            continue
+        paths.extend(architecture_root.glob(getattr(tag_rule, "match", "")))
+    return tuple(dict.fromkeys(sorted(paths)))
+
+
+def _recipe_subject_tag_names(architecture_settings: object) -> tuple[str, ...]:
+    return tuple(
+        realm.module_tag
+        for realm in flow.configured_realms(architecture_settings)
+        if realm.layers
     )
 
 

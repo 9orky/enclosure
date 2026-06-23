@@ -344,10 +344,14 @@ def _bootstrap_config_content(
 
     contract_section["language"] = selected_extractor
     contract_section["root"] = "src" if (project_root / "src").is_dir() else "."
-    contract_section["exclusions"] = [".enclosure/**"]
+    contract_section["exclusions"] = [_workspace_control_exclusion()]
     recipe["skip"] = []
     recipe["roles_map"] = {}
     return _dump_migrated_config(raw_data)
+
+
+def _workspace_control_exclusion() -> str:
+    return f"{Path('.enclosure').as_posix()}/**"
 
 
 def _selected_extractor(project_root: Path, requested_source_kind: str) -> str:

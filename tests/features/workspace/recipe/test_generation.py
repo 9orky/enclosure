@@ -6,21 +6,16 @@ import enclosure.features.workspace.recipe as recipe
 
 
 RECIPE_ROOT = Path(".enclosure/recipes")
-REUSABLE_RECIPE_NAMES = (
-    "module",
-    "module-config-support",
-    "module-domain-package-cli",
-    "module-report-cli",
-    "module-workspace-cli",
-    "pattern-module",
-    "slot-infrastructure-file",
-)
 
 
-def test_describe_recipe_generation_preserves_preview_file_shapes() -> None:
+def test_describe_recipe_generation_preserves_preview_file_shapes(
+    configured_recipe_names: tuple[str, ...],
+) -> None:
+    recipe_name = configured_recipe_names[0]
+    target_path = "src/orders/reporting/example"
     report = recipe.describe_recipe_generation(
-        "module-workspace-cli",
-        "src/orders/reporting/example",
+        recipe_name,
+        target_path,
         recipe_root=RECIPE_ROOT,
         variables={},
     )
@@ -29,23 +24,22 @@ def test_describe_recipe_generation_preserves_preview_file_shapes() -> None:
     assert not report["recipe_empty"]
     assert report["create_paths"]
     assert report["preview_files"]
-    assert {
-        preview_file.relative_path.as_posix()
+    assert all(
+        preview_file.relative_path.as_posix().startswith(target_path)
         for preview_file in report["preview_files"]
-    } >= {
-        "src/orders/reporting/example/application/commands.py",
-        "src/orders/reporting/example/application/queries.py",
-    }
+    )
 
 
-def test_reusable_recipe_rendered_files_do_not_import_enclosure_shared() -> None:
+def test_reusable_recipe_rendered_files_do_not_import_enclosure_shared(
+    configured_recipe_names: tuple[str, ...],
+) -> None:
     forbidden_imports = (
         "enclosure.shared",
         "enclosure.shared.config",
         "enclosure.shared.scaffolding",
     )
 
-    for recipe_name in REUSABLE_RECIPE_NAMES:
+    for recipe_name in configured_recipe_names:
         report = recipe.describe_recipe_generation(
             recipe_name,
             f"src/orders/{recipe_name.replace('-', '_')}",

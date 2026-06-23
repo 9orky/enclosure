@@ -17,7 +17,7 @@ def findings(
                     stream=stream,
                     axis="tree_shape",
                     subject="public seam",
-                    detail="Stream has no node matching the module API seam tag.",
+                    detail="Stream has no node matching the configured public seam tag.",
                     evidence=stream,
                     impact=20,
                 )

@@ -6,6 +6,8 @@ from pathlib import PurePosixPath
 from modwire import CodeMap
 from modwire.architecture import TagMatcher
 
+from enclosure.features.architecture import flow
+
 from . import models
 
 
@@ -53,6 +55,35 @@ def stream_files(
 def tag_rule(config: object, name: str) -> object | None:
     for rule in getattr(config.rules, "tags", ()):
         if getattr(rule, "name", "") == name:
+            return rule
+    return None
+
+
+def stream_rule(config: object) -> object | None:
+    tag_rules = {
+        getattr(rule, "name", ""): rule for rule in getattr(config.rules, "tags", ())
+    }
+    realms = tuple(
+        realm for realm in flow.configured_realms(config) if realm.module_tag in tag_rules
+    )
+    for realm in realms:
+        if realm.layers:
+            return tag_rules[realm.module_tag]
+    if realms:
+        return tag_rules[realms[0].module_tag]
+    return None
+
+
+def public_seam_rule(config: object, stream_rule: object) -> object | None:
+    tag_rules = {
+        getattr(rule, "match", ""): rule for rule in getattr(config.rules, "tags", ())
+    }
+    for pattern in flow.public_seam_patterns(
+        config,
+        getattr(stream_rule, "match", ""),
+    ):
+        rule = tag_rules.get(pattern)
+        if rule is not None:
             return rule
     return None
 
@@ -153,10 +184,13 @@ def relative_parts(source_id: str, stream: str) -> tuple[str, ...]:
         return PurePosixPath(normalized[len(prefix) + 1 :]).parts
     return ()
 
+
 __all__ = [
     "layer_rules",
     "map_files",
+    "public_seam_rule",
     "stream_files",
+    "stream_rule",
     "tag_rule",
     "target_from_path",
 ]

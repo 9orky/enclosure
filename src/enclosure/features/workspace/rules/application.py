@@ -224,7 +224,7 @@ def _path_facts(
     )
     source_suffixes = _source_suffixes(getattr(architecture_settings, "language", ""))
     module_tag_names = _module_tag_names(architecture_settings)
-    module_api_tag_names = _module_api_tag_names(architecture_settings)
+    public_seam_tag_names = _public_seam_tag_names(architecture_settings)
     layer_tag_names = _layer_tag_names(architecture_settings)
     return tuple(
         _path_fact(
@@ -234,7 +234,7 @@ def _path_facts(
             source_suffixes=source_suffixes,
             matcher=matcher,
             module_tag_names=module_tag_names,
-            module_api_tag_names=module_api_tag_names,
+            public_seam_tag_names=public_seam_tag_names,
             layer_tag_names=layer_tag_names,
         )
         for path in paths
@@ -249,7 +249,7 @@ def _path_fact(
     source_suffixes: tuple[str, ...],
     matcher: TagMatcher,
     module_tag_names: tuple[str, ...],
-    module_api_tag_names: tuple[str, ...],
+    public_seam_tag_names: tuple[str, ...],
     layer_tag_names: tuple[str, ...],
 ) -> inference.RulePathFacts:
     relative_path = _relative_project_path(path, project_root)
@@ -271,7 +271,7 @@ def _path_fact(
         is_architecture_path=is_architecture_path,
         is_configured_source_file=relative_path.suffix in source_suffixes,
         matches_module=is_architecture_path
-        and _matches_any(matcher, label, (*module_tag_names, *module_api_tag_names)),
+        and _matches_any(matcher, label, (*module_tag_names, *public_seam_tag_names)),
         matches_layer=is_architecture_path
         and _matches_any(matcher, label, layer_tag_names),
     )
@@ -310,11 +310,13 @@ def _module_tag_names(architecture_settings: object) -> tuple[str, ...]:
     )
 
 
-def _module_api_tag_names(architecture_settings: object) -> tuple[str, ...]:
+def _public_seam_tag_names(architecture_settings: object) -> tuple[str, ...]:
+    public_patterns = set(flow.public_seam_patterns(architecture_settings, ""))
     return tuple(
-        tag_name
-        for tag_name in _configured_tag_names(architecture_settings)
-        if tag_name == "api" or tag_name.endswith("_api")
+        getattr(rule, "name", "")
+        for rule in getattr(getattr(architecture_settings, "rules", object()), "tags", ())
+        if getattr(rule, "match", "") in public_patterns
+        and getattr(rule, "name", "")
     )
 
 

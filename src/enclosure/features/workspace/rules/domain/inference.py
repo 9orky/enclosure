@@ -97,7 +97,7 @@ def _path_tag_selections(
         selections.append(
             RuleTagSelection(
                 tag="module",
-                reason=f"`{label}` matches a configured module or module API tag.",
+                reason=f"`{label}` matches a configured module or public seam tag.",
             )
         )
     if facts.matches_layer:
