@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import yaml
 from pydantic import ValidationError
 
@@ -22,6 +24,17 @@ class SettingsFacade:
 
     def query(self, path: str) -> object:
         return ManifestQuery(self._settings).select(path)
+
+    def architecture_root(self) -> Path:
+        architecture = self.query("architecture")
+        configured_root = getattr(architecture, "architecture_root", "")
+        if not configured_root:
+            return self.metadata.project_root
+
+        root_path = Path(str(configured_root)).expanduser()
+        if not root_path.is_absolute():
+            root_path = self.metadata.project_root / root_path
+        return root_path.resolve(strict=False)
 
     def dump_manifest(self) -> str:
         return self._dump_validated_graph()

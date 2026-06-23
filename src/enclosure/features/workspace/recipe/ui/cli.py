@@ -6,6 +6,7 @@ from typing import Annotated
 import typer
 
 from enclosure.shared import ui
+from enclosure.shared.scaffolding import scaffolding
 
 from .. import application
 
@@ -124,7 +125,7 @@ def recipe_command(
     project_root = command_context.project_root
     recipe_root = command_context.recipe_root
     recipe_root_label = ui.present_path(recipe_root, project_root)
-    variables = application.parse_variables(tuple(raw_variables or ()))
+    variables = scaffolding.parse_variables(tuple(raw_variables or ()))
 
     if bench_all_requested:
         if html_report_path is None:

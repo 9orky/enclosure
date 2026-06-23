@@ -22,7 +22,6 @@ RecipeGenerationReport = domain.RecipeGenerationReport
 RecipePreviewFile = domain.RecipePreviewFile
 RecipePreviewStatus = domain.RecipePreviewStatus
 RecipeSummary = domain.RecipeSummary
-parse_variables = domain.parse_variables
 
 
 def bench_all_preview(
@@ -138,6 +137,5 @@ __all__ = [
     "describe_recipe_generation",
     "generate_recipe",
     "list_recipes",
-    "parse_variables",
     "show_recipe",
 ]

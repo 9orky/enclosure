@@ -143,7 +143,6 @@ def test_workspace_rules_route_uses_configured_architecture_tags_for_path(
     cli_runner,
 ) -> None:
     project = fixture_project("enclosure-workspace")
-    use_project(project)
     raw_config = yaml.safe_load(project.config_path.read_text(encoding="utf-8"))
     raw_config["architecture"]["boundaries"]["tags"] = [
         {"name": "module", "match": "*/*", "except": [], "exclude": []},
@@ -152,6 +151,7 @@ def test_workspace_rules_route_uses_configured_architecture_tags_for_path(
     raw_config["architecture"]["boundaries"]["flow"]["layers"] = ["domain"]
     raw_config["architecture"]["boundaries"]["flow"]["module_tag"] = "module"
     project.config_path.write_text(yaml.safe_dump(raw_config), encoding="utf-8")
+    use_project(project)
 
     result = cli_runner.invoke(
         app,

@@ -7,7 +7,7 @@ Use this module when working inside `{{ target.path }}`.
 - Keep `__init__.py` files empty except `from __future__ import annotations`.
 - Keep exactly one application use case in each `application/*.py` file.
 - Keep exactly one domain concept in each `domain/*.py` file.
-- Keep filesystem, manifest, config, template, and workspace adapters in separate `infrastructure/*.py` files.
+- Keep feature-owned config and workspace adapters in separate `infrastructure/*.py` files.
 - Keep CLI and presentation in `ui`.
 - Do not add export hubs or re-export symbols from package seams.
-- Use `settings.metadata.recipes_dir` for the recipe root and feature-owned recipe path helpers for manifest filenames.
+- Use `settings.metadata.recipes_dir` for the recipe root and consume manifest-backed scaffolds through `enclosure.shared.scaffolding`.

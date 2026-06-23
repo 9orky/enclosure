@@ -3,9 +3,11 @@
 ```text
 .enclosure/plans/shared-scaffold/
   PLAN.md
+  PLAN_STEP_05.md
   UML.md
 src/enclosure/shared/scaffolding/
   see UML.md File Layout
+src/enclosure/shared/config/
 src/enclosure/features/workspace/recipe/
 src/enclosure/features/pattern/catalog/
 src/enclosure/features/pattern/fit/
@@ -38,6 +40,10 @@ The implementation target is code and complexity reduction. The shared API shoul
   compatibility aliases, added focused boundary guard tests, confirmed template
   stubs do not regenerate old scaffold mechanics, and verified recipe, pattern,
   shared scaffolding, and lint checks.
+- Phase 5 is proposed. A follow-up architecture scan found stale generated
+  pattern-module templates, config seam leaks, duplicated config query/metadata
+  fixtures, and a few exported helpers that should be removed or explicitly
+  justified before the shared seams are considered closed.
 
 # Phases
 
@@ -103,6 +109,23 @@ The implementation target is code and complexity reduction. The shared API shoul
   `enclosure health` reports recipe checks clean with unrelated baseline
   findings in workspace rules, recipe drift, architecture shape, pressure,
   coherence, and clusters.
+
+## Phase 5: Config And Scaffolding Leak Remediation
+
+- Status: Proposed; see [PLAN_STEP_05.md](PLAN_STEP_05.md).
+- Objective: close the SSOT forks and abstraction leaks found after Step 04 in
+  `shared.config`, `shared.scaffolding` consumers, generated templates, and
+  guard tests.
+- Owner: `.enclosure/recipes/pattern-module/`,
+  `tests/features/shared-scaffold/`, `src/enclosure/shared/config/`, and narrow
+  config-consuming feature/test seams.
+- Inputs: two independent architecture scans plus local source verification.
+- Outputs: stale generated manifest/repository/config/render mechanics removed,
+  shared config public seam decided, fake config fixtures replaced, config path
+  semantics centralized, and guard tests expanded to catch templated regressions.
+- Acceptance: Step 05 proves generators cannot recreate removed scaffold
+  mechanics; callers reach shared config/scaffolding through explicit seams; and
+  focused tests plus lint pass.
 
 # Acceptance
 

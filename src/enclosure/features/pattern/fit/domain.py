@@ -9,17 +9,6 @@ from pathlib import Path
 class PatternFitConfig:
     skip: tuple[str, ...] = ()
 
-    def __post_init__(self) -> None:
-        object.__setattr__(
-            self,
-            "skip",
-            tuple(
-                value.strip().replace("\\", "/")
-                for value in self.skip
-                if value.strip()
-            ),
-        )
-
     @classmethod
     def from_config(cls, value: object) -> PatternFitConfig:
         return cls(skip=tuple(getattr(value, "skip", ())))

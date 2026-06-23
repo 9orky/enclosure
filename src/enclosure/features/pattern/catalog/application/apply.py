@@ -26,7 +26,7 @@ def apply_roles_map(
 
     violations: list[report.PatternCatalogViolation] = []
     for module_name, role_name in roles_map.items():
-        role_pattern = preview.pattern_for_role(
+        role_pattern = preview._pattern_for_role(
             role_name,
             patterns_by_name,
         )

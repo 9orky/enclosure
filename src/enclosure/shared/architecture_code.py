@@ -3,9 +3,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from modwire import CodeMap, ExtractionCache, SourceRoots, extract_code
+from modwire import (
+    CodeMap,
+    ExtractionCache,
+    SourceRoots,
+    extract_code,
+    supported_languages,
+)
 
 from enclosure.shared.config import settings
+from enclosure.shared.config.errors import ConfigError
 
 DEFAULT_ARCHITECTURE_EXCLUSIONS = (
     ".dev/**",
@@ -43,7 +50,8 @@ def extract_architecture_code() -> ArchitectureCodeMap:
     project_root = settings.metadata.project_root
     config_path = settings.metadata.canonical_config_path
     architecture_config = settings.query("architecture")
-    architecture_root = _architecture_root(project_root, architecture_config)
+    _validate_supported_language(architecture_config)
+    architecture_root = settings.architecture_root()
     code_map = extract_code(
         language=architecture_config.language,
         sources_root=architecture_root,
@@ -61,17 +69,6 @@ def extract_architecture_code() -> ArchitectureCodeMap:
         matching_config=_matching_config(architecture_config),
         code_map=code_map,
     )
-
-
-def _architecture_root(project_root: Path, architecture_config: object) -> Path:
-    configured_root = getattr(architecture_config, "architecture_root", "")
-    if not configured_root:
-        return project_root
-
-    root_path = Path(str(configured_root)).expanduser()
-    if not root_path.is_absolute():
-        root_path = project_root / root_path
-    return root_path.resolve(strict=False)
 
 
 def _extraction_exclusions(architecture_config: object) -> tuple[str, ...]:
@@ -97,6 +94,12 @@ def _matching_config(architecture_config: object) -> object:
     if not getattr(architecture_config, "architecture_root", ""):
         return architecture_config
     return _ArchitectureMatchingConfig(architecture_config)
+
+
+def _validate_supported_language(architecture_config: object) -> None:
+    language = getattr(architecture_config, "language", "")
+    if language not in supported_languages():
+        raise ConfigError(f"unsupported language: {language}")
 
 
 __all__ = [

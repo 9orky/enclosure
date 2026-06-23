@@ -834,7 +834,10 @@ def render_recipe_bench_all_html(report: domain.RecipeBenchAllReport) -> str:
 
 
 def _load_recipe_generation_settings() -> domain.RecipeGenerationConfig:
-    return domain.RecipeGenerationConfig.from_config(settings.query("workspace.recipe"))
+    recipe_settings = settings.query("workspace.recipe")
+    if not isinstance(recipe_settings, domain.RecipeGenerationConfig):
+        raise RuntimeError("workspace.recipe settings were not validated")
+    return recipe_settings
 
 
 def _check_variables_for(
@@ -1141,11 +1144,7 @@ def _validate_roles_map(
 
 
 def _architecture_root(project_root: Path) -> Path:
-    architecture = settings.query("architecture")
-    root = getattr(architecture, "root", "")
-    if not isinstance(root, str) or not root.strip():
-        raise RuntimeError("Missing architecture.root in shared settings")
-    return project_root / root
+    return settings.architecture_root()
 
 
 def _expected_files_for(
@@ -2172,4 +2171,3 @@ RecipeGenerationReport = domain.RecipeGenerationReport
 RecipePreviewFile = domain.RecipePreviewFile
 RecipePreviewStatus = domain.RecipePreviewStatus
 RecipeSummary = domain.RecipeSummary
-parse_variables = scaffolding.parse_variables

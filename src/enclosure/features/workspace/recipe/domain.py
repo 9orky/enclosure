@@ -1,62 +1,19 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import StrEnum
-from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any, TypedDict
 
-from enclosure.shared.scaffolding import scaffolding
+from enclosure.shared.config.workspace import RecipeConfig
+
+RecipeGenerationConfig = RecipeConfig
 
 
 @dataclass(frozen=True)
 class RecipeCommandContext:
     project_root: Path
     recipe_root: Path
-
-
-@dataclass(frozen=True)
-class RecipeGenerationConfig:
-    skip: tuple[str, ...] = ()
-    roles_map: dict[str, str] = field(default_factory=dict)
-
-    def __post_init__(self) -> None:
-        object.__setattr__(
-            self,
-            "skip",
-            tuple(
-                value.strip().replace("\\", "/")
-                for value in self.skip
-                if value.strip()
-            ),
-        )
-        object.__setattr__(
-            self,
-            "roles_map",
-            {
-                module_name.strip().replace("\\", "/"): role_name.strip()
-                for module_name, role_name in self.roles_map.items()
-                if module_name.strip() and role_name.strip()
-            },
-        )
-
-    @property
-    def skip_globs(self) -> tuple[str, ...]:
-        return self.skip
-
-    def should_skip(self, relative_path: Path | str) -> bool:
-        relative_path_text = Path(relative_path).as_posix()
-        return any(fnmatch(relative_path_text, pattern) for pattern in self.skip)
-
-    @classmethod
-    def from_config(cls, value: object) -> RecipeGenerationConfig:
-        roles_map = getattr(value, "roles_map", {})
-        if not isinstance(roles_map, dict):
-            roles_map = vars(roles_map)
-        return cls(
-            skip=tuple(getattr(value, "skip", ())),
-            roles_map=dict(roles_map),
-        )
 
 
 @dataclass(frozen=True)
@@ -360,6 +317,3 @@ class RecipeBenchAllReport:
     @property
     def reports_with_warp_count(self) -> int:
         return sum(1 for report in self.reports if report.local_warp_count)
-
-
-parse_variables = scaffolding.parse_variables

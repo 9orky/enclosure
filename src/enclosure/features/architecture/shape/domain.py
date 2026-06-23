@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from modwire import CodeMap
+from modwire import ShapeConfig as ModwireShapeConfig
 from modwire import evaluate_shape as evaluate_modwire_shape
 from modwire.shape.rules import FileCountRule, SymbolShapeRule
 
@@ -61,7 +62,7 @@ def evaluate_shape(
         normalized
         for violation in evaluate_modwire_shape(
             code_map,
-            shape.to_modwire_config(),
+            _modwire_shape_config(shape),
             rules=(FileCountRule(), SymbolShapeRule()),
         )
         if (normalized := _normalize_violation(violation, shape, owners)) is not None
@@ -70,6 +71,40 @@ def evaluate_shape(
     if shape.enforce_joined_imports:
         violations.extend(_joined_import_violations(code_map))
     return tuple(violations)
+
+
+def _modwire_shape_config(shape: object) -> ModwireShapeConfig:
+    return ModwireShapeConfig(
+        max_classes_per_file=shape.max_classes_per_file,
+        max_interfaces_per_file=shape.max_interfaces_per_file,
+        max_types_per_file=shape.max_types_per_file,
+        max_abstract_classes_per_file=shape.max_abstract_classes_per_file,
+        max_functions_per_file=shape.max_functions_per_file,
+        max_methods_per_class=shape.max_methods_per_class,
+        max_declared_args=_combined_limit(
+            shape.max_declared_args_per_function,
+            shape.max_declared_args_per_method,
+        ),
+        max_function_lines=shape.max_lines_count_per_function,
+        max_method_lines=shape.max_lines_count_per_method,
+        max_class_lines=shape.max_lines_count_per_class,
+        allow_optional_function_args=shape.allow_optional_function_args,
+        allow_optional_method_args=shape.allow_optional_method_args,
+        allow_optional_class_properties=shape.allow_optional_class_properties,
+        allow_import_aliases=shape.allow_imports_aliases,
+        allowed_import_crossing_types=tuple(shape.allowed_imports_crossing_types),
+        require_joined_imports=False,
+    )
+
+
+def _combined_limit(function_limit: int, method_limit: int) -> int:
+    if function_limit == method_limit:
+        return function_limit
+    if function_limit == -1:
+        return method_limit
+    if method_limit == -1:
+        return function_limit
+    return max(function_limit, method_limit)
 
 
 def _normalize_violation(

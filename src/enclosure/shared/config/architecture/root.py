@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from modwire import supported_languages
 from pydantic import Field
-from pydantic import field_validator
 
 from ..base import StrictConfigModel
 from .boundaries import BoundariesConfig
@@ -33,13 +31,6 @@ class ArchitectureConfig(StrictConfigModel):
     @property
     def rules(self) -> BoundariesConfig:
         return self.boundaries
-
-    @field_validator("language")
-    @classmethod
-    def known_language(cls, value: str) -> str:
-        if value not in supported_languages():
-            raise ValueError(f"unsupported language: {value}")
-        return value
 
 
 __all__ = ["ArchitectureConfig"]

@@ -218,7 +218,10 @@ def _path_facts(
     architecture_settings: object,
 ) -> tuple[inference.RulePathFacts, ...]:
     matcher = TagMatcher(architecture_settings)
-    architecture_root = getattr(architecture_settings, "architecture_root", "")
+    architecture_root = _relative_project_path(
+        settings.architecture_root(),
+        project_root,
+    )
     source_suffixes = _source_suffixes(getattr(architecture_settings, "language", ""))
     module_tag_names = _module_tag_names(architecture_settings)
     module_api_tag_names = _module_api_tag_names(architecture_settings)
@@ -242,7 +245,7 @@ def _path_fact(
     path: Path,
     *,
     project_root: Path,
-    architecture_root: str,
+    architecture_root: Path,
     source_suffixes: tuple[str, ...],
     matcher: TagMatcher,
     module_tag_names: tuple[str, ...],
@@ -284,9 +287,9 @@ def _relative_project_path(path: Path, project_root: Path) -> Path:
     return candidate
 
 
-def _is_architecture_path(path: Path, architecture_root: str) -> bool:
+def _is_architecture_path(path: Path, architecture_root: Path) -> bool:
     try:
-        path.relative_to(Path(architecture_root))
+        path.relative_to(architecture_root)
         return True
     except ValueError:
         return False

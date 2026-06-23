@@ -16,7 +16,6 @@ ladder:
       state: split-files
       files:
         - config.py
-        - manifest.py
         - reference.py
         - report.py
         - result.py
@@ -24,9 +23,6 @@ ladder:
       state: split-files
       files:
         - config.py
-        - manifests.py
-        - repository.py
-        - templates.py
         - workspace.py
     ui:
       state: split-files
@@ -52,8 +48,6 @@ files:
     target: "{{ target.path }}/domain/__init__.py"
   - source: templates/domain/config.py.tmpl
     target: "{{ target.path }}/domain/config.py"
-  - source: templates/domain/manifest.py.tmpl
-    target: "{{ target.path }}/domain/manifest.py"
   - source: templates/domain/reference.py.tmpl
     target: "{{ target.path }}/domain/reference.py"
   - source: templates/domain/report.py.tmpl
@@ -64,12 +58,6 @@ files:
     target: "{{ target.path }}/infrastructure/__init__.py"
   - source: templates/infrastructure/config.py.tmpl
     target: "{{ target.path }}/infrastructure/config.py"
-  - source: templates/infrastructure/manifests.py.tmpl
-    target: "{{ target.path }}/infrastructure/manifests.py"
-  - source: templates/infrastructure/repository.py.tmpl
-    target: "{{ target.path }}/infrastructure/repository.py"
-  - source: templates/infrastructure/templates.py.tmpl
-    target: "{{ target.path }}/infrastructure/templates.py"
   - source: templates/infrastructure/workspace.py.tmpl
     target: "{{ target.path }}/infrastructure/workspace.py"
   - source: templates/ui/__init__.py.tmpl

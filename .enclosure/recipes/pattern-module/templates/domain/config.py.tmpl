@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from pydantic import Field
-
-from enclosure.shared import config
+from dataclasses import dataclass
 
 
-class {{ target.class }}Config(config.StrictConfigModel):
-    skip: tuple[str, ...] = Field(default_factory=tuple)
+@dataclass(frozen=True)
+class {{ target.class }}Config:
+    skip: tuple[str, ...] = ()
+
+    @classmethod
+    def from_config(cls, value: object) -> "{{ target.class }}Config":
+        return cls(skip=tuple(getattr(value, "skip", ())))
 
 
 __all__ = ["{{ target.class }}Config"]

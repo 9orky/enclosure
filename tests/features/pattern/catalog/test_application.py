@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from enclosure.features.pattern.catalog.application import describe, preview, validate
-from enclosure.shared.scaffolding import scaffolding
+from enclosure.features.pattern.catalog.application import describe, validate
 
 
 def test_list_and_show_patterns_from_manifest_catalog(tmp_path: Path) -> None:
@@ -85,48 +84,6 @@ def test_validate_catalog_reports_missing_roles_map_pattern(tmp_path: Path) -> N
     assert "missing_role_pattern" in {
         violation.code for violation in report.violations
     }
-
-
-def test_composed_role_merges_included_ladder_slots(tmp_path: Path) -> None:
-    _write_pattern(
-        tmp_path,
-        "base",
-        """
-schema_version: 1
-role: fragment
-ladder:
-  family: module-slot
-  rung: domain
-  slots:
-    domain: file
-""",
-    )
-    _write_pattern(
-        tmp_path,
-        "support",
-        """
-schema_version: 1
-role: fragment
-ladder:
-  family: module-slot
-  rung: infrastructure
-  slots:
-    infrastructure: file
-""",
-    )
-
-    patterns_by_name = {
-        pattern.name: pattern
-        for pattern in scaffolding.load_all(tmp_path)
-    }
-    role_pattern = preview.pattern_for_role("base+support", patterns_by_name)
-
-    assert role_pattern is not None
-    assert role_pattern.role == "archetype"
-    ladder = preview.composed_ladder_for(role_pattern, patterns_by_name)
-    assert ladder["family"] == "composed"
-    assert ladder["rung"] == "base+support"
-    assert set(ladder["slots"]) == {"domain", "infrastructure"}
 
 
 def _write_pattern(

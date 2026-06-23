@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Literal
 
-from modwire import ShapeConfig as ModwireShapeConfig
 from pydantic import Field
 from pydantic import field_validator
 
@@ -32,29 +31,6 @@ class ShapeConfig(StrictConfigModel):
         default_factory=lambda: ["module", "symbol"]
     )
 
-    def to_modwire_config(self) -> ModwireShapeConfig:
-        return ModwireShapeConfig(
-            max_classes_per_file=self.max_classes_per_file,
-            max_interfaces_per_file=self.max_interfaces_per_file,
-            max_types_per_file=self.max_types_per_file,
-            max_abstract_classes_per_file=self.max_abstract_classes_per_file,
-            max_functions_per_file=self.max_functions_per_file,
-            max_methods_per_class=self.max_methods_per_class,
-            max_declared_args=_combined_limit(
-                self.max_declared_args_per_function,
-                self.max_declared_args_per_method,
-            ),
-            max_function_lines=self.max_lines_count_per_function,
-            max_method_lines=self.max_lines_count_per_method,
-            max_class_lines=self.max_lines_count_per_class,
-            allow_optional_function_args=self.allow_optional_function_args,
-            allow_optional_method_args=self.allow_optional_method_args,
-            allow_optional_class_properties=self.allow_optional_class_properties,
-            allow_import_aliases=self.allow_imports_aliases,
-            allowed_import_crossing_types=tuple(self.allowed_imports_crossing_types),
-            require_joined_imports=False,
-        )
-
     @field_validator(
         "max_classes_per_file",
         "max_interfaces_per_file",
@@ -83,16 +59,6 @@ class ShapeConfig(StrictConfigModel):
         if len(value) != len(set(value)):
             raise ValueError("allowed import crossing types must be unique")
         return value
-
-
-def _combined_limit(function_limit: int, method_limit: int) -> int:
-    if function_limit == method_limit:
-        return function_limit
-    if function_limit == -1:
-        return method_limit
-    if method_limit == -1:
-        return function_limit
-    return max(function_limit, method_limit)
 
 
 __all__ = ["ImportCrossingType", "ShapeConfig"]
