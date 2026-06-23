@@ -71,6 +71,7 @@ argument violations, symbol imports, and a few oversized owned files.
 
 4. Fix shape violations.
    Step doc: `PLAN_STEP_04.md`.
+   Status: Complete.
    Outcome: optional-argument and same-domain symbol-import findings are gone.
 
 5. Split oversized owned internals.

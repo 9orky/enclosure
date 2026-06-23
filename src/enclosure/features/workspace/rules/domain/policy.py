@@ -2,29 +2,20 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .documents import (
-    RuleDocument,
-    RuleDocumentCheck,
-    RuleDocumentClass,
-    RuleDocumentFile,
-    RuleDocumentScope,
-    RuleSchemaViolation,
-)
-from .references import RuleReference, resolve_reference_path
-from .schema import RuleDocumentSchema, RuleSectionRequirement
+from . import documents, references, schema
 
 
 class RuleSchemaPolicy:
     def __init__(
         self,
         *,
-        navigational_schema: RuleDocumentSchema,
-        policy_schema: RuleDocumentSchema,
-        local_policy_schema: RuleDocumentSchema,
-        execution_calibration_schema: RuleDocumentSchema,
-        execution_big_picture_schema: RuleDocumentSchema,
-        execution_step_schema: RuleDocumentSchema,
-        local_execution_schema: RuleDocumentSchema,
+        navigational_schema: schema.RuleDocumentSchema,
+        policy_schema: schema.RuleDocumentSchema,
+        local_policy_schema: schema.RuleDocumentSchema,
+        execution_calibration_schema: schema.RuleDocumentSchema,
+        execution_big_picture_schema: schema.RuleDocumentSchema,
+        execution_step_schema: schema.RuleDocumentSchema,
+        local_execution_schema: schema.RuleDocumentSchema,
         local_max_content_chars: int,
     ) -> None:
         self._navigational_schema = navigational_schema
@@ -54,30 +45,30 @@ class RuleSchemaPolicy:
     @classmethod
     def _build(cls, *, local_max_content_chars: int) -> RuleSchemaPolicy:
         return cls(
-            navigational_schema=RuleDocumentSchema.navigational(),
-            policy_schema=RuleDocumentSchema.policy(),
-            local_policy_schema=RuleDocumentSchema.local_policy(),
-            execution_calibration_schema=RuleDocumentSchema.execution_calibration(),
-            execution_big_picture_schema=RuleDocumentSchema.execution_big_picture(),
-            execution_step_schema=RuleDocumentSchema.execution_step(),
-            local_execution_schema=RuleDocumentSchema.local_execution(),
+            navigational_schema=schema.RuleDocumentSchema.navigational(),
+            policy_schema=schema.RuleDocumentSchema.policy(),
+            local_policy_schema=schema.RuleDocumentSchema.local_policy(),
+            execution_calibration_schema=schema.RuleDocumentSchema.execution_calibration(),
+            execution_big_picture_schema=schema.RuleDocumentSchema.execution_big_picture(),
+            execution_step_schema=schema.RuleDocumentSchema.execution_step(),
+            local_execution_schema=schema.RuleDocumentSchema.local_execution(),
             local_max_content_chars=local_max_content_chars,
         )
 
     def schema_for(
         self,
-        document_class: RuleDocumentClass,
+        document_class: documents.RuleDocumentClass,
         *,
         stage: str | None,
-        scope: RuleDocumentScope,
-    ) -> RuleDocumentSchema:
-        if document_class is RuleDocumentClass.NAVIGATIONAL:
+        scope: documents.RuleDocumentScope,
+    ) -> schema.RuleDocumentSchema:
+        if document_class is documents.RuleDocumentClass.NAVIGATIONAL:
             return self._navigational_schema
-        if document_class is RuleDocumentClass.POLICY:
-            if scope is RuleDocumentScope.LOCAL:
+        if document_class is documents.RuleDocumentClass.POLICY:
+            if scope is documents.RuleDocumentScope.LOCAL:
                 return self._local_policy_schema
             return self._policy_schema
-        if scope is RuleDocumentScope.LOCAL:
+        if scope is documents.RuleDocumentScope.LOCAL:
             return self._local_execution_schema
         if stage == "calibration":
             return self._execution_calibration_schema
@@ -91,14 +82,14 @@ class RuleSchemaPolicy:
 
     def validate_file(
         self,
-        document_file: RuleDocumentFile,
-    ) -> tuple[RuleSchemaViolation, ...]:
+        document_file: documents.RuleDocumentFile,
+    ) -> tuple[documents.RuleSchemaViolation, ...]:
         if not document_file.is_local or self._local_max_content_chars < 0:
             return ()
         if document_file.content_char_count <= self._local_max_content_chars:
             return ()
         return (
-            RuleSchemaViolation(
+            documents.RuleSchemaViolation(
                 code="local-content-too-large",
                 message=(
                     "Local rule content is "
@@ -111,18 +102,18 @@ class RuleSchemaPolicy:
     @staticmethod
     def validate_path_scope(
         *,
-        document_file: RuleDocumentFile,
-        document: RuleDocument,
-    ) -> tuple[RuleSchemaViolation, ...]:
+        document_file: documents.RuleDocumentFile,
+        document: documents.RuleDocument,
+    ) -> tuple[documents.RuleSchemaViolation, ...]:
         expected_scope = (
-            RuleDocumentScope.LOCAL
+            documents.RuleDocumentScope.LOCAL
             if document_file.is_local
-            else RuleDocumentScope.SHARED
+            else documents.RuleDocumentScope.SHARED
         )
         if document.scope is expected_scope:
             return ()
         return (
-            RuleSchemaViolation(
+            documents.RuleSchemaViolation(
                 code="invalid-frontmatter-scope",
                 message=(
                     f"Rule frontmatter scope is {document.scope}; expected "
@@ -134,17 +125,17 @@ class RuleSchemaPolicy:
     def validate_document(
         self,
         *,
-        document_class: RuleDocumentClass,
-        scope: RuleDocumentScope,
+        document_class: documents.RuleDocumentClass,
+        scope: documents.RuleDocumentScope,
         observed_section_headings: tuple[str, ...],
         has_navigation_targets: bool,
         stage: str | None,
-    ) -> tuple[RuleSchemaViolation, ...]:
-        schema = self.schema_for(document_class, stage=stage, scope=scope)
+    ) -> tuple[documents.RuleSchemaViolation, ...]:
+        document_schema = self.schema_for(document_class, stage=stage, scope=scope)
         violations = list(
             self._validate_requirements(
                 observed_headings=observed_section_headings,
-                requirements=schema.section_requirements,
+                requirements=document_schema.section_requirements,
                 missing_code="missing-section",
                 invalid_order_code="invalid-section-order",
                 missing_message_prefix="Missing required section",
@@ -152,9 +143,9 @@ class RuleSchemaPolicy:
             )
         )
 
-        if schema.navigation_targets_required and not has_navigation_targets:
+        if document_schema.navigation_targets_required and not has_navigation_targets:
             violations.append(
-                RuleSchemaViolation(
+                documents.RuleSchemaViolation(
                     code="missing-navigation-targets",
                     message=(
                         "Navigational documents must declare at least one "
@@ -165,9 +156,12 @@ class RuleSchemaPolicy:
 
         return tuple(violations)
 
-    def inspect_document(self, document_file: RuleDocumentFile) -> RuleDocumentCheck:
-        document = RuleDocument.from_file(document_file)
-        return RuleDocumentCheck(
+    def inspect_document(
+        self,
+        document_file: documents.RuleDocumentFile,
+    ) -> documents.RuleDocumentCheck:
+        document = documents.RuleDocument.from_file(document_file)
+        return documents.RuleDocumentCheck(
             document=document,
             violations=(
                 self.validate_file(document_file)
@@ -188,16 +182,16 @@ class RuleSchemaPolicy:
     def validate_references(
         self,
         *,
-        document: RuleDocument,
+        document: documents.RuleDocument,
         known_paths: set[Path],
-    ) -> tuple[RuleSchemaViolation, ...]:
-        violations: list[RuleSchemaViolation] = []
+    ) -> tuple[documents.RuleSchemaViolation, ...]:
+        violations: list[documents.RuleSchemaViolation] = []
 
         for reference in document.references:
             resolved_path = self._resolve_reference_path(reference)
             if resolved_path is None:
                 violations.append(
-                    RuleSchemaViolation(
+                    documents.RuleSchemaViolation(
                         code="invalid-reference-path",
                         message=(
                             "Rule reference must resolve to a markdown rule "
@@ -210,7 +204,7 @@ class RuleSchemaPolicy:
 
             if resolved_path not in known_paths:
                 violations.append(
-                    RuleSchemaViolation(
+                    documents.RuleSchemaViolation(
                         code="missing-reference-target",
                         message=(
                             "Rule reference does not point to a discovered "
@@ -226,13 +220,13 @@ class RuleSchemaPolicy:
         self,
         *,
         observed_headings: tuple[str, ...],
-        requirements: tuple[RuleSectionRequirement, ...],
+        requirements: tuple[schema.RuleSectionRequirement, ...],
         missing_code: str,
         invalid_order_code: str,
         missing_message_prefix: str,
         invalid_order_message_prefix: str,
-    ) -> tuple[RuleSchemaViolation, ...]:
-        violations: list[RuleSchemaViolation] = []
+    ) -> tuple[documents.RuleSchemaViolation, ...]:
+        violations: list[documents.RuleSchemaViolation] = []
         positions: list[tuple[int, str]] = []
 
         for requirement in requirements:
@@ -240,7 +234,7 @@ class RuleSchemaPolicy:
             if matched_index is None:
                 if requirement.required:
                     violations.append(
-                        RuleSchemaViolation(
+                        documents.RuleSchemaViolation(
                             code=missing_code,
                             message=(
                                 f"{missing_message_prefix}: "
@@ -264,7 +258,7 @@ class RuleSchemaPolicy:
     @staticmethod
     def _find_heading_index(
         observed_headings: tuple[str, ...],
-        requirement: RuleSectionRequirement,
+        requirement: schema.RuleSectionRequirement,
     ) -> int | None:
         for index, heading in enumerate(observed_headings):
             if requirement.matches(heading):
@@ -277,15 +271,15 @@ class RuleSchemaPolicy:
         section_positions: list[tuple[int, str]],
         invalid_order_code: str,
         invalid_order_message_prefix: str,
-    ) -> tuple[RuleSchemaViolation, ...]:
-        violations: list[RuleSchemaViolation] = []
+    ) -> tuple[documents.RuleSchemaViolation, ...]:
+        violations: list[documents.RuleSchemaViolation] = []
 
         for current_index in range(1, len(section_positions)):
             previous_position, previous_heading = section_positions[current_index - 1]
             current_position, current_heading = section_positions[current_index]
             if current_position < previous_position:
                 violations.append(
-                    RuleSchemaViolation(
+                    documents.RuleSchemaViolation(
                         code=invalid_order_code,
                         message=(
                             f"{invalid_order_message_prefix}: {current_heading} "
@@ -298,8 +292,8 @@ class RuleSchemaPolicy:
         return tuple(violations)
 
     @staticmethod
-    def _resolve_reference_path(reference: RuleReference) -> Path | None:
-        return resolve_reference_path(reference)
+    def _resolve_reference_path(reference: references.RuleReference) -> Path | None:
+        return references.resolve_reference_path(reference)
 
 
 __all__ = ["RuleSchemaPolicy"]

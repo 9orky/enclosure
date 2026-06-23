@@ -61,7 +61,7 @@ def init_command(
             "--language",
             help="Set the source extractor when source detection is ambiguous.",
         ),
-    ] = "",
+    ],
 ) -> None:
     if llm:
         ui.render_llm("llm.tmpl")

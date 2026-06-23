@@ -8,18 +8,10 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
-from .metadata import body_content_from, metadata_from
-from .references import (
-    RuleReference,
-    all_references_from,
-    child_references_from,
-    escalation_references_from,
-    has_markdown_link,
-    markdown_references_from,
-    tightens_references_from,
-)
+from . import metadata, references
 
 _SECTION_HEADING_PATTERN = re.compile(r"^##\s+(?P<value>.+)$", re.MULTILINE)
+RuleReference = references.RuleReference
 
 
 class RuleDocumentClass(StrEnum):
@@ -75,7 +67,7 @@ class RuleDocumentFile(BaseModel):
 
     @property
     def content_char_count(self) -> int:
-        return len(body_content_from(self.content))
+        return len(metadata.body_content_from(self.content))
 
     @property
     def is_local(self) -> bool:
@@ -106,7 +98,7 @@ class RuleDocument(BaseModel):
 
     @classmethod
     def from_file(cls, document_file: RuleDocumentFile) -> RuleDocument:
-        document_metadata = metadata_from(document_file.content)
+        document_metadata = metadata.metadata_from(document_file.content)
         return cls(
             path=document_file.path,
             document_class=RuleDocumentClass.from_literal(document_metadata.doc_class),
@@ -124,23 +116,23 @@ class RuleDocument(BaseModel):
                 document_metadata,
             ),
             content_char_count=document_file.content_char_count,
-            child_references=child_references_from(
+            child_references=references.child_references_from(
                 document_file.path,
                 document_metadata,
             ),
-            tightens_references=tightens_references_from(
+            tightens_references=references.tightens_references_from(
                 document_file.path,
                 document_metadata,
             ),
-            escalation_references=escalation_references_from(
+            escalation_references=references.escalation_references_from(
                 document_file.path,
                 document_metadata,
             ),
-            markdown_references=markdown_references_from(
+            markdown_references=references.markdown_references_from(
                 document_file.path,
                 document_file.content,
             ),
-            references=all_references_from(
+            references=references.all_references_from(
                 document_file.path,
                 document_metadata,
                 document_file.content,
@@ -203,7 +195,7 @@ def has_navigation_targets(
 ) -> bool:
     if getattr(metadata, "child_paths", ()):
         return True
-    return has_markdown_link(content)
+    return references.has_markdown_link(content)
 
 
 def document_path_scope(path: Path) -> RuleDocumentScope:

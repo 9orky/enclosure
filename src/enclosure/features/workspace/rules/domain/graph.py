@@ -5,14 +5,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 
-from .documents import (
-    RuleDocument,
-    RuleDocumentClass,
-    RuleDocumentScope,
-    RuleSchemaViolation,
-)
-from .inference import RuleTagSelection
-from .references import RuleReference, resolve_reference_path
+from . import documents, inference, references
 
 _SUPPORTED_READ_STRATEGIES = {"progressive"}
 
@@ -21,7 +14,7 @@ class RuleGraphFinding(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     path: Path
-    violation: RuleSchemaViolation
+    violation: documents.RuleSchemaViolation
 
 
 class RuleReadStep(BaseModel):
@@ -29,8 +22,8 @@ class RuleReadStep(BaseModel):
 
     path: Path
     reason: str
-    document_class: RuleDocumentClass
-    scope: RuleDocumentScope
+    document_class: documents.RuleDocumentClass
+    scope: documents.RuleDocumentScope
     purpose: str
     tags: tuple[str, ...]
     local_supplement: bool = False
@@ -42,7 +35,7 @@ class RuleReadPlan(BaseModel):
     requested_tags: tuple[str, ...]
     available_tags: tuple[str, ...]
     steps: tuple[RuleReadStep, ...]
-    tag_selections: tuple[RuleTagSelection, ...] = ()
+    tag_selections: tuple[inference.RuleTagSelection, ...] = ()
     stop_point: str = ""
 
     @property
@@ -51,14 +44,14 @@ class RuleReadPlan(BaseModel):
 
 
 def validate_rule_graph(
-    documents: tuple[RuleDocument, ...],
+    documents_: tuple[documents.RuleDocument, ...],
 ) -> tuple[RuleGraphFinding, ...]:
-    documents_by_path = _documents_by_path(documents)
+    documents_by_path = _documents_by_path(documents_)
     known_paths = set(documents_by_path)
-    reachable_paths = _reachable_paths(documents)
+    reachable_paths = _reachable_paths(documents_)
     findings: list[RuleGraphFinding] = []
 
-    for document in documents:
+    for document in documents_:
         if document.read_directly and not document.entrypoint:
             findings.append(
                 _finding(
@@ -69,7 +62,7 @@ def validate_rule_graph(
             )
 
         if (
-            document.document_class is RuleDocumentClass.NAVIGATIONAL
+            document.document_class is documents.RuleDocumentClass.NAVIGATIONAL
             and document.read_strategy
             and document.read_strategy not in _SUPPORTED_READ_STRATEGIES
         ):
@@ -82,7 +75,7 @@ def validate_rule_graph(
             )
 
         if (
-            document.document_class is RuleDocumentClass.NAVIGATIONAL
+            document.document_class is documents.RuleDocumentClass.NAVIGATIONAL
             and document.child_references
             and not _known_reference_targets(document.child_references, known_paths)
         ):
@@ -94,7 +87,7 @@ def validate_rule_graph(
                 )
             )
 
-        if document.scope is RuleDocumentScope.LOCAL and not _has_shared_anchor(
+        if document.scope is documents.RuleDocumentScope.LOCAL and not _has_shared_anchor(
             document,
             documents_by_path,
         ):
@@ -119,12 +112,12 @@ def validate_rule_graph(
 
 
 def build_rule_read_plan(
-    documents: tuple[RuleDocument, ...],
+    documents_: tuple[documents.RuleDocument, ...],
     requested_tags: tuple[str, ...],
-    tag_selections: tuple[RuleTagSelection, ...] = (),
+    tag_selections: tuple[inference.RuleTagSelection, ...],
 ) -> RuleReadPlan:
     normalized_tags = _normalize_tags(requested_tags)
-    available_tags = _available_tags(documents)
+    available_tags = _available_tags(documents_)
     if not normalized_tags:
         return RuleReadPlan(
             requested_tags=(),
@@ -133,10 +126,10 @@ def build_rule_read_plan(
             tag_selections=tag_selections,
         )
 
-    documents_by_path = _documents_by_path(documents)
-    supplements_by_target = _supplements_by_target(documents, documents_by_path)
-    parent_paths = _navigation_parent_paths(documents, documents_by_path)
-    target_documents = _route_targets(documents, normalized_tags, documents_by_path)
+    documents_by_path = _documents_by_path(documents_)
+    supplements_by_target = _supplements_by_target(documents_, documents_by_path)
+    parent_paths = _navigation_parent_paths(documents_, documents_by_path)
+    target_documents = _route_targets(documents_, normalized_tags, documents_by_path)
     step_paths: list[tuple[Path, bool, str]] = []
     seen: set[Path] = set()
 
@@ -182,46 +175,48 @@ def build_rule_read_plan(
     )
 
 
-def available_rule_tags(documents: tuple[RuleDocument, ...]) -> tuple[str, ...]:
-    return _available_tags(documents)
+def available_rule_tags(
+    documents_: tuple[documents.RuleDocument, ...],
+) -> tuple[str, ...]:
+    return _available_tags(documents_)
 
 
 def _documents_by_path(
-    documents: tuple[RuleDocument, ...],
-) -> dict[Path, RuleDocument]:
-    return {document.path: document for document in documents}
+    documents_: tuple[documents.RuleDocument, ...],
+) -> dict[Path, documents.RuleDocument]:
+    return {document.path: document for document in documents_}
 
 
 def _known_reference_targets(
-    references: tuple[RuleReference, ...],
+    references_: tuple[references.RuleReference, ...],
     known_paths: set[Path],
 ) -> tuple[Path, ...]:
     return tuple(
         target
-        for reference in references
-        for target in (resolve_reference_path(reference),)
+        for reference in references_
+        for target in (references.resolve_reference_path(reference),)
         if target in known_paths
     )
 
 
 def _has_shared_anchor(
-    document: RuleDocument,
-    documents_by_path: dict[Path, RuleDocument],
+    document: documents.RuleDocument,
+    documents_by_path: dict[Path, documents.RuleDocument],
 ) -> bool:
     for target_path in _known_reference_targets(
         document.tightens_references,
         set(documents_by_path),
     ):
         target = documents_by_path[target_path]
-        if target.scope is RuleDocumentScope.SHARED:
+        if target.scope is documents.RuleDocumentScope.SHARED:
             return True
     return False
 
 
-def _reachable_paths(documents: tuple[RuleDocument, ...]) -> set[Path]:
-    documents_by_path = _documents_by_path(documents)
-    roots = _route_roots(documents)
-    supplements_by_target = _supplements_by_target(documents, documents_by_path)
+def _reachable_paths(documents_: tuple[documents.RuleDocument, ...]) -> set[Path]:
+    documents_by_path = _documents_by_path(documents_)
+    roots = _route_roots(documents_)
+    supplements_by_target = _supplements_by_target(documents_, documents_by_path)
     reachable: set[Path] = set()
     pending = deque(roots)
 
@@ -237,10 +232,10 @@ def _reachable_paths(documents: tuple[RuleDocument, ...]) -> set[Path]:
     return reachable
 
 
-def _route_roots(documents: tuple[RuleDocument, ...]) -> tuple[Path, ...]:
+def _route_roots(documents_: tuple[documents.RuleDocument, ...]) -> tuple[Path, ...]:
     roots = [
         document
-        for document in documents
+        for document in documents_
         if document.path == Path("INDEX.md")
         and document.read_directly
     ]
@@ -249,29 +244,29 @@ def _route_roots(documents: tuple[RuleDocument, ...]) -> tuple[Path, ...]:
 
     roots = [
         document
-        for document in documents
+        for document in documents_
         if document.read_directly
     ]
     if not roots:
         roots = [
             document
-            for document in documents
+            for document in documents_
             if document.entrypoint
-            and document.scope is RuleDocumentScope.SHARED
+            and document.scope is documents.RuleDocumentScope.SHARED
         ]
     if not roots:
-        roots = [document for document in documents if document.entrypoint]
+        roots = [document for document in documents_ if document.entrypoint]
     return tuple(document.path for document in sorted(roots, key=_document_sort_key))
 
 
 def _supplements_by_target(
-    documents: tuple[RuleDocument, ...],
-    documents_by_path: dict[Path, RuleDocument],
+    documents_: tuple[documents.RuleDocument, ...],
+    documents_by_path: dict[Path, documents.RuleDocument],
 ) -> dict[Path, tuple[Path, ...]]:
     values: dict[Path, list[Path]] = {}
     known_paths = set(documents_by_path)
-    for document in documents:
-        if document.scope is not RuleDocumentScope.LOCAL:
+    for document in documents_:
+        if document.scope is not documents.RuleDocumentScope.LOCAL:
             continue
         for target_path in _known_reference_targets(document.tightens_references, known_paths):
             values.setdefault(target_path, []).append(document.path)
@@ -282,12 +277,12 @@ def _supplements_by_target(
 
 
 def _navigation_parent_paths(
-    documents: tuple[RuleDocument, ...],
-    documents_by_path: dict[Path, RuleDocument],
+    documents_: tuple[documents.RuleDocument, ...],
+    documents_by_path: dict[Path, documents.RuleDocument],
 ) -> dict[Path, tuple[Path, ...]]:
     known_paths = set(documents_by_path)
     parent_paths: dict[Path, tuple[Path, ...]] = {}
-    pending = deque((root, (root,)) for root in _route_roots(documents))
+    pending = deque((root, (root,)) for root in _route_roots(documents_))
 
     while pending:
         path, route = pending.popleft()
@@ -304,22 +299,22 @@ def _navigation_parent_paths(
 
 
 def _route_targets(
-    documents: tuple[RuleDocument, ...],
+    documents_: tuple[documents.RuleDocument, ...],
     requested_tags: tuple[str, ...],
-    documents_by_path: dict[Path, RuleDocument],
-) -> tuple[RuleDocument, ...]:
-    selected: list[RuleDocument] = []
+    documents_by_path: dict[Path, documents.RuleDocument],
+) -> tuple[documents.RuleDocument, ...]:
+    selected: list[documents.RuleDocument] = []
     seen: set[Path] = set()
     for requested_tag in requested_tags:
         matching = tuple(
             document
-            for document in documents
+            for document in documents_
             if requested_tag in _normalize_tags(document.tags)
         )
         matching_shared = tuple(
             document
             for document in matching
-            if document.scope is RuleDocumentScope.SHARED
+            if document.scope is documents.RuleDocumentScope.SHARED
         )
         candidates = matching_shared or tuple(
             _shared_anchors_for_local_matches(matching, documents_by_path)
@@ -330,7 +325,7 @@ def _route_targets(
         navigational_candidates = tuple(
             document
             for document in candidates
-            if document.document_class is RuleDocumentClass.NAVIGATIONAL
+            if document.document_class is documents.RuleDocumentClass.NAVIGATIONAL
         )
         if navigational_candidates:
             candidates = (sorted(navigational_candidates, key=_document_sort_key)[0],)
@@ -344,24 +339,24 @@ def _route_targets(
 
 
 def _shared_anchors_for_local_matches(
-    documents: tuple[RuleDocument, ...],
-    documents_by_path: dict[Path, RuleDocument],
-) -> tuple[RuleDocument, ...]:
-    anchors: list[RuleDocument] = []
+    documents_: tuple[documents.RuleDocument, ...],
+    documents_by_path: dict[Path, documents.RuleDocument],
+) -> tuple[documents.RuleDocument, ...]:
+    anchors: list[documents.RuleDocument] = []
     known_paths = set(documents_by_path)
-    for document in documents:
-        if document.scope is not RuleDocumentScope.LOCAL:
+    for document in documents_:
+        if document.scope is not documents.RuleDocumentScope.LOCAL:
             continue
         for target_path in _known_reference_targets(document.tightens_references, known_paths):
             target = documents_by_path[target_path]
-            if target.scope is RuleDocumentScope.SHARED:
+            if target.scope is documents.RuleDocumentScope.SHARED:
                 anchors.append(target)
     return tuple(anchors)
 
 
 def _route_reason(
-    document: RuleDocument,
-    target: RuleDocument,
+    document: documents.RuleDocument,
+    target: documents.RuleDocument,
     *,
     requested_tags: tuple[str, ...],
     is_target: bool,
@@ -411,12 +406,12 @@ def _append_step_path(
     step_paths.append((path, local_supplement, reason))
 
 
-def _available_tags(documents: tuple[RuleDocument, ...]) -> tuple[str, ...]:
+def _available_tags(documents_: tuple[documents.RuleDocument, ...]) -> tuple[str, ...]:
     return tuple(
         sorted(
             {
                 tag.strip().lower()
-                for document in documents
+                for document in documents_
                 for tag in document.tags
                 if tag.strip()
             }
@@ -433,7 +428,7 @@ def _normalize_tags(values: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(normalized)
 
 
-def _document_sort_key(document: RuleDocument) -> tuple[int, int, str]:
+def _document_sort_key(document: documents.RuleDocument) -> tuple[int, int, str]:
     return (
         0 if document.path == Path("INDEX.md") else 1,
         len(document.path.parts),
@@ -444,7 +439,7 @@ def _document_sort_key(document: RuleDocument) -> tuple[int, int, str]:
 def _finding(path: Path, code: str, message: str) -> RuleGraphFinding:
     return RuleGraphFinding(
         path=path,
-        violation=RuleSchemaViolation(
+        violation=documents.RuleSchemaViolation(
             code=code,
             message=message,
         ),

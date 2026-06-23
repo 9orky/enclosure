@@ -42,13 +42,6 @@ class _MigratedConfigDumper(yaml.SafeDumper):
     def ignore_aliases(self, data: object) -> bool:
         return True
 
-    def increase_indent(
-        self,
-        flow: bool = False,
-        indentless: bool = False,
-    ) -> None:
-        super().increase_indent(flow, indentless=False)
-
 
 @dataclass(frozen=True)
 class _MigratedConfig:
@@ -63,7 +56,7 @@ class FileRepository:
         metadata: object,
         *,
         default_config_content: str,
-        source_kind: str = "",
+        source_kind: str,
     ) -> domain.Workspace:
         project_root = metadata.project_root.resolve()
         workspace_paths = _workspace_paths(metadata)
@@ -468,7 +461,7 @@ def _config_path_label(path: tuple[object, ...]) -> str:
 
 def _dump_migrated_config(data: dict[object, object]) -> str:
     return yaml.dump(
-        _with_compact_yaml_objects(data),
+        _with_compact_yaml_objects(data, in_sequence=False),
         Dumper=_MigratedConfigDumper,
         default_flow_style=False,
         sort_keys=False,
@@ -478,14 +471,15 @@ def _dump_migrated_config(data: dict[object, object]) -> str:
 def _with_compact_yaml_objects(
     value: object,
     *,
-    in_sequence: bool = False,
+    in_sequence: bool,
 ) -> object:
     if isinstance(value, list):
         return [_with_compact_yaml_objects(item, in_sequence=True) for item in value]
 
     if isinstance(value, dict):
         converted_items = {
-            key: _with_compact_yaml_objects(item) for key, item in value.items()
+            key: _with_compact_yaml_objects(item, in_sequence=False)
+            for key, item in value.items()
         }
         if not value or (
             not in_sequence and all(_is_yaml_scalar(item) for item in value.values())

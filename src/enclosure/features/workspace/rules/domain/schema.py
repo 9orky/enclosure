@@ -4,7 +4,7 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
-from .documents import RuleDocumentClass
+from . import documents
 
 
 class RuleSectionRequirement(BaseModel):
@@ -34,7 +34,7 @@ class RuleSectionRequirement(BaseModel):
 class RuleDocumentSchema(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    document_class: RuleDocumentClass
+    document_class: documents.RuleDocumentClass
     section_requirements: tuple[RuleSectionRequirement, ...]
     navigation_targets_required: bool = False
 
@@ -49,7 +49,7 @@ class RuleDocumentSchema(BaseModel):
     @classmethod
     def navigational(cls) -> RuleDocumentSchema:
         return cls(
-            document_class=RuleDocumentClass.NAVIGATIONAL,
+            document_class=documents.RuleDocumentClass.NAVIGATIONAL,
             section_requirements=(
                 RuleSectionRequirement(
                     headings=("Use This Branch When",),
@@ -65,7 +65,7 @@ class RuleDocumentSchema(BaseModel):
     @classmethod
     def policy(cls) -> RuleDocumentSchema:
         return cls(
-            document_class=RuleDocumentClass.POLICY,
+            document_class=documents.RuleDocumentClass.POLICY,
             section_requirements=(
                 RuleSectionRequirement(headings=("Required Decisions",)),
                 RuleSectionRequirement(headings=("Core Rules",)),
@@ -80,7 +80,7 @@ class RuleDocumentSchema(BaseModel):
     @classmethod
     def local_policy(cls) -> RuleDocumentSchema:
         return cls(
-            document_class=RuleDocumentClass.POLICY,
+            document_class=documents.RuleDocumentClass.POLICY,
             section_requirements=(
                 RuleSectionRequirement(headings=("Rules",)),
                 RuleSectionRequirement(headings=("Checks",)),
@@ -90,7 +90,7 @@ class RuleDocumentSchema(BaseModel):
     @classmethod
     def execution_big_picture(cls) -> RuleDocumentSchema:
         return cls(
-            document_class=RuleDocumentClass.EXECUTION,
+            document_class=documents.RuleDocumentClass.EXECUTION,
             section_requirements=(
                 RuleSectionRequirement(headings=("Required Sections",)),
                 RuleSectionRequirement(headings=("Optional Sections",), required=False),
@@ -108,7 +108,7 @@ class RuleDocumentSchema(BaseModel):
     @classmethod
     def execution_calibration(cls) -> RuleDocumentSchema:
         return cls(
-            document_class=RuleDocumentClass.EXECUTION,
+            document_class=documents.RuleDocumentClass.EXECUTION,
             section_requirements=(
                 RuleSectionRequirement(headings=("Protocol Position",)),
                 RuleSectionRequirement(headings=("Required Activities",)),
@@ -123,7 +123,7 @@ class RuleDocumentSchema(BaseModel):
     @classmethod
     def execution_step(cls) -> RuleDocumentSchema:
         return cls(
-            document_class=RuleDocumentClass.EXECUTION,
+            document_class=documents.RuleDocumentClass.EXECUTION,
             section_requirements=(
                 RuleSectionRequirement(headings=("Required Sections",)),
                 RuleSectionRequirement(headings=("Implementation Tree Rules",)),
@@ -137,7 +137,7 @@ class RuleDocumentSchema(BaseModel):
     @classmethod
     def local_execution(cls) -> RuleDocumentSchema:
         return cls(
-            document_class=RuleDocumentClass.EXECUTION,
+            document_class=documents.RuleDocumentClass.EXECUTION,
             section_requirements=(
                 RuleSectionRequirement(headings=("Rules",)),
                 RuleSectionRequirement(headings=("Checks",)),

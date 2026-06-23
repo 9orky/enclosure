@@ -64,8 +64,8 @@ def build_rule_schema_report() -> documents.RuleSchemaReport:
 def build_rule_read_plan(
     tags: tuple[str, ...],
     *,
-    paths: tuple[Path, ...] = (),
-    task: str = "",
+    paths: tuple[Path, ...],
+    task: str,
 ) -> graph.RuleReadPlan:
     project_root = settings.metadata.project_root
     architecture_settings = settings.query("architecture")
