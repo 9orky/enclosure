@@ -12,6 +12,7 @@ src/enclosure/features/pattern/fit/
 tests/shared/scaffolding/
 tests/features/workspace/recipe/
 tests/features/pattern/
+tests/features/shared-scaffold/
 ```
 
 # Goal
@@ -30,9 +31,12 @@ The implementation target is code and complexity reduction. The shared API shoul
   variables, and writes through the package-root shared scaffolding facade.
   Recipe-owned report, drift, bench, preview, skip, and roles-map behavior
   remains local.
-- Phase 3 is ready for acceptance. Treat the shared scaffolding package as
-  complete; do not add shared capabilities during pattern integration unless
-  the UML and Step 01 are reopened first.
+- Phase 3 is complete. `pattern.catalog` and `pattern.fit` now use the
+  package-root shared scaffolding facade for scaffold mechanics; duplicate
+  pattern manifest, repository, render, context, and write code is removed.
+- Phase 4 gathers the remaining integration audit and cleanup items. Treat
+  shared scaffolding as complete; do not add shared capabilities unless the UML
+  and Step 01 are reopened first.
 
 # Phases
 
@@ -64,7 +68,7 @@ The implementation target is code and complexity reduction. The shared API shoul
 
 ## Phase 3: Remaining Modules and Cleanups
 
-- Status: Ready for acceptance; do not implement until accepted.
+- Status: Complete.
 - Objective: move remaining pattern modules to the proven shared seam and delete obsolete duplicate code.
 - Owner: `src/enclosure/features/pattern/catalog/`, `src/enclosure/features/pattern/fit/`, and cleanup in affected recipe files.
 - Inputs: proven shared scaffolding package and completed recipe integration pattern.
@@ -73,6 +77,25 @@ The implementation target is code and complexity reduction. The shared API shoul
   `uv run pytest tests/shared/scaffolding tests/features/workspace/recipe
   tests/features/pattern` and `uv run ruff check src tests` pass; follow with
   `enclosure health` if available in the active environment.
+
+## Phase 4: Final Integration Audit
+
+- Status: Ready for acceptance; do not implement until accepted.
+- Objective: gather and close the remaining integration questions after recipe
+  and pattern migration, without expanding the shared scaffolding API.
+- Owner: `src/enclosure/features/workspace/recipe/`, `.enclosure/recipes/`,
+  `tests/shared/scaffolding/`, `tests/features/workspace/recipe/`,
+  `tests/features/pattern/`, and focused scan/guard tests.
+- Inputs: completed Step 03 migration and the post-migration full-pass audit.
+- Outputs: every manifest-backed scaffold consumer is either using
+  `from enclosure.shared.scaffolding import ...` through the package root or is
+  explicitly documented as a non-scaffold feature; remaining compatibility
+  aliases are either justified by current callers or removed; guard tests/scans
+  prevent reintroducing local scaffold mechanics.
+- Acceptance: Step 04 proves there are no remaining live integrations beyond
+  shared scaffolding consumers, no feature imports shared internals, recipe
+  template stubs do not regenerate removed scaffold mechanics, and existing
+  recipe/pattern/shared tests plus lint pass.
 
 # Acceptance
 
@@ -100,3 +123,7 @@ The implementation target is code and complexity reduction. The shared API shoul
   Enums can be introduced later only if they reduce consumer code.
 - Nested scaffold DTO types remain reachable only through exported `Scaffold`;
   they are not promoted to package-root exports for Step 03.
+- `workspace.plan` and `workspace.sync` use plan/sync write behavior, not
+  manifest-backed scaffolding. They are excluded from shared scaffolding
+  integration unless they later load, compose, render, or materialize
+  recipe-style scaffold manifests.
