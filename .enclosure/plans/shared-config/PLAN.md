@@ -1,6 +1,6 @@
 # Shared Config
 
-Status: Draft
+Status: Step 01 implemented; Step 02 ready for implementation after Step 01 verification
 
 ## File Tree
 
@@ -35,11 +35,11 @@ Status: Draft
 - src/enclosure/shared/config/health/
 - tests/shared/config/
 
-## Problem Or Goal
+## Goal
 
 Create `enclosure.shared.config` as an independent package with a thin public API. It becomes the sole owner of config pydantic classes, manifest loading, whole-graph validation, and dot-path manifest querying.
 
-The public API is:
+The runtime caller API is:
 
 ```python
 from enclosure.shared.config import settings
@@ -71,19 +71,21 @@ Step 01 must build a ready standalone package. During that step, `src/enclosure/
 
 No module inside `shared.config` may know anything about existing features and modules as part of Step 01. Existing feature integration happens only after Step 01.
 
-Integration is staged by bounded-context root. Step 02 migrates only the
-architecture bounded context. Step 03 migrates the remaining bounded contexts
-after the architecture migration succeeds. No integration step may add missing
-`shared.config` capabilities. If integration discovers that the package is
-incomplete, return to Step 01, complete the package independently, then resume
-the blocked integration step.
+Integration is staged by bounded-context root. Step 02 migrates the architecture
+bounded context plus the current architecture extraction helper. Step 03
+migrates the remaining bounded contexts after the architecture migration
+succeeds. No integration step may add missing `shared.config` capabilities. If
+integration discovers that the package is incomplete, return to Step 01,
+complete the package independently, then resume the blocked integration step.
 
 ## Root Boundary Rule
 
 Every step may edit only the roots declared by that step.
 
 - Step 01 root: `src/enclosure/shared/config/` and `tests/shared/config/`.
-- Step 02 root: `src/enclosure/features/architecture/` and `tests/features/architecture/`.
+- Step 02 roots: `src/enclosure/features/architecture/`,
+  `src/enclosure/shared/architecture_code.py`, and
+  `tests/features/architecture/`.
 - Step 03 roots: one remaining bounded-context or cleanup root at a time, as declared by the active Step 03 migration unit.
 
 If work appears to require edits outside the active root boundary, stop and move
@@ -94,10 +96,12 @@ a single step.
 
 Step 01 target is the standalone `shared.config` package and its tests.
 
-Step 02 target callers are architecture bounded-context modules that need
-runtime configuration:
+Step 02 target callers are architecture bounded-context modules and the current
+architecture extraction helper that need runtime configuration:
 
 - `architecture.*` features that consume architecture config.
+- `src/enclosure/shared/architecture_code.py`, because it is the existing
+  architecture extraction entry point used by architecture commands.
 
 Step 03 target callers are the remaining bounded contexts and later integration
 surfaces that need runtime configuration:
@@ -108,7 +112,7 @@ surfaces that need runtime configuration:
 - later shared helpers and CLI flows that are outside the architecture root.
 
 Callers should not import config models from bounded contexts after their
-bounded-context migration step. They should import `settings` from
+bounded-context migration step. Runtime callers should import `settings` from
 `enclosure.shared.config` and query the validated graph through the facade.
 
 Callers that need project location or standard workspace paths must use
@@ -139,7 +143,7 @@ completed Step 01 package.
 
 ## Public Seam
 
-The public seam is intentionally thin:
+The runtime public seam is intentionally thin:
 
 ```python
 from enclosure.shared.config import settings
@@ -275,10 +279,11 @@ Acceptance: `shared.config` is complete after this phase and imports no existing
 
 Phase 2: Integrate architecture bounded context.
 
-Owner: `src/enclosure/features/architecture/` and architecture tests.
+Owner: `src/enclosure/features/architecture/`,
+`src/enclosure/shared/architecture_code.py`, and architecture tests.
 Inputs: completed Step 01 package.
 Outputs: architecture config callers use `from enclosure.shared.config import settings`; architecture bounded-context config ownership is removed inside the architecture root.
-Acceptance: no compatibility bridges are introduced, edits stay inside the architecture step root, integration does not change the standalone ownership rules established in Step 01, and Step 02 does not add new `shared.config` capabilities.
+Acceptance: no compatibility bridges are introduced, edits stay inside the architecture step roots, integration does not change the standalone ownership rules established in Step 01, and Step 02 does not add new `shared.config` capabilities.
 
 Phase 3: Integrate remaining bounded contexts.
 
@@ -323,7 +328,9 @@ compatibility bridges are introduced, and Step 03 does not add new
 - `settings` is a facade class instance.
 - `settings.metadata.project_root` is the application-wide source of truth for project root.
 - `settings.metadata` is the source of truth for standard workspace paths.
-- Step 02 architecture callers do not resolve or rediscover project root independently inside the architecture root.
+- Step 02 architecture callers do not resolve or rediscover project root
+  independently inside the architecture root or the architecture extraction
+  helper.
 - Step 03 callers do not resolve or rediscover project root independently inside their migration roots.
 - `src/enclosure/shared/layout.py` is removed during the step that owns the final remaining callers and the shared root.
 - `settings.query("...")` is queryable by dot paths.

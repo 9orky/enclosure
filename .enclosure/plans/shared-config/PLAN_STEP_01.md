@@ -1,6 +1,6 @@
 # Step 01: Standalone Shared Config Package
 
-Status: Draft
+Status: Implemented; verify before Step 02
 
 ## Goal
 
@@ -58,7 +58,9 @@ outside `tests/shared/config/`.
 ## Work Items
 
 - Convert `src/enclosure/shared/config.py` into the `src/enclosure/shared/config/` package.
-- Export only `settings` and intentionally public support types from `__init__.py`.
+- Export `settings` as the runtime caller seam and keep support exports such as
+  `ConfigError` and `StrictConfigModel` limited to package tests and migration
+  internals.
 - Implement `StrictConfigModel`, `ConfigError`, `ConfigMetadata`, `Manifest`, `ManifestQuery`, `SettingsFacade`, and `EnclosureSettings`.
 - Implement all config pydantic classes inside topic subpackages without importing existing feature modules.
 - Declare generic config defaults on pydantic config fields wherever possible.
@@ -77,6 +79,7 @@ outside `tests/shared/config/`.
 ## Acceptance
 
 - `from enclosure.shared.config import settings` works.
+- Runtime callers use `settings` as the public config seam.
 - Implementation strictly follows [UML.md](UML.md).
 - `settings.query("...")` supports dot paths.
 - `settings.dump_manifest()` returns YAML for the validated settings graph.

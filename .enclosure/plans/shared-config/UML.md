@@ -1,6 +1,6 @@
 # Shared Config UML
 
-Status: Draft
+Status: Aligned for Step 02 implementation
 
 This diagram describes the intended `enclosure.shared.config` package outcome for the shared config plan. It uses Mermaid so it can live in Markdown preview.
 
@@ -16,13 +16,16 @@ If another plan document conflicts with this UML, stop and update the documents 
 
 Step 01 completes everything inside `enclosure.shared.config` without importing
 existing enclosure feature modules, bounded-context config modules, or other
-shared modules/packages. Step 02 then integrates only the architecture bounded
-context with the finished package. Step 03 integrates the remaining bounded
-contexts after architecture succeeds.
+shared modules/packages. Step 02 then integrates the architecture bounded
+context and the current `src/enclosure/shared/architecture_code.py`
+architecture extraction helper with the finished package. Step 03 integrates
+the remaining bounded contexts and shared-helper cleanup units after
+architecture succeeds.
 
 ## File Layout
 
-- `__init__.py`: exports `settings`
+- `__init__.py`: exports `settings` plus support types needed by package tests
+  and migration internals; architecture callers use only `settings`
 - `facade.py`: `SettingsFacade`
 - `query.py`: `ManifestQuery`
 - `base.py`: `StrictConfigModel`
@@ -278,6 +281,7 @@ namespace integration_callers {
   class WorkspaceCallers
   class PatternCallers
   class HealthCallers
+  class ArchitectureCodeHelper
   class SharedHelpers
   class CliCommands
   class OldArchitectureConfig {
@@ -367,6 +371,7 @@ ArchitectureCallers --> settings : Step 02 import settings
 WorkspaceCallers --> settings : Step 03 import settings
 PatternCallers --> settings : Step 03 import settings
 HealthCallers --> settings : Step 03 import settings
+ArchitectureCodeHelper --> settings : Step 02 architecture extraction helper
 SharedHelpers --> settings : Step 03 cleanup unit only
 CliCommands --> settings : Step 03 cleanup unit only
 
@@ -375,7 +380,7 @@ note for Manifest "Single owner of manifest IO.\nConstructed with cwd-as-project
 note for ConfigMetadata "Constructed only with project_root.\nAll other paths are @property values derived from the private .enclosure layout.\nBecause .enclosure layout is known, metadata is the layout SSOT for callers."
 note for ManifestQuery "Dot-path traversal behind SettingsFacade.query(...).\nNo item access public API.\nNo get/default fallback API."
 note for EnclosureSettings "Whole manifest graph validates at once.\nGeneric defaults live on config fields wherever possible.\nValidated graph YAML dumping is initiated by SettingsFacade, not by passing settings into Manifest."
-note for ArchitectureCallers "Step 02 only: architecture callers import settings, use settings.metadata.project_root, and query config values through settings.query(...).\nStep 02 edits stay inside the architecture root and matching architecture tests."
+note for ArchitectureCallers "Step 02 only: architecture callers import settings, use settings.metadata.project_root, and query config values through settings.query(...).\nStep 02 edits stay inside the architecture root, the architecture extraction helper, and matching architecture tests."
 note for WorkspaceCallers "Step 03 only, after successful architecture migration.\nEach migration unit edits only its own root and matching tests."
 ```
 
@@ -444,9 +449,12 @@ and it does not call a `Manifest` API that accepts an `EnclosureSettings` object
 - This UML is the implementation source of truth.
 - Step 01 completes `shared.config` independently.
 - Step 01 imports no existing enclosure feature modules, bounded-context config modules, or other shared modules/packages.
-- Step 02 integrates only architecture bounded-context callers with the completed package.
+- Step 02 integrates architecture bounded-context callers and
+  `src/enclosure/shared/architecture_code.py` with the completed package.
 - Step 03 integrates remaining bounded contexts after architecture migration succeeds.
-- The only public object is `settings`.
+- The runtime public seam for callers is `settings`; support exports such as
+  `ConfigError` and `StrictConfigModel` are not a caller-facing query or loading
+  API.
 - Importing `settings` is the first config operation during normal command runtime.
 - `Path.cwd()` is treated as the project root; no upward project-root discovery happens in `shared.config`.
 - `settings.metadata.project_root` exposes that cwd-derived project root as the SSOT.
