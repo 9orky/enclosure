@@ -14,7 +14,11 @@ If another plan document conflicts with this UML, stop and update the documents 
 
 ## Independence Boundary
 
-Step 01 completes everything inside `enclosure.shared.config` without importing existing enclosure feature modules, bounded-context config modules, or other shared modules/packages. Step 02 then integrates existing callers with the finished package.
+Step 01 completes everything inside `enclosure.shared.config` without importing
+existing enclosure feature modules, bounded-context config modules, or other
+shared modules/packages. Step 02 then integrates only the architecture bounded
+context with the finished package. Step 03 integrates the remaining bounded
+contexts after architecture succeeds.
 
 ## File Layout
 
@@ -24,8 +28,7 @@ Step 01 completes everything inside `enclosure.shared.config` without importing 
 - `base.py`: `StrictConfigModel`
 - `errors.py`: `ConfigError`
 - `metadata.py`: `ConfigMetadata`
-- `loader.py`: `ManifestLoader`
-- `loaded_manifest.py`: `LoadedManifest`
+- `manifest.py`: `Manifest`
 - `root.py`: `EnclosureSettings`
 - `architecture/__init__.py`
 - `architecture/root.py`: `ArchitectureConfig`
@@ -61,10 +64,13 @@ namespace enclosure_shared_config {
 
   class SettingsFacade {
     <<public>>
-    -ManifestLoader loader
-    +ManifestQuery manifest
     +ConfigMetadata metadata
-    +load() EnclosureSettings
+    +query(path) object
+    +dump_manifest() str
+    -Manifest manifest
+    -EnclosureSettings settings
+    -validate_manifest() EnclosureSettings
+    -dump_validated_graph() str
   }
 
   class ConfigError {
@@ -78,35 +84,46 @@ namespace enclosure_shared_config {
 
   class ConfigMetadata {
     <<value object>>
+    +__init__(project_root)
     +Path project_root
-    +Path config_path
-    +str config_format
+    +target_dir Path
+    +canonical_config_path Path
+    +recipes_dir Path
+    +plans_dir Path
+    +cache_dir Path
+    +dev_dir Path
+    +rules_dir Path
+    +local_rules_dir Path
+    +bootstrap_instruction_path Path
+    +agent_instruction_path Path
   }
 
   class ManifestQuery {
-    <<dot notation only>>
+    <<internal dot-path traversal>>
     -object value
     +__getattr__(name) object
+    +select(path) object
     -wrap(value) object
-  }
-
-  class ManifestLoader {
-    <<private service>>
-    +load() LoadedManifest
-    -find_config_path() Path
-    -load_yaml_mapping(path) dict
-  }
-
-  class LoadedManifest {
-    <<value object>>
-    +ConfigMetadata metadata
-    +dict raw_data
   }
 
   class EnclosureSettings {
     <<root pydantic model>>
     +ArchitectureConfig architecture
     +WorkspaceConfig workspace
+  }
+
+  class Manifest {
+    <<manifest owner>>
+    +__init__(project_root)
+    +dump_default() str$
+    ~ConfigMetadata metadata
+    ~dict raw_data
+    -Path project_root
+    -Path target_dir
+    -Path selected_path
+    -tuple_str manifest_file_names
+    -find_config_path() Path
+    -load_yaml_mapping(path) dict
   }
 }
 
@@ -281,19 +298,21 @@ namespace integration_callers {
   class OldPatternConfig {
     <<delete duplicate>>
   }
+  class OldSharedLayout {
+    <<delete>>
+  }
 }
 
 settings --> SettingsFacade : instance of
-SettingsFacade *-- ManifestLoader : loads through
+SettingsFacade ..> Manifest : constructed from
 SettingsFacade *-- ConfigMetadata : exposes
 SettingsFacade *-- EnclosureSettings : validates whole graph
-SettingsFacade --> ManifestQuery : exposes as manifest
+SettingsFacade --> ManifestQuery : queries through
 
-ManifestLoader --> LoadedManifest : returns
-LoadedManifest *-- ConfigMetadata
-ManifestLoader ..> ConfigError : raises on IO/YAML/shape failures
+Manifest *-- ConfigMetadata
+Manifest ..> ConfigError : raises on IO/YAML/shape failures
 EnclosureSettings ..> ConfigError : validation failures wrapped loudly
-ManifestQuery ..> AttributeError : missing attributes
+ManifestQuery ..> AttributeError : missing paths
 
 StrictConfigModel <|-- EnclosureSettings
 StrictConfigModel <|-- ArchitectureConfig
@@ -342,18 +361,22 @@ OldRulesConfig ..> RulesConfig : replaced by Step 01 class
 OldRecipeConfig ..> RecipeConfig : replaced by Step 01 class
 OldSyncConfig ..> SyncConfig : replaced by Step 01 class
 OldPatternConfig ..> RecipeConfig : duplicate collapsed
+OldSharedLayout ..> ConfigMetadata : standard paths replaced by metadata
 
 ArchitectureCallers --> settings : Step 02 import settings
-WorkspaceCallers --> settings
-PatternCallers --> settings
-HealthCallers --> settings
-SharedHelpers --> settings
-CliCommands --> settings
+WorkspaceCallers --> settings : Step 03 import settings
+PatternCallers --> settings : Step 03 import settings
+HealthCallers --> settings : Step 03 import settings
+SharedHelpers --> settings : Step 03 cleanup unit only
+CliCommands --> settings : Step 03 cleanup unit only
 
 note for SettingsFacade "Step 01: complete standalone package.\nNo imports from existing features, old config modules, or other shared modules/packages."
-note for ManifestQuery "Dot notation only.\nNo item access public API.\nNo get/default fallback API."
-note for EnclosureSettings "Whole manifest graph validates at once.\nNo section-by-section bounded-context loaders."
-note for ArchitectureCallers "Step 02 only: existing callers integrate with the completed package."
+note for Manifest "Single owner of manifest IO.\nConstructed with cwd-as-project-root.\nDuring init it joins project_root/.enclosure and accepted manifest filenames, checks existence, loads raw data, and creates metadata.\nIts loaded mapping and selected path are implementation details.\nIts only public behavior beyond construction is dump_default()."
+note for ConfigMetadata "Constructed only with project_root.\nAll other paths are @property values derived from the private .enclosure layout.\nBecause .enclosure layout is known, metadata is the layout SSOT for callers."
+note for ManifestQuery "Dot-path traversal behind SettingsFacade.query(...).\nNo item access public API.\nNo get/default fallback API."
+note for EnclosureSettings "Whole manifest graph validates at once.\nGeneric defaults live on config fields wherever possible.\nValidated graph YAML dumping is initiated by SettingsFacade, not by passing settings into Manifest."
+note for ArchitectureCallers "Step 02 only: architecture callers import settings, use settings.metadata.project_root, and query config values through settings.query(...).\nStep 02 edits stay inside the architecture root and matching architecture tests."
+note for WorkspaceCallers "Step 03 only, after successful architecture migration.\nEach migration unit edits only its own root and matching tests."
 ```
 
 ## Runtime Flow
@@ -361,35 +384,59 @@ note for ArchitectureCallers "Step 02 only: existing callers integrate with the 
 ```mermaid
 sequenceDiagram
 autonumber
+actor Importer
 actor Caller
 participant Settings as settings: SettingsFacade
-participant Loader as ManifestLoader
+participant Manifest as Manifest
 participant YAML as YAML parser
 participant RootModel as EnclosureSettings
 participant Query as ManifestQuery
 
-Caller->>Settings: settings.manifest.architecture.root
-Settings->>Loader: load()
-Loader->>Loader: discover .enclosure/enclosure.yaml or .yml independently
-Loader->>YAML: parse config file
+Importer->>Settings: from enclosure.shared.config import settings
+Settings->>Manifest: Manifest(Path.cwd())
+Manifest->>Manifest: treat cwd as project_root SSOT
+Manifest->>Manifest: build project_root/.enclosure
+Manifest->>Manifest: check enclosure.yaml, then enclosure.yml
+Manifest->>YAML: parse selected manifest file
 
-alt unreadable file, invalid YAML, or non-mapping top level
-  Loader-->>Settings: raise ConfigError
-  Settings-->>Caller: fail loud
+alt no manifest, unreadable file, invalid YAML, or non-mapping top level
+  Manifest-->>Importer: raise ConfigError
 else raw mapping loaded
-  Loader-->>Settings: LoadedManifest(metadata, raw_data)
+  Manifest-->>Settings: Manifest
+  Settings->>Manifest: read package-internal raw_data
   Settings->>RootModel: model_validate(raw_data)
   alt pydantic validation error
-    RootModel-->>Settings: validation error
-    Settings-->>Caller: raise ConfigError
+    RootModel-->>Importer: raise ConfigError
   else valid whole graph
     RootModel-->>Settings: EnclosureSettings
-    Settings->>Query: wrap(validated root model)
-    Query-->>Settings: ManifestQuery
+    Caller->>Settings: settings.metadata.project_root
+    Settings-->>Caller: project root SSOT
+    Caller->>Settings: settings.metadata.plans_dir
+    Settings-->>Caller: canonical plans path
+    Caller->>Settings: settings.query("architecture.root")
+    Settings->>Query: select from validated root model
+    Query-->>Settings: selected value
     Settings-->>Caller: architecture.root value
+    Caller->>Settings: settings.dump_manifest()
+    Settings-->>Caller: YAML for validated graph
   end
 end
 ```
+
+## Default Manifest Dumping
+
+The generic manifest defaults live on `EnclosureSettings` and its nested config
+models. `Manifest.dump_default()` is the only public dump behavior on
+`Manifest`; it serializes the full default config graph with
+`model_dump(mode="json", by_alias=True)` to YAML. It does not require an
+existing `.enclosure/enclosure.yaml` file or a `Manifest` instance. Later
+workspace sync integration can use this to initialize `.enclosure/enclosure.yaml`,
+then apply project-specific overrides such as detected language and source root
+outside the public facade.
+
+The public facade method `SettingsFacade.dump_manifest()` dumps the already
+loaded and validated settings graph. It does not accept overrides or file paths,
+and it does not call a `Manifest` API that accepts an `EnclosureSettings` object.
 
 ## Design Checks
 
@@ -397,11 +444,27 @@ end
 - This UML is the implementation source of truth.
 - Step 01 completes `shared.config` independently.
 - Step 01 imports no existing enclosure feature modules, bounded-context config modules, or other shared modules/packages.
-- Step 02 integrates existing callers with the completed package.
+- Step 02 integrates only architecture bounded-context callers with the completed package.
+- Step 03 integrates remaining bounded contexts after architecture migration succeeds.
 - The only public object is `settings`.
+- Importing `settings` is the first config operation during normal command runtime.
+- `Path.cwd()` is treated as the project root; no upward project-root discovery happens in `shared.config`.
+- `settings.metadata.project_root` exposes that cwd-derived project root as the SSOT.
+- `settings.metadata.project_root` is the source of truth for project root after bootstrap.
+- `settings.metadata` owns canonical non-null project paths such as `plans_dir`, `recipes_dir`, `rules_dir`, and `cache_dir`.
+- `settings.metadata.canonical_config_path` is always `.enclosure/enclosure.yaml`.
+- The selected loaded manifest path is private to `Manifest` and can point to either `.yaml` or `.yml`.
+- `Manifest` owns the possible manifest filenames: `.enclosure/enclosure.yaml` and `.enclosure/enclosure.yml`.
+- Missing manifests raise `ConfigError` during `settings` construction.
+- `Manifest.dump_default()` is the default config generation API for later workspace sync integration.
+- `Manifest` does not expose generic YAML dumping or methods that accept `EnclosureSettings`; arbitrary graph dumping belongs to `SettingsFacade.dump_manifest()`.
+- Step 03 removes the packaged `resources/enclosure.yaml` template after workspace sync uses `Manifest.dump_default()`.
+- Integrated callers must not rediscover or infer project root independently.
+- `enclosure.shared.layout` is removed during a Step 03 shared-helper cleanup unit; specialized path helpers move to owning features.
+- Each integration step edits only the root boundary declared by that step or migration unit.
 - The root model validates the complete manifest graph.
 - All config pydantic classes live in `shared.config`.
 - Config classes are grouped under topic subpackages.
 - Module names omit redundant `config` suffixes inside `shared.config`.
-- Dot-notation traversal is the only query API.
+- `settings.query("...")` dot-path traversal is the only query API.
 - Old bounded-context config modules are deleted after Step 01 replacements exist, with no compatibility bridges.

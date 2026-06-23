@@ -6,7 +6,7 @@ Status: Draft
 
 Implement `src/enclosure/shared/config/` as a complete independent package.
 
-This step finishes the package before any existing caller is integrated. The output must be a ready solution with manifest loading, whole-graph pydantic validation, the `settings` facade, and dot-notation manifest querying.
+This step finishes the package before any existing caller is integrated. The output must be a ready solution with manifest loading, whole-graph pydantic validation, the `settings` facade, and dot-path manifest querying.
 
 ## Source Of Truth
 
@@ -26,6 +26,18 @@ Allowed dependencies are the Python standard library plus direct package depende
 
 This step may create standalone tests under `tests/shared/config/` that exercise only `shared.config`.
 
+## Root Boundary
+
+Step 01 may edit only these roots:
+
+- `src/enclosure/shared/config/`
+- `tests/shared/config/`
+
+Step 01 may update the shared-config plan documents while defining the package.
+It must not edit existing feature modules, bounded-context config modules, shared
+helpers outside `src/enclosure/shared/config/`, CLI flows, resources, or tests
+outside `tests/shared/config/`.
+
 ## File Tree
 
 - src/enclosure/shared/config/
@@ -35,8 +47,7 @@ This step may create standalone tests under `tests/shared/config/` that exercise
 - src/enclosure/shared/config/base.py
 - src/enclosure/shared/config/errors.py
 - src/enclosure/shared/config/metadata.py
-- src/enclosure/shared/config/loader.py
-- src/enclosure/shared/config/loaded_manifest.py
+- src/enclosure/shared/config/manifest.py
 - src/enclosure/shared/config/root.py
 - src/enclosure/shared/config/architecture/
 - src/enclosure/shared/config/workspace/
@@ -48,12 +59,17 @@ This step may create standalone tests under `tests/shared/config/` that exercise
 
 - Convert `src/enclosure/shared/config.py` into the `src/enclosure/shared/config/` package.
 - Export only `settings` and intentionally public support types from `__init__.py`.
-- Implement `StrictConfigModel`, `ConfigError`, `ConfigMetadata`, `LoadedManifest`, `ManifestLoader`, `ManifestQuery`, `SettingsFacade`, and `EnclosureSettings`.
+- Implement `StrictConfigModel`, `ConfigError`, `ConfigMetadata`, `Manifest`, `ManifestQuery`, `SettingsFacade`, and `EnclosureSettings`.
 - Implement all config pydantic classes inside topic subpackages without importing existing feature modules.
-- Implement independent config file discovery for `.enclosure/enclosure.yaml` and `.enclosure/enclosure.yml`.
+- Declare generic config defaults on pydantic config fields wherever possible.
+- Implement manifest loading from `Path.cwd()` as project root, with accepted filenames `.enclosure/enclosure.yaml` and `.enclosure/enclosure.yml`.
+- Populate `ConfigMetadata.project_root` as the application-wide source of truth for project root after bootstrap.
+- Populate common metadata paths as `@property` values derived from the bootstrapped root, including target, canonical config path, recipes, plans, cache, dev, rules, local rules, bootstrap instruction, and agent instruction paths.
 - Implement whole-manifest YAML loading and top-level mapping validation.
 - Implement whole-graph pydantic validation through `EnclosureSettings`.
-- Implement dot-notation manifest traversal through `settings.manifest`.
+- Implement dot-path manifest traversal through `settings.query("...")`.
+- Implement `SettingsFacade.dump_manifest()` with no parameters to dump the currently loaded validated graph.
+- Implement static `Manifest.dump_default()` to dump the generic default config graph from `EnclosureSettings()`.
 - Ensure missing manifest attributes raise `AttributeError`.
 - Ensure manifest load and validation failures raise loud config errors before partial settings are exposed.
 - Add standalone tests for valid config, invalid YAML, non-mapping YAML, invalid nested values, missing attributes, list traversal, object traversal, and import independence.
@@ -62,10 +78,16 @@ This step may create standalone tests under `tests/shared/config/` that exercise
 
 - `from enclosure.shared.config import settings` works.
 - Implementation strictly follows [UML.md](UML.md).
-- `settings.manifest` supports dot notation.
-- Dot-notation queries can return scalar values, pydantic objects, lists, tuples, and nested query objects.
+- `settings.query("...")` supports dot paths.
+- `settings.dump_manifest()` returns YAML for the validated settings graph.
+- `settings.metadata.project_root` provides the bootstrapped project root.
+- `settings.metadata.canonical_config_path` provides the canonical manifest output path.
+- `settings.metadata` provides common workspace paths as non-null `Path` values.
+- `Manifest.dump_default()` returns valid YAML for the generic default settings graph.
+- Dot-path queries can return scalar values, pydantic objects, lists, and tuples.
 - The full manifest graph validates at once.
-- No partial settings are exposed after load or validation failure.
+- The generic default manifest graph is valid and dumpable from pydantic defaults.
+- No partial settings facade is exposed after load or validation failure.
 - `src/enclosure/shared/config/` imports no existing enclosure feature modules, bounded-context config modules, or other shared modules/packages.
 - The package is complete enough to integrate existing callers without adding more config-package capabilities in Step 02.
 
@@ -75,6 +97,11 @@ This step may create standalone tests under `tests/shared/config/` that exercise
 - [ ] Compare Step 01 implementation against [UML.md](UML.md).
 - [ ] Run an import scan proving `src/enclosure/shared/config/` has no imports from existing features, old config modules, or other shared modules/packages.
 - [ ] Validate the current `.enclosure/enclosure.yaml` through `EnclosureSettings`.
-- [ ] Verify `settings.manifest.architecture.root`.
-- [ ] Verify `settings.manifest.architecture.shape`.
+- [ ] Verify `settings.metadata.project_root`.
+- [ ] Verify `settings.metadata.canonical_config_path`.
+- [ ] Verify path metadata such as `settings.metadata.plans_dir`, `settings.metadata.recipes_dir`, and `settings.metadata.rules_dir`.
+- [ ] Verify `settings.query("architecture.root")`.
+- [ ] Verify `settings.query("architecture.shape")`.
+- [ ] Verify `settings.dump_manifest()`.
+- [ ] Verify `Manifest.dump_default()` validates through `EnclosureSettings`.
 - [ ] Verify list access through a dot-selected list such as architecture boundary tags.

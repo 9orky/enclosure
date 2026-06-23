@@ -1,75 +1,100 @@
-# Step 02: Integrate Shared Config
+# Step 02: Migrate Architecture Bounded Context
 
 Status: Draft
 
 ## Goal
 
-Integrate the completed `shared.config` package from Step 01 into existing enclosure callers.
+Integrate the completed `shared.config` package from Step 01 into the
+architecture bounded context only.
 
-This step must treat `shared.config` as finished. Do not add new package capabilities here unless Step 01 is first updated and completed again.
+This step is the pilot migration. It proves that architecture callers can use
+`settings`, `settings.query("architecture...")`, and `settings.metadata` without
+changing any other bounded context.
+
+This step must treat `shared.config` as finished. Do not add new package
+capabilities here unless Step 01 is first updated and completed again.
 
 ## Source Of Truth
 
-[UML.md](UML.md) is the source of truth for Step 02 integration boundaries. Integration must strictly follow the caller direction, deleted old ownership, no-bridge rule, and independence boundary shown in the UML.
+[UML.md](UML.md) is the source of truth for integration boundaries. Step 02 must
+strictly follow the caller direction, deleted old ownership, no-bridge rule, and
+independence boundary shown in the UML.
 
-If integration needs behavior not represented in the UML, stop and update Step 01 and the UML before coding.
+If architecture integration needs behavior not represented in the UML, stop,
+update Step 01 and the UML, complete Step 01 independently, then resume Step 02.
+
+## Root Boundary
+
+Step 02 may edit only these roots:
+
+- `src/enclosure/features/architecture/`
+- `tests/features/architecture/`
+
+Step 02 must not edit:
+
+- `src/enclosure/shared/config/`
+- non-architecture bounded contexts such as `workspace`, `pattern`, or `health`
+- shared helpers outside the architecture root
+- CLI, resource, or UI files outside the architecture root
+
+If an architecture migration appears to require edits outside this root
+boundary, stop and move that work to Step 03 or return to Step 01 if it is a
+missing `shared.config` capability.
 
 ## Integration Boundary
 
-Step 02 may edit existing feature modules, shared helpers, tests, and CLI flows.
-
-Step 02 must not weaken the Step 01 independence contract. Existing callers may depend on `shared.config`, but `shared.config` must not begin depending on existing callers.
+Architecture callers may depend on `shared.config`, but `shared.config` must not
+begin depending on architecture callers.
 
 No backwards-compatibility bridges are allowed.
 
-If integration reveals a missing `shared.config` capability, stop Step 02, update and complete Step 01 independently, then resume integration.
+No architecture caller may call a project-root discovery helper, walk upward
+from the current working directory, or infer the project root from config paths.
+Any architecture code that needs the project root or a common workspace path
+must read it from `settings.metadata` and pass that value downward.
 
 ## File Tree
 
-- src/enclosure/features/architecture/config/
-- src/enclosure/features/workspace/config/
-- src/enclosure/features/workspace/rules/domain/config.py
-- src/enclosure/features/workspace/recipe/domain.py
-- src/enclosure/features/workspace/sync/domain.py
-- src/enclosure/features/pattern/catalog/domain/config.py
-- src/enclosure/features/pattern/fit/domain.py
-- src/enclosure/shared/architecture_code.py
-- tests/shared/
-- tests/features/
+- `src/enclosure/features/architecture/`
+- `src/enclosure/features/architecture/config/` (delete after callers move)
+- `tests/features/architecture/`
 
 ## Work Items
 
-- Replace existing config imports with `from enclosure.shared.config import settings`.
-- Replace section-level config loading with `settings.manifest` queries.
-- Delete `src/enclosure/features/architecture/config/` after all callers move.
-- Delete `src/enclosure/features/workspace/config/` after all callers move.
-- Delete nested bounded-context config class definitions after confirming their replacements already exist in the completed Step 01 package.
-- Remove duplicate `load_config()` functions and repeated config error aliases.
-- Remove `config.section(...)` only if no internal shared-config implementation still needs it.
-- Update tests that previously validated independent sections to validate the shared root graph and focused nested validators.
-- Update CLI and report code to use metadata exposed by `settings` if needed.
-- Run full relevant verification.
+- Replace architecture config imports with `from enclosure.shared.config import settings`.
+- Replace architecture section-level config loading with `settings.query("architecture")` or narrower `settings.query("architecture...")` calls.
+- Replace architecture project-root discovery with `settings.metadata.project_root` inside the architecture root.
+- Replace architecture canonical config-path construction with `settings.metadata.canonical_config_path` when the architecture root needs to report or reference the canonical manifest path.
+- Pass `settings.metadata.project_root` and queried architecture settings into downstream architecture functions and reports instead of resolving them locally.
+- Delete `src/enclosure/features/architecture/config/` after all architecture callers move.
+- Remove architecture duplicate `load_config()` functions and repeated config error aliases.
+- Remove architecture section-level config validation after equivalent shared-config validation is already covered by Step 01 tests.
+- Update architecture tests that previously validated independent architecture sections to use the shared root graph or focused shared-config validators.
+- Update architecture tests that patched project-root discovery to patch or construct architecture inputs around `settings.metadata.project_root`.
+- Run architecture-focused verification.
 
 ## Acceptance
 
-- Existing callers use `from enclosure.shared.config import settings`.
-- Integration strictly follows [UML.md](UML.md).
-- No existing feature module loads raw YAML.
-- No existing feature module validates raw manifest sections directly.
-- Old bounded-context config packages and loaders are deleted, not wrapped.
+- Architecture production callers use `from enclosure.shared.config import settings`.
+- Architecture integration strictly follows [UML.md](UML.md).
+- Architecture edits stay inside the Step 02 root boundary.
+- Architecture callers use `settings.query("architecture...")` for architecture config data.
+- Architecture callers use `settings.metadata.project_root` as the runtime source of project-root truth.
+- Architecture callers use `settings.metadata.canonical_config_path` when the canonical manifest output path is needed.
+- Architecture callers do not rediscover, infer, or resolve the project root independently.
+- Architecture feature modules do not load raw YAML.
+- Architecture feature modules do not validate raw manifest sections directly.
+- `src/enclosure/features/architecture/config/` is deleted, not wrapped.
 - No backwards-compatibility bridges are introduced.
-- `shared.config` remains independent of existing feature modules, bounded-context config modules, and other shared modules/packages.
+- `shared.config` remains independent of architecture and other feature modules.
 - Step 02 adds no new `shared.config` capabilities.
-- Code reduction opportunities from removed duplicate config paths are applied.
 
 ## Verification
 
-- [ ] Run tests for features migrated from bounded-context config imports.
-- [ ] Compare Step 02 integration against [UML.md](UML.md).
-- [ ] Run tests that cover invalid manifests and fail-fast behavior.
-- [ ] Run `uv run pytest tests/shared/test_config.py`.
-- [ ] Run `enclosure health`.
-- [ ] Run `enclosure workspace health` if workspace files changed.
+- [ ] Compare Step 02 architecture integration against [UML.md](UML.md).
+- [ ] Run `uv run pytest tests/shared/config`.
+- [ ] Run architecture tests affected by config migration.
+- [ ] Run `uv run pytest tests/features/architecture`.
 - [ ] Run `enclosure architecture boundaries`.
 - [ ] Run `enclosure architecture shape`.
-- [ ] Run `enclosure architecture health` if architecture-sensitive code changed.
+- [ ] Run `enclosure architecture health`.
