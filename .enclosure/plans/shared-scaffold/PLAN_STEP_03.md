@@ -13,11 +13,11 @@ src/enclosure/features/pattern/catalog/
 src/enclosure/features/pattern/fit/
   domain.py
     fit-specific preview/result dataclasses remain
-    duplicate scaffold models/helpers removed
+    duplicate scaffold models/include helpers removed
   infrastructure.py
     repository/render/materializer duplicates removed
   application.py
-    preview/materialize use shared scaffolding load/render/write behavior
+    preview/materialize use shared scaffolding load/compose/render/write behavior
 tests/features/pattern/
   catalog and fit proof tests
 ```
@@ -26,7 +26,7 @@ tests/features/pattern/
 
 Move remaining modules to the proven shared scaffolding facade seam and clean up the temporary complexity left by the extraction.
 
-This step should finish the reduction: the same manifest/render/write behavior should exist in one shared package, and pattern modules should only retain feature-specific orchestration and result language.
+This step should finish the reduction: the same manifest/include/render/write behavior should exist in one shared package, and pattern modules should only retain feature-specific orchestration and result language.
 
 # Step Contract
 
@@ -40,17 +40,20 @@ This step should finish the reduction: the same manifest/render/write behavior s
 
 # Execution
 
-1. Replace pattern catalog repository and manifest loading with `scaffolding.load_all()` and `scaffolding.load()`.
-2. Map shared `Scaffold` objects into pattern catalog summaries only if the catalog templates/application require pattern-specific names.
-3. Delete `pattern.catalog.domain.manifest` types that duplicate shared scaffold models.
-4. Delete `pattern.catalog.infrastructure.manifests` once all callers use the shared loader.
-5. Replace pattern fit repository with shared scaffolding facade loading.
-6. Replace pattern fit renderer and materializer with `scaffolding.render()` and `scaffolding.write()`.
-7. Remove pattern fit local target context, defaults, variable context, target normalization, and manifest DTO helpers.
-8. Keep pattern fit preview statuses local: `create`, `skip_exists`, and `skip_config`.
-9. Review `workspace.recipe` after pattern integration and remove any aliases or wrappers that were kept only for migration confidence.
-10. Run a search for duplicate scaffold symbols and remove remaining private copies unless they are feature-specific by behavior, not just by name.
-11. Do not add back-calls from `shared.scaffolding` into pattern or recipe code.
+1. Resolve `scaffold_root` in pattern code from `settings.metadata.recipes_dir`; pass that path into shared calls and do not let shared code import settings.
+2. Replace pattern catalog repository and manifest loading with `scaffolding.load_all()` and `scaffolding.load()`.
+3. Map shared `Scaffold` objects into pattern catalog summaries only if the catalog templates/application require pattern-specific names.
+4. Replace pattern catalog include traversal and composed ladder metadata reads with shared `scaffolding.compose()` where the behavior is generic.
+5. Keep pattern catalog role composition strings and catalog validation local.
+6. Delete `pattern.catalog.domain.manifest` types that duplicate shared scaffold models.
+7. Delete `pattern.catalog.infrastructure.manifests` once all callers use the shared scaffolding facade.
+8. Replace pattern fit repository with shared scaffolding facade loading.
+9. Replace pattern fit include traversal, input aggregation, renderer, and materializer with `scaffolding.render()` and `scaffolding.write()`.
+10. Remove pattern fit local target context, defaults, variable context, target normalization, and manifest DTO helpers.
+11. Keep pattern fit preview statuses local: `create`, `skip_exists`, and `skip_config`.
+12. Review `workspace.recipe` after pattern integration and remove any aliases or wrappers that were kept only for migration confidence.
+13. Run a search for duplicate scaffold symbols and remove remaining private copies unless they are feature-specific by behavior, not just by name.
+14. Do not add back-calls from `shared.scaffolding` into pattern or recipe code.
 
 # Verification
 
@@ -59,7 +62,7 @@ This step should finish the reduction: the same manifest/render/write behavior s
 - Run `uv run pytest tests/shared/scaffolding tests/features/workspace/recipe tests/features/pattern`.
 - Run `uv run ruff check src tests`.
 - Run `enclosure health` if the command is available from the local environment.
-- Confirm with `rg` that `_PatternManifest`, `FilePatternRepository`, `FilePatternRenderer`, `FilePatternMaterializer`, pattern-local `_load_yaml_mapping`, and duplicate pattern `RelativePath`/`PatternInputSpec`/`PatternFile` definitions no longer remain outside intentional feature result models.
+- Confirm with `rg` that `_PatternManifest`, `FilePatternRepository`, `FilePatternRenderer`, `FilePatternMaterializer`, pattern-local `_load_yaml_mapping`, local include traversal helpers, local input aggregation helpers, and duplicate pattern `RelativePath`/`PatternInputSpec`/`PatternFile` definitions no longer remain outside intentional feature result models.
 - Confirm `src/enclosure/shared/scaffolding/` still has no imports from `src/enclosure/features/`.
 
 # Completion

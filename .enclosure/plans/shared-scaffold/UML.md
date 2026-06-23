@@ -1,74 +1,23 @@
 # Shared Scaffolding UML
 
-Status: Draft blueprint for Step 01
-
-This document describes the intended `enclosure.shared.scaffolding` package
-outcome. It uses Mermaid so it can live in Markdown preview.
-
-Mermaid namespace labels are diagram groupings. They mirror package areas but
-are not import paths or module names.
-
 ## Source Of Truth
 
-This UML document is the source of truth for Step 01 implementation. The package
-layout, file names, DTO names, facade methods, relationships, public seam, step
-boundary, and independence rules shown here must be strictly followed.
+This document is the Step 01 implementation contract for
+`enclosure.shared.scaffolding`.
 
-If another plan document conflicts with this UML, stop and update the documents
-before coding.
+The design is class-only. Standalone helper functions are forbidden. Internal
+behavior belongs to private classes or private methods.
 
-## Independence Boundary
-
-Step 01 completes everything inside `enclosure.shared.scaffolding` without
-importing existing enclosure feature modules, recipe modules, pattern modules,
-or other scaffolding consumers.
-
-Step 01 must implement this package directly. It must not wrap, import, or
-delegate to existing recipe or pattern repositories, renderers, materializers,
-config loaders, manifest parsers, or application services.
-
-The package hides behavior repeated by recipe and pattern modules:
-
-- manifest discovery
-- manifest validation
-- relative path safety
-- variable parsing
-- input resolution
-- target defaults
-- naming context construction
-- template rendering
-- selective file writes
-
-Step 02 integrates one bounded context, `workspace.recipe`, with the finished
-package. Step 03 integrates `pattern.catalog`, `pattern.fit`, and cleanup units.
-
-## File Layout
-
-- `__init__.py`: exports the `scaffolding` facade instance plus required DTOs and errors only
-- `facade.py`: `ScaffoldFacade`
-- `domain.py`: `Scaffold`, `RenderedScaffoldFile`, `_ScaffoldInput`,
-  `_ScaffoldFile`, `_ScaffoldLadder`, `_ScaffoldSlot`, `_RelativePath`
-- `manifest.py`: `ManifestScaffoldRepository`, `_ScaffoldManifest`,
-  `_load_yaml_mapping`, `_scaffold_from_manifest`, `_input_specs_from`,
-  `_scaffold_files_from`, `_scaffold_ladder_from`, `_scaffold_slot_from`
-- `context.py`: `parse_variables`, `resolve_context`, `_resolve_inputs`,
-  `_resolve_input`, `_variable_context_for`, `_target_context_for`,
-  `_target_defaults_for`
-- `render.py`: `ScaffoldRenderer`, `_normalize_target_path`,
-  `_normalize_rendered_target`
-- `write.py`: `RenderedFileWriter`
-- `errors.py`: `ScaffoldError`
-- `tests/shared/scaffolding/test_scaffolding.py`: tests package-root behavior only
+`ScaffoldFacade` remains the public facade class. The package root exports a
+single `scaffolding` instance of that class.
 
 ## Public Seam
-
-Runtime callers import the facade instance:
 
 ```python
 from enclosure.shared.scaffolding import scaffolding
 ```
 
-The package root exports only:
+Package-root exports:
 
 ```text
 Scaffold
@@ -77,8 +26,48 @@ RenderedScaffoldFile
 scaffolding
 ```
 
-Callers must not import `facade.py`, `domain.py`, `manifest.py`, `context.py`,
-`render.py`, or `write.py` directly.
+## File Layout
+
+This section is the single source of truth for the Step 01 file layout. Plan
+documents must reference this section instead of duplicating the tree.
+
+```text
+src/enclosure/shared/scaffolding/
+  __init__.py
+    scaffolding: ScaffoldFacade
+    Scaffold
+    ScaffoldError
+    RenderedScaffoldFile
+  facade.py
+    ScaffoldFacade
+  scaffold.py
+    Scaffold
+    RenderedScaffoldFile
+    _ScaffoldInput
+    _ScaffoldFile
+    _ScaffoldLadder
+    _ScaffoldSlot
+    _ScaffoldInputValueValidator
+  relative_path.py
+    _ScaffoldRelativePath
+    _ScaffoldRelativePathNormalizer
+  manifest.py
+    _ScaffoldManifestRepository
+    _ScaffoldManifest
+    _ScaffoldManifestReader
+    _ScaffoldManifestConverter
+  composition.py
+    _ScaffoldComposer
+  context.py
+    _ScaffoldVariableParser
+    _ScaffoldContextFactory
+  render.py
+    _ScaffoldRenderer
+  write.py
+    _ScaffoldRenderedFileWriter
+  errors.py
+    ScaffoldError
+```
 
 ## Class Diagram
 
@@ -86,215 +75,277 @@ Callers must not import `facade.py`, `domain.py`, `manifest.py`, `context.py`,
 classDiagram
 direction LR
 
-namespace enclosure_shared_scaffolding {
+namespace enclosure_shared_scaffolding_public {
   class scaffolding {
-    <<singleton facade instance>>
+    <<ScaffoldFacade instance>>
   }
 
   class ScaffoldFacade {
-    <<public facade in facade.py>>
-    -ManifestScaffoldRepository repository
-    -ScaffoldRenderer renderer
-    -RenderedFileWriter writer
-    +load_all(root_path) tuple_Scaffold
-    +load(root_path, name) Scaffold
-    +parse_variables(values) dict_str_str
-    +render(scaffold, project_root, target_path, variables) tuple_RenderedScaffoldFile
-    +write(rendered_files, create_paths) None
+    -_ScaffoldManifestRepository _repository
+    -_ScaffoldVariableParser _variable_parser
+    -_ScaffoldComposer _composer
+    -_ScaffoldRenderer _renderer
+    -_ScaffoldRenderedFileWriter _writer
+    +load_all(scaffold_root: Path) tuple~Scaffold~
+    +load(scaffold_root: Path, name: str) Scaffold
+    +parse_variables(values: tuple~str~) dict~str,str~
+    +compose(scaffold: Scaffold, scaffolds: tuple~Scaffold~) tuple~Scaffold~
+    +render(scaffold: Scaffold, scaffolds: tuple~Scaffold~, target_root: Path, target_path: Path_or_str, variables: dict~str,str~) tuple~RenderedScaffoldFile~
+    +write(rendered_files: tuple~RenderedScaffoldFile~, create_paths: tuple~Path~) None
   }
 
   class ScaffoldError {
-    <<public error in errors.py>>
   }
 
   class Scaffold {
-    <<public DTO in domain.py>>
-    +str name
-    +Path root_path
-    +str role
-    +str description
-    +_ScaffoldLadder ladder
-    +tuple_str includes
-    +tuple_str archetypes
-    +dict_str_str roles_map
-    +tuple__ScaffoldInput inputs
-    +tuple__ScaffoldFile files
+    +name: str
+    +source_root: Path
+    +role: str
+    +description: str
+    +ladder: _ScaffoldLadder
+    +includes: tuple~str~
+    +archetypes: tuple~str~
+    +roles_map: dict~str,str~
+    +inputs: tuple~_ScaffoldInput~
+    +files: tuple~_ScaffoldFile~
     +is_empty() bool
+    -_validate_name(name: str) str
+    -_validate_role(role: str) str
   }
 
   class RenderedScaffoldFile {
-    <<public DTO in domain.py>>
-    +Path source_path
-    +Path target_path
-    +Path relative_path
-    +str content
+    +source_path: Path
+    +target_path: Path
+    +relative_path: Path
+    +content: str
   }
+}
 
+namespace enclosure_shared_scaffolding_domain {
   class _ScaffoldInput {
-    <<internal DTO in domain.py>>
-    +str name
-    +str value_type
-    +bool required
-    +str default
-    +str default_from
-    +tuple_str choices
+    +name: str
+    +value_type: str
+    +required: bool
+    +default: str
+    +default_from: str
+    +choices: tuple~str~
+    -_validate_name(name: str) str
+    -_validate_type(value_type: str) str
+    -_validate_choices(value_type: str, choices: tuple~str~) tuple~str~
   }
 
   class _ScaffoldFile {
-    <<internal DTO in domain.py>>
-    +_RelativePath source
-    +str target
+    +source: _ScaffoldRelativePath
+    +target: str
+    -_validate_target(target: str) str
   }
 
   class _ScaffoldLadder {
-    <<internal DTO in domain.py>>
-    +str family
-    +str rung
-    +tuple__ScaffoldSlot slots
-    +bool declared
+    +family: str
+    +rung: str
+    +slots: tuple~_ScaffoldSlot~
+    +declared: bool
     +is_declared() bool
     +summary() dict
+    -_validate_family(family: str, declared: bool) str
+    -_validate_rung(rung: str, declared: bool) str
   }
 
   class _ScaffoldSlot {
-    <<internal DTO in domain.py>>
-    +str name
-    +str state
-    +tuple_str files
-    +tuple_str packages
+    -_ScaffoldRelativePathNormalizer _paths
+    +name: str
+    +state: str
+    +files: tuple~str~
+    +packages: tuple~str~
     +summary() dict
+    -_validate_state(state: str) str
+    -_normalize_paths(values: tuple~str~) tuple~str~
+    -_validate_split_state(state: str, files: tuple~str~, packages: tuple~str~) None
   }
 
-  class _RelativePath {
-    <<internal value object in domain.py>>
-    +Path value
+  class _ScaffoldInputValueValidator {
+    -_ScaffoldRelativePathNormalizer _paths
+    +validate(input_spec: _ScaffoldInput, value: str) object
+    -_validate_identifier(input_spec: _ScaffoldInput, value: str) None
+    -_validate_dotted_name(input_spec: _ScaffoldInput, value: str) None
+    -_validate_path(input_spec: _ScaffoldInput, value: str) None
+    -_validate_slug(input_spec: _ScaffoldInput, value: str) None
+    -_validate_choice(input_spec: _ScaffoldInput, value: str) None
+    -_parse_list(value: str) tuple~str~
+  }
+}
+
+namespace enclosure_shared_scaffolding_paths {
+  class _ScaffoldRelativePath {
+    -_ScaffoldRelativePathNormalizer _paths
+    +value: Path
     +as_posix() str
-    +resolve_from(root_path) Path
+    +resolve_from(source_root: Path) Path
+  }
+
+  class _ScaffoldRelativePathNormalizer {
+    +normalize(value: Path_or_str, label: str) Path
+    +relative_path(value: Path_or_str, label: str) _ScaffoldRelativePath
+    +text(value: Path_or_str, label: str) str
+    +target_path(target_root: Path, target_path: Path_or_str) Path
+    -_text(value: Path_or_str) str
+    -_reject_absolute(value: Path, text: str, label: str) None
+    -_reject_empty(value: Path, label: str) None
+    -_reject_traversal(value: Path, label: str) None
   }
 }
 
 namespace enclosure_shared_scaffolding_manifest {
-  class ManifestScaffoldRepository {
-    <<internal service in manifest.py>>
-    +find_all(root_path) tuple_Scaffold
-    +get_by_name(root_path, name) Scaffold
-    -iter_scaffold_roots(root_path) tuple_Path
-    -manifest_path(scaffold_root) Path
-    -load_scaffold(scaffold_root, manifest_path) Scaffold
+  class _ScaffoldManifestRepository {
+    -_manifest_file_name: str
+    -_ScaffoldManifestReader _reader
+    -_ScaffoldManifestConverter _converter
+    +find_all(scaffold_root: Path) tuple~Scaffold~
+    +get_by_name(scaffold_root: Path, name: str) Scaffold
+    -_iter_scaffold_roots(scaffold_root: Path) tuple~Path~
+    -_manifest_path(source_root: Path) Path
+    -_load_scaffold(source_root: Path, manifest_path: Path) Scaffold
   }
 
   class _ScaffoldManifest {
-    <<private pydantic DTO in manifest.py>>
-    +int schema_version
-    +str role
-    +str description
-    +dict ladder
-    +list_str includes
-    +list_str archetypes
-    +dict_str_str roles_map
-    +dict inputs
-    +list files
+    +schema_version: int
+    +role: str
+    +description: str
+    +ladder: dict
+    +includes: list~str~
+    +archetypes: list~str~
+    +roles_map: dict~str,str~
+    +inputs: dict
+    +files: list~dict~
+  }
+
+  class _ScaffoldManifestReader {
+    +read_mapping(path: Path) dict
+    -_read_text(path: Path) str
+    -_parse_yaml(path: Path, content: str) object
+    -_validate_mapping(path: Path, raw_data: object) dict
+  }
+
+  class _ScaffoldManifestConverter {
+    -_ScaffoldRelativePathNormalizer _paths
+    +to_scaffold(source_root: Path, manifest_path: Path, raw_data: dict) Scaffold
+    -_validate_schema_version(manifest: _ScaffoldManifest, manifest_path: Path) None
+    -_input_specs_from(raw_inputs: object) tuple~_ScaffoldInput~
+    -_scaffold_files_from(raw_files: object) tuple~_ScaffoldFile~
+    -_scaffold_ladder_from(raw_ladder: object) _ScaffoldLadder
+    -_scaffold_slot_from(raw_name: object, raw_slot: object) _ScaffoldSlot
+    -_optional_string(value: object) str
+    -_string_list(value: object, message: str) tuple~str~
+  }
+}
+
+namespace enclosure_shared_scaffolding_composition {
+  class _ScaffoldComposer {
+    +compose(scaffold: Scaffold, scaffolds: tuple~Scaffold~) tuple~Scaffold~
+    +input_specs_for(composed_scaffolds: tuple~Scaffold~) tuple~_ScaffoldInput~
+    -_scaffolds_by_name(scaffolds: tuple~Scaffold~) dict~str,Scaffold~
+    -_included_scaffolds_for(scaffold: Scaffold, scaffolds_by_name: dict~str,Scaffold~, trail: tuple~str~) tuple~Scaffold~
+    -_assert_no_cycle(include_name: str, trail: tuple~str~) None
+    -_included_scaffold(include_name: str, scaffolds_by_name: dict~str,Scaffold~) Scaffold
   }
 }
 
 namespace enclosure_shared_scaffolding_context {
-  class context_module {
-    <<module functions in context.py>>
-    +parse_variables(values) dict_str_str
-    +resolve_context(scaffold, target_relative_path, variables) dict
-    -resolve_inputs(scaffold, raw_variables, defaults) dict
-    -resolve_input(input_spec, raw_variables, defaults) object
-    -variable_context_for(value) object
-    -target_context_for(relative_path) dict
-    -target_defaults_for(relative_path) dict_str_str
+  class _ScaffoldVariableParser {
+    +parse(values: tuple~str~) dict~str,str~
+    -_parse_pair(raw_value: str) tuple~str,str~
+    -_validate_name(name: str, raw_value: str) str
+  }
+
+  class _ScaffoldContextFactory {
+    -_ScaffoldComposer _composer
+    -_ScaffoldInputValueValidator _input_validator
+    -_ScaffoldRelativePathNormalizer _paths
+    +resolve(composed_scaffolds: tuple~Scaffold~, target_relative_path: Path, variables: dict~str,str~) dict
+    -_resolve_inputs(input_specs: tuple~_ScaffoldInput~, raw_variables: dict~str,str~, defaults: dict~str,str~) dict
+    -_resolve_input(input_spec: _ScaffoldInput, raw_variables: dict~str,str~, defaults: dict~str,str~) object
+    -_variable_context_for(value: object) object
+    -_target_context_for(relative_path: Path) dict
+    -_target_defaults_for(relative_path: Path) dict~str,str~
   }
 }
 
 namespace enclosure_shared_scaffolding_render {
-  class ScaffoldRenderer {
-    <<internal service in render.py>>
-    +render(scaffold, project_root, target_path, variables) tuple_RenderedScaffoldFile
-    -normalize_target_path(project_root, target_path) Path
-    -normalize_rendered_target(value) Path
-    -render_file(scaffold, scaffold_file, project_root, context) RenderedScaffoldFile
+  class _ScaffoldRenderer {
+    -_ScaffoldComposer _composer
+    -_ScaffoldContextFactory _context_factory
+    -_ScaffoldRelativePathNormalizer _paths
+    +render(scaffold: Scaffold, scaffolds: tuple~Scaffold~, target_root: Path, target_path: Path_or_str, variables: dict~str,str~) tuple~RenderedScaffoldFile~
+    -_render_file(scaffold: Scaffold, scaffold_file: _ScaffoldFile, target_root: Path, context: dict) RenderedScaffoldFile
+    -_source_path(scaffold: Scaffold, scaffold_file: _ScaffoldFile) Path
+    -_rendered_target(scaffold_file: _ScaffoldFile, context: dict) Path
+    -_rendered_content(source_path: Path, context: dict) str
   }
 }
 
 namespace enclosure_shared_scaffolding_write {
-  class RenderedFileWriter {
-    <<internal service in write.py>>
-    +write(rendered_files, create_paths) None
+  class _ScaffoldRenderedFileWriter {
+    +write(rendered_files: tuple~RenderedScaffoldFile~, create_paths: tuple~Path~) None
+    -_create_path_set(create_paths: tuple~Path~) set~Path~
+    -_should_write(rendered_file: RenderedScaffoldFile, create_paths: set~Path~) bool
+    -_write_file(rendered_file: RenderedScaffoldFile) None
   }
 }
 
-namespace integration_callers {
-  class RecipeCallers
-  class PatternCatalogCallers
-  class PatternFitCallers
-  class OldRecipeManifestParser {
-    <<delete in Step 02>>
-  }
-  class OldRecipeRenderer {
-    <<delete in Step 02>>
-  }
-  class OldRecipeMaterializer {
-    <<delete in Step 02>>
-  }
-  class OldPatternManifestParser {
-    <<delete in Step 03>>
-  }
-  class OldPatternRenderer {
-    <<delete in Step 03>>
-  }
-  class OldPatternMaterializer {
-    <<delete in Step 03>>
-  }
-}
+scaffolding --> ScaffoldFacade
+ScaffoldFacade *-- _ScaffoldManifestRepository
+ScaffoldFacade *-- _ScaffoldVariableParser
+ScaffoldFacade *-- _ScaffoldComposer
+ScaffoldFacade *-- _ScaffoldRenderer
+ScaffoldFacade *-- _ScaffoldRenderedFileWriter
 
-scaffolding --> ScaffoldFacade : instance of
-ScaffoldFacade *-- ManifestScaffoldRepository
-ScaffoldFacade *-- ScaffoldRenderer
-ScaffoldFacade *-- RenderedFileWriter
-ScaffoldFacade ..> context_module : delegates variable parsing
-
-Scaffold *-- "0..*" _ScaffoldInput
-Scaffold *-- "0..*" _ScaffoldFile
 Scaffold *-- _ScaffoldLadder
-_ScaffoldLadder *-- "0..*" _ScaffoldSlot
-_ScaffoldFile *-- _RelativePath
+Scaffold *-- _ScaffoldInput
+Scaffold *-- _ScaffoldFile
+_ScaffoldLadder *-- _ScaffoldSlot
+_ScaffoldFile *-- _ScaffoldRelativePath
 
-ManifestScaffoldRepository --> _ScaffoldManifest : validates with
-ManifestScaffoldRepository --> Scaffold : returns
-_ScaffoldManifest ..> Scaffold : converted into
+_ScaffoldSlot ..> _ScaffoldRelativePathNormalizer
+_ScaffoldInputValueValidator *-- _ScaffoldRelativePathNormalizer
+_ScaffoldRelativePath *-- _ScaffoldRelativePathNormalizer
 
-ScaffoldRenderer --> Scaffold : consumes
-ScaffoldRenderer --> RenderedScaffoldFile : returns
-ScaffoldRenderer ..> context_module : builds render context
+_ScaffoldManifestRepository *-- _ScaffoldManifestReader
+_ScaffoldManifestRepository *-- _ScaffoldManifestConverter
+_ScaffoldManifestRepository ..> Scaffold
+_ScaffoldManifestConverter ..> _ScaffoldManifest
+_ScaffoldManifestConverter ..> Scaffold
+_ScaffoldManifestConverter *-- _ScaffoldRelativePathNormalizer
 
-RenderedFileWriter --> RenderedScaffoldFile : consumes
+_ScaffoldComposer ..> Scaffold
+_ScaffoldComposer ..> _ScaffoldInput
 
-RecipeCallers --> scaffolding : Step 02 import facade instance
-PatternCatalogCallers --> scaffolding : Step 03 import facade instance
-PatternFitCallers --> scaffolding : Step 03 import facade instance
+_ScaffoldContextFactory *-- _ScaffoldComposer
+_ScaffoldContextFactory *-- _ScaffoldInputValueValidator
+_ScaffoldContextFactory *-- _ScaffoldRelativePathNormalizer
+_ScaffoldContextFactory ..> Scaffold
 
-OldRecipeManifestParser ..> ManifestScaffoldRepository : replaced by Step 02
-OldRecipeRenderer ..> ScaffoldRenderer : replaced by Step 02
-OldRecipeMaterializer ..> RenderedFileWriter : replaced by Step 02
-OldPatternManifestParser ..> ManifestScaffoldRepository : replaced by Step 03
-OldPatternRenderer ..> ScaffoldRenderer : replaced by Step 03
-OldPatternMaterializer ..> RenderedFileWriter : replaced by Step 03
+_ScaffoldRenderer *-- _ScaffoldComposer
+_ScaffoldRenderer *-- _ScaffoldContextFactory
+_ScaffoldRenderer *-- _ScaffoldRelativePathNormalizer
+_ScaffoldRenderer ..> RenderedScaffoldFile
 
-ScaffoldError <.. ManifestScaffoldRepository : raises
-ScaffoldError <.. ScaffoldRenderer : raises
-ScaffoldError <.. context_module : raises
-ScaffoldError <.. RenderedFileWriter : raises
+_ScaffoldRenderedFileWriter ..> RenderedScaffoldFile
 
-note for scaffolding "Package-root facade instance.\nRuntime callers import this, similar to shared.config.settings."
-note for ScaffoldFacade "The only behavior API.\nCallers do not import repository, renderer, writer, or context module directly."
-note for Scaffold "Public aggregate returned by load methods and consumed by render.\nNested DTOs are reachable as attributes but are not package-root exports."
-note for _ScaffoldManifest "Private pydantic parser DTO.\nAccepts the existing recipe.yaml shape only.\nNever exported."
-note for ScaffoldRenderer "Hides target normalization, input resolution, target/default context building, and template rendering."
-note for RenderedFileWriter "Hides parent directory creation and create-path filtering."
+ScaffoldError <.. Scaffold
+ScaffoldError <.. _ScaffoldInput
+ScaffoldError <.. _ScaffoldFile
+ScaffoldError <.. _ScaffoldLadder
+ScaffoldError <.. _ScaffoldSlot
+ScaffoldError <.. _ScaffoldInputValueValidator
+ScaffoldError <.. _ScaffoldRelativePathNormalizer
+ScaffoldError <.. _ScaffoldManifestRepository
+ScaffoldError <.. _ScaffoldManifestReader
+ScaffoldError <.. _ScaffoldManifestConverter
+ScaffoldError <.. _ScaffoldComposer
+ScaffoldError <.. _ScaffoldVariableParser
+ScaffoldError <.. _ScaffoldContextFactory
+ScaffoldError <.. _ScaffoldRenderer
+ScaffoldError <.. _ScaffoldRenderedFileWriter
 ```
 
 ## Runtime Flow
@@ -304,69 +355,64 @@ sequenceDiagram
 autonumber
 actor Caller
 participant API as scaffolding: ScaffoldFacade
-participant Repo as ManifestScaffoldRepository
-participant Context as context.py
-participant Renderer as ScaffoldRenderer
-participant Templates as shared.templates
-participant Writer as RenderedFileWriter
+participant Repository as _ScaffoldManifestRepository
+participant Reader as _ScaffoldManifestReader
+participant Converter as _ScaffoldManifestConverter
+participant Parser as _ScaffoldVariableParser
+participant Composer as _ScaffoldComposer
+participant Renderer as _ScaffoldRenderer
+participant Context as _ScaffoldContextFactory
+participant Writer as _ScaffoldRenderedFileWriter
 
-Caller->>API: from enclosure.shared.scaffolding import scaffolding
-Caller->>API: scaffolding.load_all(root_path)
-API->>Repo: find_all(root_path)
-Repo->>Repo: find child folders with recipe.yaml
-Repo->>Repo: read YAML mapping
-Repo->>Repo: validate _ScaffoldManifest
-Repo-->>API: tuple[Scaffold, ...]
+Caller->>API: load_all(scaffold_root)
+API->>Repository: find_all(scaffold_root)
+Repository->>Reader: read_mapping(manifest_path)
+Repository->>Converter: to_scaffold(source_root, manifest_path, raw_data)
+Repository-->>API: tuple[Scaffold, ...]
 API-->>Caller: tuple[Scaffold, ...]
 
-Caller->>API: scaffolding.parse_variables(("name=value",))
-API->>Context: parse_variables(values)
-Context-->>API: dict[str, str]
+Caller->>API: load(scaffold_root, name)
+API->>Repository: get_by_name(scaffold_root, name)
+Repository->>Reader: read_mapping(manifest_path)
+Repository->>Converter: to_scaffold(source_root, manifest_path, raw_data)
+Repository-->>API: Scaffold
+API-->>Caller: Scaffold
+
+Caller->>API: parse_variables(values)
+API->>Parser: parse(values)
+Parser-->>API: dict[str, str]
 API-->>Caller: dict[str, str]
 
-Caller->>API: scaffolding.render(scaffold, project_root, target_path, variables)
-API->>Renderer: render(scaffold, project_root, target_path, variables)
-Renderer->>Renderer: normalize target path inside project root
-Renderer->>Context: resolve_context(scaffold, target_relative_path, variables)
-Renderer->>Templates: render target and file content templates
+Caller->>API: compose(scaffold, scaffolds)
+API->>Composer: compose(scaffold, scaffolds)
+Composer-->>API: tuple[Scaffold, ...]
+API-->>Caller: tuple[Scaffold, ...]
+
+Caller->>API: render(scaffold, scaffolds, target_root, target_path, variables)
+API->>Renderer: render(scaffold, scaffolds, target_root, target_path, variables)
+Renderer->>Composer: compose(scaffold, scaffolds)
+Renderer->>Context: resolve(composed_scaffolds, target_relative_path, variables)
 Renderer-->>API: tuple[RenderedScaffoldFile, ...]
 API-->>Caller: tuple[RenderedScaffoldFile, ...]
 
-Caller->>API: scaffolding.write(rendered_files, create_paths)
+Caller->>API: write(rendered_files, create_paths)
 API->>Writer: write(rendered_files, create_paths)
-Writer->>Writer: create parent directories for selected files
-Writer->>Writer: write selected file content
 Writer-->>API: None
 API-->>Caller: None
 ```
 
-## Design Checks
+## Boundaries
 
-- This UML is the implementation source of truth.
-- Step 01 completes `shared.scaffolding` independently.
-- Step 01 imports no existing enclosure feature modules, recipe modules, pattern modules, or scaffolding consumers.
-- Step 01 does not wrap or delegate to existing recipe/pattern repositories, renderers, materializers, config loaders, manifest parsers, or application services.
-- `__init__.py` is export-only and contains no behavior implementation.
-- Runtime behavior is accessed through the package-root `scaffolding` facade instance.
-- `ScaffoldFacade` lives in `shared/scaffolding/facade.py`.
-- The package-root public seam is limited to `scaffolding`, `Scaffold`,
-  `RenderedScaffoldFile`, and `ScaffoldError`.
-- Nested manifest/value-object DTOs are not package-root exports.
-- Internal services are not package-root exports.
-- The public seam is intentionally smaller than the duplicated symbols it replaces.
-- The existing manifest filename remains `recipe.yaml`.
-- The existing manifest schema remains compatible with `schema_version`, `role`,
-  `description`, `ladder`, `includes`, `archetypes`, `roles_map`, `inputs`, and
-  `files`.
-- Role and slot-state values are validated strings, not exported enums, unless a
-  later approved UML change proves enums reduce consumer code.
-- Public rendered-file paths use ordinary `Path` values.
-- Relative path validation is internal to `domain.py` and `render.py`.
-- YAML parsing and pydantic manifest DTOs are private to `manifest.py`.
-- Input resolution and naming-context behavior are private to `context.py`.
-- Template rendering is hidden behind `scaffolding.render(...)`.
-- Selective writes are hidden behind `scaffolding.write(...)`.
-- Step 02 may integrate only `workspace.recipe` as the proof bounded context.
-- Step 03 may integrate remaining pattern modules and cleanup wrappers after the proof succeeds.
-- If Step 02 or Step 03 needs new shared scaffolding behavior, stop and update
-  this UML before coding that behavior.
+- `shared.scaffolding` imports no existing feature modules, recipe modules,
+  pattern modules, config loaders, settings objects, or scaffolding consumers.
+- `scaffold_root` is the already-resolved collection folder whose immediate
+  child folders are scaffolds.
+- `source_root` is the individual scaffold folder containing `recipe.yaml` and
+  templates.
+- The scaffold manifest filename is owned by `_ScaffoldManifestRepository`.
+  Current compatible value: `recipe.yaml`.
+- `target_root` is the caller-provided output boundary.
+- `target_path` is a relative path or an absolute path inside `target_root`.
+- `roles_map` composition strings, catalog validation, drift checks, bench
+  reports, preview status planning, and CLI output stay outside
+  `shared.scaffolding`.

@@ -1,6 +1,14 @@
 # Step 01: Standalone Shared Scaffolding Package
 
-Status: Planned; implement after acceptance
+Status: Revision planned; pending plan acceptance
+
+## Target Shape
+
+This step describes the target shape after the accepted scaffolding fixes are
+implemented. It is not a description of the current partially implemented code.
+
+The Step 01 file layout, class names, properties, methods, relationships, and
+public seam are owned by [UML.md](UML.md). Do not duplicate the file tree here.
 
 ## Goal
 
@@ -8,8 +16,8 @@ Implement `src/enclosure/shared/scaffolding/` as a complete independent package.
 
 This step finishes the package before any existing caller is integrated. The
 output must be a ready solution for manifest discovery, manifest validation,
-relative path safety, variable parsing, input resolution, target defaults,
-template rendering, and selective file writes.
+relative path safety, variable parsing, include composition, composed input
+resolution, target defaults, template rendering, and selective file writes.
 
 Step 01 must not be a wrapper around existing implementation. It is a fresh
 shared package whose behavior is derived from the UML contract and verified by
@@ -19,7 +27,7 @@ standalone tests.
 
 [UML.md](UML.md) is the source of truth for Step 01 implementation. The
 standalone package must strictly follow the package layout, file names, DTO
-names, behavior functions, relationships, public seam, and independence boundary
+names, class methods, relationships, public seam, and independence boundary
 shown in the UML.
 
 If the step plan and UML conflict, stop and update the documents before coding.
@@ -59,10 +67,21 @@ the UML.
 - Keep `__init__.py` export-only.
 - Export only the `scaffolding` facade instance and required DTOs/errors named by the UML public seam.
 - Keep nested manifest/value-object DTOs internal unless the UML is first updated.
+- Keep internal class behavior stateless with respect to caller roots; pass
+  `scaffold_root` and `target_root` as operation inputs through the facade.
+- Do not introduce standalone helper functions. Private behavior belongs to
+  private classes and private methods.
 - Implement behavior directly inside `shared.scaffolding`; do not delegate to existing feature-module repositories, renderers, materializers, config loaders, or manifest parsers.
-- Implement manifest discovery and YAML validation for the existing `recipe.yaml` shape.
+- Implement scaffold manifest discovery and YAML validation for the existing
+  `recipe.yaml` file name, with the filename owned in `_ScaffoldManifestRepository`.
+- Rename the public scaffold source-folder field to `source_root`; keep it
+  distinct from caller-provided `scaffold_root`.
 - Implement relative path validation without exporting path value objects.
-- Implement variable parsing, input resolution, target defaults, and naming context behind the public render behavior.
+- Implement include traversal, missing include failures, cycle detection, and
+  ordered scaffold composition in `_ScaffoldComposer`, exposed through
+  `scaffolding.compose(...)` and used by `scaffolding.render(...)`.
+- Implement variable parsing, composed input resolution, target defaults, and
+  naming context behind the public render behavior.
 - Implement template target/content rendering behind the public render behavior.
 - Implement selective file writes behind the public write behavior.
 - Add standalone tests through the package-root seam only.
@@ -72,6 +91,9 @@ the UML.
 - Implementation strictly follows [UML.md](UML.md).
 - The package-root seam exports only the names listed in the UML public seam.
 - `__init__.py` contains no behavior implementation.
+- Internal modules remain internal; feature code imports only the package root.
+- Internal class behavior does not import settings and does not bind `scaffold_root` or
+  `target_root` in constructors.
 - The package imports no existing feature modules, recipe modules, pattern modules, or scaffolding consumers.
 - The package does not import or wrap existing recipe/pattern repositories, renderers, materializers, config loaders, or manifest parsers.
 - Existing recipe and pattern code remain untouched in this step.
@@ -85,6 +107,8 @@ the UML.
 - [ ] Run a forbidden-delegation scan proving Step 01 does not call old recipe/pattern repository, renderer, materializer, config loader, or manifest parser symbols.
 - [ ] Verify valid manifest loading through the package-root seam.
 - [ ] Verify invalid YAML, non-mapping YAML, unsupported `schema_version`, and unsafe paths fail loudly.
-- [ ] Verify variable parsing and input resolution through the package-root seam.
+- [ ] Verify `scaffold_root`, `target_root`, and `source_root` semantics through the package-root seam.
+- [ ] Verify include composition order, missing include errors, and cycle detection through the package-root seam.
+- [ ] Verify variable parsing and composed input resolution through the package-root seam.
 - [ ] Verify target and content rendering through the package-root seam.
 - [ ] Verify selective writes through the package-root seam.
