@@ -11,8 +11,7 @@ from modwire import (
     supported_languages,
 )
 
-from .config import settings
-from .config.errors import ConfigError
+from .. import config
 
 
 @dataclass(frozen=True)
@@ -39,18 +38,18 @@ class ArchitectureCodeMap:
 
 
 def extract_architecture_code() -> ArchitectureCodeMap:
-    project_root = settings.metadata.project_root
-    config_path = settings.metadata.canonical_config_path
-    architecture_config = settings.query("architecture")
+    project_root = config.settings.metadata.project_root
+    config_path = config.settings.metadata.canonical_config_path
+    architecture_config = config.settings.query("architecture")
     _validate_supported_language(architecture_config)
-    architecture_root = settings.architecture_root()
+    architecture_root = config.settings.architecture_root()
     code_map = extract_code(
         language=architecture_config.language,
         sources_root=architecture_root,
         exclusions=_extraction_exclusions(architecture_config),
         source_roots=SourceRoots(workspace_root=project_root),
         cache=ExtractionCache(
-            root=settings.metadata.cache_dir / "modwire",
+            root=config.settings.metadata.cache_dir / "modwire",
             max_entries=3,
         ),
     )
@@ -88,7 +87,7 @@ def _matching_config(architecture_config: object) -> object:
 def _validate_supported_language(architecture_config: object) -> None:
     language = getattr(architecture_config, "language", "")
     if language not in supported_languages():
-        raise ConfigError(f"unsupported language: {language}")
+        raise config.ConfigError(f"unsupported language: {language}")
 
 
 __all__ = [

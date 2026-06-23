@@ -66,3 +66,29 @@ def test_shape_import_flags_can_be_relaxed_without_hiding_other_violations(
     assert "max_classes_per_file actual 2, limit 1" in result.stdout
     assert "allow_imports_aliases" not in result.stdout
     assert "allowed_imports_crossing_types" not in result.stdout
+
+
+def test_shape_reports_split_imports_without_file_barrier(tmp_path: Path) -> None:
+    project_root = copy_fixture(tmp_path, "clean_architecture")
+    domain_path = (
+        project_root
+        / "src/enclosure/features/sales/report/domain.py"
+    )
+    domain_path.write_text(
+        "\n".join(
+            [
+                "from enclosure.shared.scaffolding import Scaffold",
+                "from enclosure.shared.scaffolding import ScaffoldError",
+                "",
+                "",
+                "def describe():",
+                "    return (Scaffold, ScaffoldError)",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_cli(project_root, "architecture", "shape")
+
+    assert result.returncode == 1
+    assert "- sales/report/domain:enclosure/shared enforce_joined_imports actual 2, limit 1" in result.stdout

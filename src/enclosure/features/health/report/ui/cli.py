@@ -4,8 +4,7 @@ from typing import Annotated
 
 import typer
 
-from enclosure.shared import ui
-from enclosure.shared import verbosity as report_verbosity
+from enclosure.shared import ui, verbosity as report_verbosity
 
 from .. import application
 

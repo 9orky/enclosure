@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from ..base import StrictConfigModel
+from .. import base
 
 
-class ConfigTagRule(StrictConfigModel):
+class ConfigTagRule(base.StrictConfigModel):
     name: str
     match: str
     except_: list[str] = Field(alias="except")

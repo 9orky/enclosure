@@ -5,19 +5,21 @@ from collections import Counter
 from pydantic import Field
 from pydantic import model_validator
 
-from ..base import StrictConfigModel
-from .boundary_rule import BoundaryRule
-from .flow import FlowRuleSet
-from .tag import ConfigTagRule
+from .. import base
+from . import boundary_rule, flow, tag
+
+BOUNDARY_RULE = boundary_rule
+FLOW = flow
+TAG = tag
 
 
-class BoundariesConfig(StrictConfigModel):
-    tags: list[ConfigTagRule] = Field(default_factory=list)
-    rules: list[BoundaryRule] = Field(default_factory=list)
-    flow: FlowRuleSet = Field(default_factory=FlowRuleSet)
+class BoundariesConfig(base.StrictConfigModel):
+    tags: list[TAG.ConfigTagRule] = Field(default_factory=list)
+    rules: list[BOUNDARY_RULE.BoundaryRule] = Field(default_factory=list)
+    flow: FLOW.FlowRuleSet = Field(default_factory=FLOW.FlowRuleSet)
 
     @property
-    def boundaries(self) -> list[BoundaryRule]:
+    def boundaries(self) -> list[BOUNDARY_RULE.BoundaryRule]:
         return self.rules
 
     @model_validator(mode="after")

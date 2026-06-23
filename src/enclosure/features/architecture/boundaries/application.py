@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from modwire import CodeMap
-from modwire.architecture import TagMatcher
-from modwire.graph import DependencyGraph
+from modwire import CodeMap, architecture as modwire_architecture, graph
 
 from enclosure.shared import architecture_code
 
@@ -37,14 +35,14 @@ def evaluate_boundaries(
 def _internal_dependency_graph(
     code_map: CodeMap,
     config: object,
-) -> DependencyGraph:
+) -> graph.DependencyGraph:
     tracked_ids = set(code_map.source_ids())
     public_target_patterns = _public_target_patterns(config)
     public_seam_patterns = architecture.flow.public_seam_patterns(config, "")
-    matcher = TagMatcher(config)
-    graph = DependencyGraph()
+    matcher = modwire_architecture.TagMatcher(config)
+    graph_builder = graph.DependencyGraph()
     for source_id in sorted(tracked_ids):
-        graph.add_node(source_id)
+        graph_builder.add_node(source_id)
     for edge in code_map.graph.edges:
         if edge.from_id not in tracked_ids:
             continue
@@ -63,14 +61,14 @@ def _internal_dependency_graph(
         )
         if target_id is None:
             continue
-        graph.add_edge(edge.from_id, target_id, kind=edge.kind)
-    return graph
+        graph_builder.add_edge(edge.from_id, target_id, kind=edge.kind)
+    return graph_builder
 
 
 def _is_same_public_seam_reexport(
     source_id: str,
     target_id: str,
-    matcher: TagMatcher,
+    matcher: modwire_architecture.TagMatcher,
     public_seam_patterns: tuple[str, ...],
 ) -> bool:
     for pattern in public_seam_patterns:
@@ -89,7 +87,7 @@ def _is_same_public_seam_reexport(
 def _tracked_target_id(
     target_id: str,
     tracked_ids: set[str],
-    matcher: TagMatcher,
+    matcher: modwire_architecture.TagMatcher,
     public_target_patterns: tuple[str, ...],
 ) -> str | None:
     if target_id in tracked_ids:
@@ -111,7 +109,7 @@ def _tracked_target_id(
 def _is_public_target_for_import(
     target_id: str,
     source_id: str,
-    matcher: TagMatcher,
+    matcher: modwire_architecture.TagMatcher,
     public_target_patterns: tuple[str, ...],
 ) -> bool:
     target_parts = _path_parts(target_id)

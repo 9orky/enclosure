@@ -3,10 +3,10 @@ from __future__ import annotations
 from pydantic import Field
 from pydantic import field_validator
 
-from ..base import StrictConfigModel
+from .. import base
 
 
-class LocalRulesConfig(StrictConfigModel):
+class LocalRulesConfig(base.StrictConfigModel):
     max_content_chars: int = 1200
 
     @field_validator("max_content_chars")
@@ -17,7 +17,7 @@ class LocalRulesConfig(StrictConfigModel):
         return value
 
 
-class RulesConfig(StrictConfigModel):
+class RulesConfig(base.StrictConfigModel):
     local: LocalRulesConfig = Field(default_factory=LocalRulesConfig)
 
 

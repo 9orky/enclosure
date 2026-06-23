@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from enclosure.shared.scaffolding import catalog_policy
-from enclosure.shared.scaffolding import Scaffold
+from enclosure.shared.scaffolding import Scaffold, catalog_policy
 from .. import domain
 
 

@@ -8,10 +8,15 @@ from . import models
 def findings(
     stream_files: dict[str, tuple[models.FileMap, ...]],
     has_api_rule: bool,
+    virtual_api_streams: set[str],
 ) -> tuple[models.CoherenceFinding, ...]:
     tree_findings: list[models.CoherenceFinding] = []
     for stream, files in stream_files.items():
-        if has_api_rule and not any(file.is_api for file in files):
+        if (
+            has_api_rule
+            and stream not in virtual_api_streams
+            and not any(file.is_api for file in files)
+        ):
             tree_findings.append(
                 models.CoherenceFinding(
                     stream=stream,

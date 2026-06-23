@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from ..base import StrictConfigModel
+from .. import base
 
 
-class SyncConfig(StrictConfigModel):
+class SyncConfig(base.StrictConfigModel):
     pass
 
 

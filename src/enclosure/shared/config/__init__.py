@@ -3,14 +3,16 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from .errors import ConfigError
-from .facade import SettingsFacade
-from .manifest import Manifest
+from . import errors, facade, manifest
+
+ConfigError = errors.ConfigError
+SettingsFacade = facade.SettingsFacade
+Manifest = manifest.Manifest
 
 
 class _LazySettingsFacade:
     def __init__(self) -> None:
-        self._facade: SettingsFacade | None = None
+        self._facade = None
 
     def _load(self) -> SettingsFacade:
         if self._facade is None:

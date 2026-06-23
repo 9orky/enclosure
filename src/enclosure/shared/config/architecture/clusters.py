@@ -3,10 +3,10 @@ from __future__ import annotations
 from pydantic import Field
 from pydantic import field_validator
 
-from ..base import StrictConfigModel
+from .. import base
 
 
-class ClustersConfig(StrictConfigModel):
+class ClustersConfig(base.StrictConfigModel):
     group_depth: int = Field(default=5, ge=1, le=8)
     top: int = 20
     files_top: int = 5

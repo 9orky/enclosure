@@ -17,7 +17,7 @@ def describe_recipe_generation(
     return generation.RecipeGenerationService(
         infrastructure.default_workspace(
             recipe_root=recipe_root,
-            config=infrastructure.load_recipe_generation_settings(),
+            recipe_config=infrastructure.load_recipe_generation_settings(),
         ),
     ).describe(recipe_name, target_path, variables=variables)
 
@@ -32,7 +32,7 @@ def generate_recipe(
     return generation.RecipeGenerationService(
         infrastructure.default_workspace(
             recipe_root=recipe_root,
-            config=infrastructure.load_recipe_generation_settings(),
+            recipe_config=infrastructure.load_recipe_generation_settings(),
         ),
     ).generate(recipe_name, target_path, variables=variables)
 

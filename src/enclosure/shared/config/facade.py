@@ -5,25 +5,21 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
-from .errors import ConfigError
-from .manifest import Manifest
-from .metadata import ConfigMetadata
-from .query import ManifestQuery
-from .root import EnclosureSettings
+from . import errors, manifest, metadata, query, root
 
 
 class SettingsFacade:
-    def __init__(self, manifest: Manifest) -> None:
-        self._manifest = manifest
+    def __init__(self, config_manifest: manifest.Manifest) -> None:
+        self._manifest = config_manifest
         self._settings = self._validate_manifest()
-        self._metadata = manifest._metadata
+        self._metadata = config_manifest._metadata
 
     @property
-    def metadata(self) -> ConfigMetadata:
+    def metadata(self) -> metadata.ConfigMetadata:
         return self._metadata
 
     def query(self, path: str) -> object:
-        return ManifestQuery(self._settings).select(path)
+        return query.ManifestQuery(self._settings).select(path)
 
     def architecture_root(self) -> Path:
         architecture = self.query("architecture")
@@ -39,11 +35,11 @@ class SettingsFacade:
     def dump_manifest(self) -> str:
         return self._dump_validated_graph()
 
-    def _validate_manifest(self) -> EnclosureSettings:
+    def _validate_manifest(self) -> root.EnclosureSettings:
         try:
-            return EnclosureSettings.model_validate(self._manifest._raw_data)
+            return root.EnclosureSettings.model_validate(self._manifest._raw_data)
         except ValidationError as exc:
-            raise ConfigError(
+            raise errors.ConfigError(
                 f"Invalid config values in {self._manifest._selected_path}: {exc}"
             ) from exc
 

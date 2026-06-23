@@ -4,7 +4,7 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
-from . import naming
+from .. import naming
 
 _TEMPLATE_PATTERN = re.compile(r"{{\s*(?P<expression>[^{}]+?)\s*}}")
 _RAW_PATTERN = re.compile(

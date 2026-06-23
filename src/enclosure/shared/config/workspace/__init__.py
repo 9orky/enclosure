@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from .guidance import GuidanceConfig
-from .recipe import RecipeConfig
-from .root import WorkspaceConfig
-from .rules import LocalRulesConfig
-from .rules import RulesConfig
-from .sync import SyncConfig
+from . import guidance, recipe, root, rules, sync
+
+GuidanceConfig = guidance.GuidanceConfig
+LocalRulesConfig = rules.LocalRulesConfig
+RecipeConfig = recipe.RecipeConfig
+RulesConfig = rules.RulesConfig
+SyncConfig = sync.SyncConfig
+WorkspaceConfig = root.WorkspaceConfig
 
 __all__ = [
     "GuidanceConfig",

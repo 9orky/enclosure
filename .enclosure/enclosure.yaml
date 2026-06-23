@@ -7,7 +7,7 @@
 architecture:
   language: python
   root: src/enclosure
-  exclusions: [.venv/**, .enclosure/**, tests/**, libraries/**, __pycache__/**, "**/__pycache__/**", "**/__init__.py"]
+  exclusions: [.venv/**, .enclosure/**, tests/**, libraries/**, __pycache__/**, "**/__pycache__/**", "**/__init__.py", "__main__.py", "_version.py"]
 
   shape:
     max_classes_per_file: -1
@@ -33,16 +33,18 @@ architecture:
   boundaries:
     tags:
       - { name: context, match: &context "*", except: ["__init__", "*/*/*"], exclude: [] }
-      - { name: module, match: &module "*/*", except: ["*/__init__"], exclude: [] }
-      - { name: module_api, match: &module_api "*/*/__init__", except: [], exclude: [] }
-      - { name: domain, match: &domain "*/*/domain", except: [], exclude: [] }
-      - { name: infrastructure, match: &infrastructure "*/*/infrastructure", except: [], exclude: [] }
-      - { name: application, match: &application "*/*/application", except: [], exclude: [] }
-      - { name: ui, match: &ui "*/*/ui", except: [], exclude: [] }
+      - { name: module, match: &module "features/*/*", except: ["features/*/*/__init__"], exclude: [] }
+      - { name: module_api, match: &module_api "features/*/*/__init__", except: [], exclude: [] }
+      - { name: shared, match: &shared "shared/*", except: [], exclude: [] }
+      - { name: domain, match: &domain "features/*/*/domain", except: [], exclude: [] }
+      - { name: infrastructure, match: &infrastructure "features/*/*/infrastructure", except: [], exclude: [] }
+      - { name: application, match: &application "features/*/*/application", except: [], exclude: [] }
+      - { name: ui, match: &ui "features/*/*/ui", except: [], exclude: [] }
 
     rules:
-      - { source: *context, disallow: [*context], allow: [*module_api], allow_same_match: false }
-      - { source: *module, disallow: [*module], allow: [*module_api], allow_same_match: true }
+      - { source: *context, disallow: [*context], allow: [*module_api, *shared], allow_same_match: false }
+      - { source: *module, disallow: [*module], allow: [*module_api, *shared], allow_same_match: true }
+      - { source: *shared, disallow: [*module], allow: [], allow_same_match: true }
       - { source: *domain, disallow: [*application, *infrastructure, *ui], allow: [], allow_same_match: false }
       - { source: *infrastructure, disallow: [*application, *ui], allow: [], allow_same_match: false }
       - { source: *application, disallow: [*ui], allow: [], allow_same_match: false }
@@ -52,6 +54,7 @@ architecture:
       layers: [ui, application, infrastructure, domain]
       realms:
         - { name: module, module_tag: module }
+        - { name: shared, module_tag: shared, layers: [] }
       analyzers: [backward-flow, no-cycles]
 
   map:

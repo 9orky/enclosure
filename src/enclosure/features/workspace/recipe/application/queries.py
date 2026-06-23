@@ -14,7 +14,7 @@ def list_recipes(
     return catalog.RecipeCatalog(
         infrastructure.default_workspace(
             recipe_root=recipe_root,
-            config=domain.RecipeGenerationConfig(skip=()),
+            recipe_config=domain.RecipeGenerationConfig(skip=()),
         ),
     ).list_recipes()
 
@@ -27,7 +27,7 @@ def show_recipe(
     return catalog.RecipeCatalog(
         infrastructure.default_workspace(
             recipe_root=recipe_root,
-            config=domain.RecipeGenerationConfig(skip=()),
+            recipe_config=domain.RecipeGenerationConfig(skip=()),
         ),
     ).show_recipe(recipe_name)
 
@@ -43,7 +43,7 @@ def check_recipes(
     return generation.RecipeGenerationService(
         infrastructure.default_workspace(
             recipe_root=recipe_root,
-            config=domain.RecipeGenerationConfig(
+            recipe_config=domain.RecipeGenerationConfig(
                 skip=(),
                 roles_map=recipe_settings.roles_map,
             ),
@@ -62,7 +62,7 @@ def check_recipe_drifts(
     return drift.RecipeDriftService(
         infrastructure.default_workspace(
             recipe_root=recipe_root,
-            config=infrastructure.load_recipe_generation_settings(),
+            recipe_config=infrastructure.load_recipe_generation_settings(),
         ),
     ).build_report()
 
@@ -75,7 +75,7 @@ def bench_preview(
     return bench.RecipeBenchService(
         infrastructure.default_workspace(
             recipe_root=recipe_root,
-            config=infrastructure.load_recipe_generation_settings(),
+            recipe_config=infrastructure.load_recipe_generation_settings(),
         ),
     ).build_module_report(module_name)
 
@@ -87,7 +87,7 @@ def bench_all_preview(
     return bench.RecipeBenchService(
         infrastructure.default_workspace(
             recipe_root=recipe_root,
-            config=infrastructure.load_recipe_generation_settings(),
+            recipe_config=infrastructure.load_recipe_generation_settings(),
         ),
     ).build_workspace_report()
 

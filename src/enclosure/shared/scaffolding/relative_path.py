@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path, PureWindowsPath
 
-from .errors import ScaffoldError
+from . import errors
 
 
 @dataclass(frozen=True)
@@ -44,7 +44,9 @@ class _ScaffoldRelativePathNormalizer:
         try:
             relative_path = raw_path.resolve(strict=False).relative_to(resolved_target_root)
         except ValueError as exc:
-            raise ScaffoldError("Target path must stay inside the target root") from exc
+            raise errors.ScaffoldError(
+                "Target path must stay inside the target root"
+            ) from exc
         return self.normalize(relative_path, "Target path")
 
     def _text(self, value: Path | str) -> str:
@@ -52,12 +54,12 @@ class _ScaffoldRelativePathNormalizer:
 
     def _reject_absolute(self, value: Path, text: str, label: str) -> None:
         if value.is_absolute() or PureWindowsPath(text).is_absolute():
-            raise ScaffoldError(f"{label} must be relative")
+            raise errors.ScaffoldError(f"{label} must be relative")
 
     def _reject_empty(self, value: Path, label: str) -> None:
         if not value.parts:
-            raise ScaffoldError(f"{label} must not be empty")
+            raise errors.ScaffoldError(f"{label} must not be empty")
 
     def _reject_traversal(self, value: Path, label: str) -> None:
         if any(part in {".", ".."} for part in value.parts):
-            raise ScaffoldError(f"{label} must not traverse outside the target root")
+            raise errors.ScaffoldError(f"{label} must not traverse outside the target root")

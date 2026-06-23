@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from enclosure.shared.scaffolding import catalog_policy
-from enclosure.shared.scaffolding import Scaffold
+from enclosure.shared.scaffolding import Scaffold, catalog_policy
 
 
 def _pattern_for_role(
@@ -18,6 +17,7 @@ def _pattern_for_role(
         patterns_by_name,
         composed_name="composed-role",
         composed_description="Composed Pattern role",
+        composed_ladder=None,
     )
 
 

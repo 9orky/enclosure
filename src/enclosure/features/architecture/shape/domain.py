@@ -260,7 +260,7 @@ def _joined_import_violations(code_map: CodeMap) -> tuple[ShapeViolation, ...]:
     for source_id, source_file in code_map.extraction_result.files.items():
         imports_by_join_key = {}
         for source_import in source_file.imports:
-            if not source_import.file_barrier_crossed or not source_import.join_key:
+            if not source_import.join_key:
                 continue
             imports_by_join_key.setdefault(source_import.join_key, []).append(
                 source_import

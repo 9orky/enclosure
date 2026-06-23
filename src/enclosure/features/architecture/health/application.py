@@ -51,6 +51,7 @@ def _build_health_report(top_override: int | None) -> domain.ArchitectureHealthR
         code_map,
         code_analysis.matching_config,
         top,
+        code_analysis.project_root / code_analysis.config.architecture_root,
     )
 
     return domain.ArchitectureHealthReport(

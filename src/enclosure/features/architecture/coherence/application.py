@@ -27,6 +27,7 @@ def _build_coherence_report(
         code_analysis.code_map,
         code_analysis.matching_config,
         top,
+        code_analysis.project_root / code_analysis.config.architecture_root,
     )
     return domain.ArchitectureCoherenceReport(
         **code_analysis.report_fields(),

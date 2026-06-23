@@ -3,9 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from pathlib import Path
 
-from enclosure.shared.config import settings
-from enclosure.shared.scaffolding import catalog_policy
-from enclosure.shared.scaffolding import Scaffold, ScaffoldError, scaffolding
+from enclosure.shared import config, scaffolding
 
 from ..domain import report
 from ..infrastructure import workspace
@@ -18,8 +16,8 @@ def validate_catalog(
     roles_map: Mapping[str, str],
 ) -> report.PatternCatalogReport:
     try:
-        patterns = scaffolding.load_all(pattern_root)
-    except ScaffoldError as exc:
+        patterns = scaffolding.scaffolding.load_all(pattern_root)
+    except scaffolding.ScaffoldError as exc:
         return report.PatternCatalogReport(
             pattern_root=pattern_root,
             patterns_discovered=0,
@@ -30,7 +28,7 @@ def validate_catalog(
     patterns_by_name = _patterns_by_name(patterns)
     violations = (
         _violations(
-            catalog_policy.validate_scaffold_catalog(
+            scaffolding.catalog_policy.validate_scaffold_catalog(
                 patterns,
                 patterns_by_name,
                 code_suffix="pattern",
@@ -55,7 +53,7 @@ def validate_catalog(
 
 def validate_current_catalog() -> report.PatternCatalogReport:
     pattern_root = workspace.current_pattern_root()
-    roles_map = getattr(settings.query("workspace.recipe"), "roles_map", {})
+    roles_map = getattr(config.settings.query("workspace.recipe"), "roles_map", {})
     return validate_catalog(
         pattern_root=pattern_root,
         roles_map=roles_map,
@@ -63,8 +61,8 @@ def validate_current_catalog() -> report.PatternCatalogReport:
 
 
 def _patterns_by_name(
-    patterns: tuple[Scaffold, ...],
-) -> dict[str, Scaffold]:
+    patterns: tuple[scaffolding.Scaffold, ...],
+) -> dict[str, scaffolding.Scaffold]:
     return {pattern.name: pattern for pattern in patterns}
 
 
@@ -81,7 +79,7 @@ def _violation(
 
 
 def _violations(
-    violations: tuple[catalog_policy.CatalogPolicyViolation, ...],
+    violations: tuple[scaffolding.catalog_policy.CatalogPolicyViolation, ...],
 ) -> tuple[report.PatternCatalogViolation, ...]:
     return tuple(
         _violation(

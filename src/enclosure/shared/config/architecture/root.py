@@ -2,32 +2,36 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from ..base import StrictConfigModel
-from .boundaries import BoundariesConfig
-from .clusters import ClustersConfig
-from .health import HealthConfig
-from .map import MapConfig
-from .pressure import PressureConfig
-from .shape import ShapeConfig
+from .. import base
+from . import boundaries, clusters, health, map, pressure, shape
+
+BOUNDARIES = boundaries
+CLUSTERS = clusters
+HEALTH = health
+MAP = map
+PRESSURE = pressure
+SHAPE = shape
 
 
-class ArchitectureConfig(StrictConfigModel):
+class ArchitectureConfig(base.StrictConfigModel):
     language: str = ""
     root: str = "."
     exclusions: list[str] = Field(default_factory=list)
-    boundaries: BoundariesConfig = Field(default_factory=BoundariesConfig)
-    clusters: ClustersConfig = Field(default_factory=ClustersConfig)
-    health: HealthConfig = Field(default_factory=HealthConfig)
-    map: MapConfig = Field(default_factory=MapConfig)
-    pressure: PressureConfig = Field(default_factory=PressureConfig)
-    shape: ShapeConfig = Field(default_factory=ShapeConfig)
+    boundaries: BOUNDARIES.BoundariesConfig = Field(
+        default_factory=BOUNDARIES.BoundariesConfig
+    )
+    clusters: CLUSTERS.ClustersConfig = Field(default_factory=CLUSTERS.ClustersConfig)
+    health: HEALTH.HealthConfig = Field(default_factory=HEALTH.HealthConfig)
+    map: MAP.MapConfig = Field(default_factory=MAP.MapConfig)
+    pressure: PRESSURE.PressureConfig = Field(default_factory=PRESSURE.PressureConfig)
+    shape: SHAPE.ShapeConfig = Field(default_factory=SHAPE.ShapeConfig)
 
     @property
     def architecture_root(self) -> str:
         return self.root
 
     @property
-    def rules(self) -> BoundariesConfig:
+    def rules(self) -> BOUNDARIES.BoundariesConfig:
         return self.boundaries
 
 

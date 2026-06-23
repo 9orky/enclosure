@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from ..base import StrictConfigModel
+from .. import base
 
 
-class BoundaryRule(StrictConfigModel):
+class BoundaryRule(base.StrictConfigModel):
     source: str
     disallow: list[str]
     allow: list[str]

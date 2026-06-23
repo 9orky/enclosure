@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .scaffold import Scaffold
+from . import scaffold
 
 
 @dataclass(frozen=True)
@@ -17,12 +17,12 @@ class CatalogPolicyViolation:
 
 def scaffold_for_role(
     role_name: str,
-    scaffolds_by_name: Mapping[str, Scaffold],
+    scaffolds_by_name: Mapping[str, scaffold.Scaffold],
     *,
     composed_name: str,
     composed_description: str,
-    composed_ladder: Any = None,
-) -> Scaffold | None:
+    composed_ladder: Any,
+) -> scaffold.Scaffold | None:
     if "+" not in role_name:
         return scaffolds_by_name.get(role_name)
 
@@ -37,7 +37,7 @@ def scaffold_for_role(
     scaffold_kwargs: dict[str, object] = {}
     if composed_ladder is not None:
         scaffold_kwargs["ladder"] = composed_ladder
-    return Scaffold(
+    return scaffold.Scaffold(
         name=composed_name,
         source_root=Path("."),
         role="archetype",
@@ -48,8 +48,8 @@ def scaffold_for_role(
 
 
 def validate_scaffold_catalog(
-    scaffolds: tuple[Scaffold, ...],
-    scaffolds_by_name: Mapping[str, Scaffold],
+    scaffolds: tuple[scaffold.Scaffold, ...],
+    scaffolds_by_name: Mapping[str, scaffold.Scaffold],
     *,
     code_suffix: str,
     catalog_label: str,
@@ -121,7 +121,7 @@ def validate_scaffold_catalog(
 
 def validate_roles_map(
     roles_map: Mapping[str, str],
-    scaffolds_by_name: Mapping[str, Scaffold],
+    scaffolds_by_name: Mapping[str, scaffold.Scaffold],
     *,
     code_suffix: str,
     item_label: str,
@@ -144,6 +144,7 @@ def validate_roles_map(
             scaffolds_by_name,
             composed_name="composed-role",
             composed_description=f"Composed {item_label} role",
+            composed_ladder=None,
         )
         if role_scaffold is None:
             violations.append(
@@ -172,8 +173,8 @@ def validate_roles_map(
 
 
 def _archetype_violations(
-    container: Scaffold,
-    scaffolds_by_name: Mapping[str, Scaffold],
+    container: scaffold.Scaffold,
+    scaffolds_by_name: Mapping[str, scaffold.Scaffold],
     *,
     code_suffix: str,
     item_label: str,
@@ -206,23 +207,23 @@ def _archetype_violations(
 
 
 def _include_violations(
-    scaffolds: tuple[Scaffold, ...],
-    scaffolds_by_name: Mapping[str, Scaffold],
+    scaffolds: tuple[scaffold.Scaffold, ...],
+    scaffolds_by_name: Mapping[str, scaffold.Scaffold],
     *,
     code_suffix: str,
     item_label: str,
     item_plural_label: str,
 ) -> tuple[CatalogPolicyViolation, ...]:
     violations: list[CatalogPolicyViolation] = []
-    for scaffold in scaffolds:
-        for include_name in scaffold.includes:
+    for candidate in scaffolds:
+        for include_name in candidate.includes:
             included_scaffold = scaffolds_by_name.get(include_name)
             if included_scaffold is None:
                 violations.append(
                     CatalogPolicyViolation(
                         code=f"missing_include_{code_suffix}",
                         message=f"{item_label} includes missing {item_label} {include_name}",
-                        subject_name=scaffold.name,
+                        subject_name=candidate.name,
                     )
                 )
                 continue
@@ -234,7 +235,7 @@ def _include_violations(
                             f"{item_plural_label} must not include container "
                             f"{item_label} {include_name}"
                         ),
-                        subject_name=scaffold.name,
+                        subject_name=candidate.name,
                     )
                 )
     return tuple(violations)

@@ -6,10 +6,7 @@ from typing import Any
 
 from .. import naming
 
-from .composition import _ScaffoldComposer
-from .errors import ScaffoldError
-from .relative_path import _ScaffoldRelativePathNormalizer
-from .scaffold import Scaffold, _ScaffoldInput, _ScaffoldInputValueValidator
+from . import composition, errors, relative_path, scaffold
 
 _VARIABLE_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
@@ -24,28 +21,30 @@ class _ScaffoldVariableParser:
 
     def _parse_pair(self, raw_value: str) -> tuple[str, str]:
         if "=" not in raw_value:
-            raise ScaffoldError(f"Scaffold variables must use key=value syntax: {raw_value}")
+            raise errors.ScaffoldError(
+                f"Scaffold variables must use key=value syntax: {raw_value}"
+            )
         name, value = raw_value.split("=", 1)
         return self._validate_name(name, raw_value), value
 
     def _validate_name(self, name: str, raw_value: str) -> str:
         normalized_name = name.strip()
         if not normalized_name:
-            raise ScaffoldError("Scaffold variable names must not be empty")
+            raise errors.ScaffoldError("Scaffold variable names must not be empty")
         if not _VARIABLE_NAME_PATTERN.match(normalized_name):
-            raise ScaffoldError(f"Invalid scaffold variable name in: {raw_value}")
+            raise errors.ScaffoldError(f"Invalid scaffold variable name in: {raw_value}")
         return normalized_name
 
 
 class _ScaffoldContextFactory:
     def __init__(self) -> None:
-        self._composer = _ScaffoldComposer()
-        self._input_validator = _ScaffoldInputValueValidator()
-        self._paths = _ScaffoldRelativePathNormalizer()
+        self._composer = composition._ScaffoldComposer()
+        self._input_validator = scaffold._ScaffoldInputValueValidator()
+        self._paths = relative_path._ScaffoldRelativePathNormalizer()
 
     def resolve(
         self,
-        composed_scaffolds: tuple[Scaffold, ...],
+        composed_scaffolds: tuple[scaffold.Scaffold, ...],
         target_relative_path: Path,
         variables: dict[str, str],
     ) -> dict[str, Any]:
@@ -68,7 +67,7 @@ class _ScaffoldContextFactory:
 
     def _resolve_inputs(
         self,
-        input_specs: tuple[_ScaffoldInput, ...],
+        input_specs: tuple[scaffold._ScaffoldInput, ...],
         raw_variables: dict[str, str],
         defaults: dict[str, str],
     ) -> dict[str, Any]:
@@ -81,7 +80,7 @@ class _ScaffoldContextFactory:
 
     def _resolve_input(
         self,
-        input_spec: _ScaffoldInput,
+        input_spec: scaffold._ScaffoldInput,
         raw_variables: dict[str, str],
         defaults: dict[str, str],
     ) -> object:
@@ -92,7 +91,9 @@ class _ScaffoldContextFactory:
         elif input_spec.default:
             value = input_spec.default
         elif input_spec.required:
-            raise ScaffoldError(f"Missing required scaffold variable: {input_spec.name}")
+            raise errors.ScaffoldError(
+                f"Missing required scaffold variable: {input_spec.name}"
+            )
         else:
             value = ""
         return self._input_validator.validate(input_spec, value)

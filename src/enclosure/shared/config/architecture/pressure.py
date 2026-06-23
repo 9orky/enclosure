@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pydantic import field_validator
 
-from ..base import StrictConfigModel
+from .. import base
 
 
-class PressureConfig(StrictConfigModel):
+class PressureConfig(base.StrictConfigModel):
     top: int = 10
 
     @field_validator("top")

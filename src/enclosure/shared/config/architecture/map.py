@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pydantic import field_validator
 
-from ..base import StrictConfigModel
+from .. import base
 
 
-class MapConfig(StrictConfigModel):
+class MapConfig(base.StrictConfigModel):
     top: int = 20
 
     @field_validator("top")

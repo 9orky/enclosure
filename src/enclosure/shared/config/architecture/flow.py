@@ -4,16 +4,16 @@ from modwire.architecture import supported_analyzers
 from pydantic import Field
 from pydantic import field_validator
 
-from ..base import StrictConfigModel
+from .. import base
 
 
-class FlowRealmRule(StrictConfigModel):
+class FlowRealmRule(base.StrictConfigModel):
     name: str
     module_tag: str
-    layers: list[str] | None = None
+    layers: list[str] = Field(default_factory=list)
 
 
-class FlowRuleSet(StrictConfigModel):
+class FlowRuleSet(base.StrictConfigModel):
     layers: list[str] = Field(default_factory=list)
     module_tag: str = ""
     module_tags: list[str] = Field(default_factory=list)

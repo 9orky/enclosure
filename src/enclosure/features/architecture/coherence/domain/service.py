@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from pathlib import Path
 
 from modwire import CodeMap
 
@@ -13,6 +14,7 @@ def describe_coherence(
     code_map: CodeMap,
     config: object,
     top: int,
+    architecture_root: Path,
 ) -> models.DescribedCoherence:
     stream_rule = tree.stream_rule(config)
     if stream_rule is None:
@@ -36,12 +38,19 @@ def describe_coherence(
     layer_indexes = {name: index for index, name in enumerate(layer_rules)}
     file_maps = tree.map_files(code_map, config, stream_rule, api_rule, layer_rules)
     stream_files = tree.stream_files(file_maps)
+    virtual_api_streams = tree.virtual_api_streams(
+        stream_files,
+        config,
+        api_rule,
+        architecture_root,
+    )
     all_findings = findings(
         code_map,
         file_maps,
         stream_files,
         api_rule,
         layer_indexes,
+        virtual_api_streams,
     )
     all_streams = streams(stream_files, all_findings)
     visible_streams = tuple(
@@ -62,6 +71,7 @@ def findings(
     stream_files: dict[str, tuple[models.FileMap, ...]],
     api_rule: object | None,
     layer_indexes: dict[str, int],
+    virtual_api_streams: set[str],
 ) -> tuple[models.CoherenceFinding, ...]:
     found: list[models.CoherenceFinding] = []
     if api_rule is None:
@@ -76,13 +86,20 @@ def findings(
             )
         )
     found.extend(naming.findings(stream_files))
-    found.extend(structure.findings(stream_files, api_rule is not None))
+    found.extend(
+        structure.findings(
+            stream_files,
+            api_rule is not None,
+            virtual_api_streams,
+        )
+    )
     found.extend(siblings.findings(stream_files))
     dependency_findings, _ = dependencies.findings(
         code_map,
         file_maps,
         stream_files,
         layer_indexes,
+        virtual_api_streams,
     )
     found.extend(dependency_findings)
     return tuple(

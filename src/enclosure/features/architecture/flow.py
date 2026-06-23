@@ -22,12 +22,12 @@ def configured_realms(config: object) -> tuple[ArchitectureRealm, ...]:
         module_tag = getattr(realm, "module_tag", "")
         if not module_tag:
             continue
-        realm_layers = getattr(realm, "layers", None)
+        realm_layers = _configured_realm_layers(realm, default_layers)
         realms.append(
             ArchitectureRealm(
                 name=getattr(realm, "name", "") or module_tag,
                 module_tag=module_tag,
-                layers=default_layers if realm_layers is None else tuple(realm_layers),
+                layers=realm_layers,
             )
         )
 
@@ -56,6 +56,22 @@ def configured_realms(config: object) -> tuple[ArchitectureRealm, ...]:
 
 def configured_module_tags(config: object) -> tuple[str, ...]:
     return tuple(realm.module_tag for realm in configured_realms(config))
+
+
+def _configured_realm_layers(
+    realm: object,
+    default_layers: tuple[str, ...],
+) -> tuple[str, ...]:
+    fields_set = getattr(realm, "model_fields_set", None)
+    if fields_set is not None:
+        if "layers" not in fields_set:
+            return default_layers
+        return tuple(getattr(realm, "layers", ()) or ())
+
+    realm_layers = getattr(realm, "layers", None)
+    if realm_layers is None:
+        return default_layers
+    return tuple(realm_layers)
 
 
 def public_seam_patterns(

@@ -4,8 +4,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from enclosure.shared.scaffolding import catalog_policy
-from enclosure.shared.scaffolding import Scaffold
+from enclosure.shared.scaffolding import Scaffold, catalog_policy
 from .. import infrastructure
 
 

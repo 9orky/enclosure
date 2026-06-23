@@ -2,18 +2,20 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from ..base import StrictConfigModel
-from .guidance import GuidanceConfig
-from .recipe import RecipeConfig
-from .rules import RulesConfig
-from .sync import SyncConfig
+from .. import base
+from . import guidance, recipe, rules, sync
+
+GUIDANCE = guidance
+RECIPE = recipe
+RULES = rules
+SYNC = sync
 
 
-class WorkspaceConfig(StrictConfigModel):
-    guidance: GuidanceConfig = Field(default_factory=GuidanceConfig)
-    recipe: RecipeConfig = Field(default_factory=RecipeConfig)
-    rules: RulesConfig = Field(default_factory=RulesConfig)
-    sync: SyncConfig = Field(default_factory=SyncConfig)
+class WorkspaceConfig(base.StrictConfigModel):
+    guidance: GUIDANCE.GuidanceConfig = Field(default_factory=GUIDANCE.GuidanceConfig)
+    recipe: RECIPE.RecipeConfig = Field(default_factory=RECIPE.RecipeConfig)
+    rules: RULES.RulesConfig = Field(default_factory=RULES.RulesConfig)
+    sync: SYNC.SyncConfig = Field(default_factory=SYNC.SyncConfig)
 
 
 __all__ = ["WorkspaceConfig"]

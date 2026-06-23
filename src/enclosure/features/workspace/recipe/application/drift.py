@@ -3,13 +3,11 @@ from __future__ import annotations
 from collections.abc import Mapping
 from pathlib import Path
 
-from enclosure.shared.config import settings
 from enclosure.shared.scaffolding import RenderedScaffoldFile, Scaffold, ScaffoldError
 from .. import domain, infrastructure
 from . import catalog, drift_ladder, drift_scan
 
 actual_files_for = drift_scan.actual_files_for
-actual_module_names = drift_scan.actual_module_names
 drift_files_for = drift_ladder.drift_files_for
 
 
@@ -46,7 +44,6 @@ class RecipeDriftService:
             recipes_by_name=recipes_by_name,
         )
         drifts: list[domain.RecipeDrift] = []
-        architecture_settings = settings.query("architecture")
         for module_name, role_name in sorted(roles_map.items()):
             role_recipe = catalog.recipe_for_role(role_name, recipes_by_name)
             module_path = subject_root / module_name
@@ -103,25 +100,6 @@ class RecipeDriftService:
                 )
             )
 
-        for module_name in actual_module_names(
-            subject_root,
-            project_root=project_root,
-            config=self._workspace.config(),
-            architecture_settings=architecture_settings,
-        ):
-            if module_name not in roles_map:
-                drifts.append(
-                    domain.RecipeDrift(
-                        module_name=module_name,
-                        role_name="",
-                        extra_files=actual_files_for(
-                            subject_root / module_name,
-                            project_root=project_root,
-                            config=self._workspace.config(),
-                        ),
-                    )
-                )
-
         return domain.RecipeDriftReport(
             project_root=project_root,
             recipe_root=self._workspace.recipe_root(),
@@ -168,7 +146,6 @@ def module_relative_rendered_paths(
 __all__ = [
     "RecipeDriftService",
     "actual_files_for",
-    "actual_module_names",
     "drift_files_for",
     "expected_files_for",
     "module_relative_rendered_paths",

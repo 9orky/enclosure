@@ -12,6 +12,7 @@ def findings(
     file_maps: dict[str, models.FileMap],
     stream_files: dict[str, tuple[models.FileMap, ...]],
     layer_indexes: dict[str, int],
+    virtual_api_streams: set[str],
 ) -> tuple[tuple[models.CoherenceFinding, ...], dict[str, set[tuple[str, str]]]]:
     dependency_findings: list[models.CoherenceFinding] = []
     dependency_groups: dict[str, set[tuple[str, str]]] = defaultdict(set)
@@ -20,7 +21,12 @@ def findings(
         source = file_maps.get(edge.from_id)
         if source is None:
             continue
-        target = tree.target_from_path(edge.to_id, streams, file_maps)
+        target = tree.target_from_path(
+            edge.to_id,
+            streams,
+            file_maps,
+            virtual_api_streams,
+        )
         if target is None:
             continue
         if source.stream == target.stream:
@@ -41,6 +47,7 @@ def findings(
             target,
             edge.to_id,
             file_maps,
+            virtual_api_streams,
         )
     dependency_findings.extend(pressure_findings(dependency_groups))
     return tuple(dependency_findings), dependency_groups
@@ -88,6 +95,7 @@ def add_cross_stream_findings(
     target: models.ImportTarget,
     target_path: str,
     file_maps: dict[str, models.FileMap],
+    virtual_api_streams: set[str],
 ) -> None:
     if not target.is_api:
         findings.append(
@@ -100,7 +108,11 @@ def add_cross_stream_findings(
                 impact=30,
             )
         )
-    if not any(file.stream == target.stream and file.is_api for file in file_maps.values()):
+    has_api_node = (
+        target.stream in virtual_api_streams
+        or any(file.stream == target.stream and file.is_api for file in file_maps.values())
+    )
+    if not has_api_node:
         findings.append(
             models.CoherenceFinding(
                 stream=target.stream,

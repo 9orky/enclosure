@@ -6,15 +6,7 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from .errors import ScaffoldError
-from .relative_path import _ScaffoldRelativePathNormalizer
-from .scaffold import (
-    Scaffold,
-    _ScaffoldFile,
-    _ScaffoldInput,
-    _ScaffoldLadder,
-    _ScaffoldSlot,
-)
+from . import errors, relative_path, scaffold
 
 
 class _ScaffoldManifestRepository:
@@ -23,7 +15,7 @@ class _ScaffoldManifestRepository:
         self._reader = _ScaffoldManifestReader()
         self._converter = _ScaffoldManifestConverter()
 
-    def find_all(self, scaffold_root: Path) -> tuple[Scaffold, ...]:
+    def find_all(self, scaffold_root: Path) -> tuple[scaffold.Scaffold, ...]:
         scaffold_root = Path(scaffold_root)
         if not scaffold_root.is_dir():
             return ()
@@ -32,8 +24,8 @@ class _ScaffoldManifestRepository:
             for source_root in self._iter_scaffold_roots(scaffold_root)
         )
 
-    def get_by_name(self, scaffold_root: Path, name: str) -> Scaffold:
-        normalized_name = Scaffold._validate_name(name)
+    def get_by_name(self, scaffold_root: Path, name: str) -> scaffold.Scaffold:
+        normalized_name = scaffold.Scaffold._validate_name(name)
         source_root = Path(scaffold_root) / normalized_name
         manifest_path = self._manifest_path(source_root)
         if not manifest_path.is_file():
@@ -52,7 +44,11 @@ class _ScaffoldManifestRepository:
     def _manifest_path(self, source_root: Path) -> Path:
         return source_root / self._manifest_file_name
 
-    def _load_scaffold(self, source_root: Path, manifest_path: Path) -> Scaffold:
+    def _load_scaffold(
+        self,
+        source_root: Path,
+        manifest_path: Path,
+    ) -> scaffold.Scaffold:
         raw_data = self._reader.read_mapping(manifest_path)
         return self._converter.to_scaffold(source_root, manifest_path, raw_data)
 
@@ -81,37 +77,43 @@ class _ScaffoldManifestReader:
         try:
             return path.read_text(encoding="utf-8")
         except OSError as exc:
-            raise ScaffoldError(f"Could not read scaffold manifest: {path}") from exc
+            raise errors.ScaffoldError(
+                f"Could not read scaffold manifest: {path}"
+            ) from exc
 
     def _parse_yaml(self, path: Path, content: str) -> object:
         try:
             return yaml.safe_load(content) or {}
         except yaml.YAMLError as exc:
-            raise ScaffoldError(f"Invalid scaffold manifest syntax in {path}") from exc
+            raise errors.ScaffoldError(
+                f"Invalid scaffold manifest syntax in {path}"
+            ) from exc
 
     def _validate_mapping(self, path: Path, raw_data: object) -> dict[str, Any]:
         if not isinstance(raw_data, dict):
-            raise ScaffoldError(f"Scaffold manifest must contain a mapping at the top level: {path}")
+            raise errors.ScaffoldError(
+                f"Scaffold manifest must contain a mapping at the top level: {path}"
+            )
         return raw_data
 
 
 class _ScaffoldManifestConverter:
     def __init__(self) -> None:
-        self._paths = _ScaffoldRelativePathNormalizer()
+        self._paths = relative_path._ScaffoldRelativePathNormalizer()
 
     def to_scaffold(
         self,
         source_root: Path,
         manifest_path: Path,
         raw_data: dict[str, Any],
-    ) -> Scaffold:
+    ) -> scaffold.Scaffold:
         try:
             manifest = _ScaffoldManifest.model_validate(raw_data)
         except ValidationError as exc:
-            raise ScaffoldError(f"Invalid scaffold manifest: {exc}") from exc
+            raise errors.ScaffoldError(f"Invalid scaffold manifest: {exc}") from exc
 
         self._validate_schema_version(manifest, manifest_path)
-        return Scaffold(
+        return scaffold.Scaffold(
             name=source_root.name,
             source_root=source_root,
             role=manifest.role,
@@ -133,22 +135,27 @@ class _ScaffoldManifestConverter:
         manifest_path: Path,
     ) -> None:
         if manifest.schema_version != 1:
-            raise ScaffoldError(f"Unsupported scaffold schema_version in {manifest_path}")
+            raise errors.ScaffoldError(
+                f"Unsupported scaffold schema_version in {manifest_path}"
+            )
 
-    def _input_specs_from(self, raw_inputs: object) -> tuple[_ScaffoldInput, ...]:
+    def _input_specs_from(
+        self,
+        raw_inputs: object,
+    ) -> tuple[scaffold._ScaffoldInput, ...]:
         if raw_inputs is None:
             return ()
         if not isinstance(raw_inputs, dict):
-            raise ScaffoldError("Scaffold inputs must be a mapping")
+            raise errors.ScaffoldError("Scaffold inputs must be a mapping")
 
-        specs: list[_ScaffoldInput] = []
+        specs: list[scaffold._ScaffoldInput] = []
         for name, raw_spec in raw_inputs.items():
             if raw_spec is None:
                 raw_spec = {}
             if not isinstance(name, str) or not isinstance(raw_spec, dict):
-                raise ScaffoldError("Scaffold inputs must be named mappings")
+                raise errors.ScaffoldError("Scaffold inputs must be named mappings")
             specs.append(
-                _ScaffoldInput(
+                scaffold._ScaffoldInput(
                     name=name,
                     value_type=str(raw_spec.get("type", "string") or "string"),
                     required=bool(raw_spec.get("required", False)),
@@ -162,43 +169,46 @@ class _ScaffoldManifestConverter:
             )
         return tuple(specs)
 
-    def _scaffold_files_from(self, raw_files: object) -> tuple[_ScaffoldFile, ...]:
+    def _scaffold_files_from(
+        self,
+        raw_files: object,
+    ) -> tuple[scaffold._ScaffoldFile, ...]:
         if raw_files is None:
             return ()
         if not isinstance(raw_files, list):
-            raise ScaffoldError("Scaffold files must be a list")
+            raise errors.ScaffoldError("Scaffold files must be a list")
 
-        files: list[_ScaffoldFile] = []
+        files: list[scaffold._ScaffoldFile] = []
         for raw_file in raw_files:
             if not isinstance(raw_file, dict):
-                raise ScaffoldError("Scaffold files must be mappings")
+                raise errors.ScaffoldError("Scaffold files must be mappings")
             source = raw_file.get("source")
             target = raw_file.get("target")
             if not isinstance(source, str) or not isinstance(target, str):
-                raise ScaffoldError("Scaffold files require source and target")
+                raise errors.ScaffoldError("Scaffold files require source and target")
             files.append(
-                _ScaffoldFile(
+                scaffold._ScaffoldFile(
                     self._paths.relative_path(source, "Scaffold file source"),
                     target,
                 )
             )
         return tuple(files)
 
-    def _scaffold_ladder_from(self, raw_ladder: object) -> _ScaffoldLadder:
+    def _scaffold_ladder_from(self, raw_ladder: object) -> scaffold._ScaffoldLadder:
         if raw_ladder == {}:
-            return _ScaffoldLadder()
+            return scaffold._ScaffoldLadder()
         if not isinstance(raw_ladder, dict):
-            raise ScaffoldError("Scaffold ladder must be a mapping")
+            raise errors.ScaffoldError("Scaffold ladder must be a mapping")
 
         family = raw_ladder.get("family")
         rung = raw_ladder.get("rung")
         raw_slots = raw_ladder.get("slots", {})
         if not isinstance(family, str) or not isinstance(rung, str):
-            raise ScaffoldError("Scaffold ladder requires family and rung")
+            raise errors.ScaffoldError("Scaffold ladder requires family and rung")
         if not isinstance(raw_slots, dict):
-            raise ScaffoldError("Scaffold ladder slots must be a mapping")
+            raise errors.ScaffoldError("Scaffold ladder slots must be a mapping")
 
-        return _ScaffoldLadder(
+        return scaffold._ScaffoldLadder(
             family=family,
             rung=rung,
             slots=tuple(
@@ -208,9 +218,13 @@ class _ScaffoldManifestConverter:
             declared=True,
         )
 
-    def _scaffold_slot_from(self, raw_name: object, raw_slot: object) -> _ScaffoldSlot:
+    def _scaffold_slot_from(
+        self,
+        raw_name: object,
+        raw_slot: object,
+    ) -> scaffold._ScaffoldSlot:
         if not isinstance(raw_name, str):
-            raise ScaffoldError("Scaffold ladder slot names must be strings")
+            raise errors.ScaffoldError("Scaffold ladder slot names must be strings")
 
         files: tuple[str, ...] = ()
         packages: tuple[str, ...] = ()
@@ -227,11 +241,15 @@ class _ScaffoldManifestConverter:
                 f"Scaffold ladder slot packages must be strings: {raw_name}",
             )
         else:
-            raise ScaffoldError("Scaffold ladder slot values must be strings or mappings")
+            raise errors.ScaffoldError(
+                "Scaffold ladder slot values must be strings or mappings"
+            )
 
         if not isinstance(raw_state, str):
-            raise ScaffoldError(f"Scaffold ladder slot requires state: {raw_name}")
-        return _ScaffoldSlot(
+            raise errors.ScaffoldError(
+                f"Scaffold ladder slot requires state: {raw_name}"
+            )
+        return scaffold._ScaffoldSlot(
             name=raw_name,
             state=raw_state,
             files=files,
@@ -247,5 +265,5 @@ class _ScaffoldManifestConverter:
         if value is None:
             return ()
         if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
-            raise ScaffoldError(message)
+            raise errors.ScaffoldError(message)
         return tuple(value)

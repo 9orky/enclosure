@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from enclosure.shared.scaffolding import Scaffold
-from enclosure.shared.scaffolding import ScaffoldError
+from enclosure.shared.scaffolding import Scaffold, ScaffoldError
 from .. import domain, infrastructure
 from . import bench_content, bench_signals, catalog, drift
 
@@ -31,6 +30,7 @@ class RecipeBenchService:
                 architecture_root=Path(),
                 selected_module=selected_module,
                 role_name="",
+                violations=(),
                 violation=domain.RecipeCheckViolation(
                     code="invalid_manifest",
                     message=str(exc),
@@ -362,7 +362,7 @@ def empty_bench_report(
     architecture_root: Path,
     role_name: str,
     violation: domain.RecipeCheckViolation | None,
-    violations: tuple[domain.RecipeCheckViolation, ...] = (),
+    violations: tuple[domain.RecipeCheckViolation, ...],
 ) -> domain.RecipeBenchReport:
     all_violations = violations + ((violation,) if violation is not None else ())
     return domain.RecipeBenchReport(

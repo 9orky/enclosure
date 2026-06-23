@@ -1,17 +1,20 @@
 from __future__ import annotations
 
-from .boundaries import BoundariesConfig
-from .boundary_rule import BoundaryRule
-from .clusters import ClustersConfig
-from .flow import FlowRealmRule
-from .flow import FlowRuleSet
-from .health import HealthConfig
-from .map import MapConfig
-from .pressure import PressureConfig
-from .root import ArchitectureConfig
-from .shape import ImportCrossingType
-from .shape import ShapeConfig
-from .tag import ConfigTagRule
+from . import boundaries, boundary_rule, clusters, flow, health, map, pressure, root
+from . import shape, tag
+
+ArchitectureConfig = root.ArchitectureConfig
+BoundariesConfig = boundaries.BoundariesConfig
+BoundaryRule = boundary_rule.BoundaryRule
+ClustersConfig = clusters.ClustersConfig
+ConfigTagRule = tag.ConfigTagRule
+FlowRealmRule = flow.FlowRealmRule
+FlowRuleSet = flow.FlowRuleSet
+HealthConfig = health.HealthConfig
+ImportCrossingType = shape.ImportCrossingType
+MapConfig = map.MapConfig
+PressureConfig = pressure.PressureConfig
+ShapeConfig = shape.ShapeConfig
 
 __all__ = [
     "ArchitectureConfig",

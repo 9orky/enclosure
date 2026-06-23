@@ -5,12 +5,12 @@ from typing import Literal
 from pydantic import Field
 from pydantic import field_validator
 
-from ..base import StrictConfigModel
+from .. import base
 
 ImportCrossingType = Literal["module", "symbol"]
 
 
-class ShapeConfig(StrictConfigModel):
+class ShapeConfig(base.StrictConfigModel):
     max_classes_per_file: int = -1
     max_interfaces_per_file: int = -1
     max_types_per_file: int = -1

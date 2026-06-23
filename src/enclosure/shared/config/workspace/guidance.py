@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pydantic import field_validator
 
-from ..base import StrictConfigModel
+from .. import base
 
 
-class GuidanceConfig(StrictConfigModel):
+class GuidanceConfig(base.StrictConfigModel):
     max_template_chars: int = 1200
 
     @field_validator("max_template_chars")

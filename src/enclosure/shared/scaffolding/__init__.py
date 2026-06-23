@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from .errors import ScaffoldError
-from .facade import ScaffoldFacade as _ScaffoldFacade
-from .scaffold import RenderedScaffoldFile, Scaffold
+from . import catalog_policy, errors, facade, scaffold
 
-scaffolding = _ScaffoldFacade()
+RenderedScaffoldFile = scaffold.RenderedScaffoldFile
+Scaffold = scaffold.Scaffold
+ScaffoldError = errors.ScaffoldError
+scaffolding = facade.ScaffoldFacade()
 
 __all__ = [
     "RenderedScaffoldFile",
     "Scaffold",
     "ScaffoldError",
+    "catalog_policy",
     "scaffolding",
 ]

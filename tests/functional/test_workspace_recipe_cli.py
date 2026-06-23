@@ -285,7 +285,7 @@ def test_recipe_drifts_ignore_configured_skip_files(tmp_path: Path) -> None:
     assert ".cache" not in result.stdout
 
 
-def test_recipe_drifts_report_unmapped_modules_from_configured_realms(
+def test_recipe_drifts_ignore_unmapped_actual_modules(
     tmp_path: Path,
 ) -> None:
     project_root = copy_fixture(tmp_path, "recipe_workspace")
@@ -297,10 +297,9 @@ def test_recipe_drifts_report_unmapped_modules_from_configured_realms(
 
     result = run_cli(project_root, "workspace", "recipe", "--drifts")
 
-    assert result.returncode == 1
-    assert "- billing/report: unmapped" in result.stdout
-    assert "- billing/report" in result.stdout
-    assert "  - application.py" in result.stdout
+    assert result.returncode == 0, result.stderr
+    assert "No recipe drifts found." in result.stdout
+    assert "billing/report" not in result.stdout
 
 
 def test_recipe_drifts_allow_slot_growth_but_report_forbidden_slot_shapes(
@@ -373,7 +372,7 @@ def test_recipe_drifts_ignore_package_slot_growth_but_bench_reports_it(
     assert drifts.returncode == 0, drifts.stderr
     assert "No recipe drifts found." in drifts.stdout
     assert "domain/service.py" not in drifts.stdout
-    assert bench.returncode == 0, bench.stderr
+    assert bench.returncode == 1
     assert "Forbidden residue: 0" in bench.stdout
     assert "Slot growth: 1" in bench.stdout
     assert "Classification: local" in bench.stdout
@@ -443,7 +442,7 @@ def test_recipe_bench_reports_repeated_slot_growth_as_established(
         ".enclosure/bench.html",
     )
 
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 1
     assert "Same-role modules: 3" in result.stdout
     assert "Local warp: 1" in result.stdout
     assert "Slot growth: 1" in result.stdout
@@ -481,7 +480,7 @@ def test_recipe_bench_reports_disjoint_same_role_warp_as_unstable(
         ".enclosure/unstable.html",
     )
 
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 1
     assert "Same-role modules: 2" in result.stdout
     assert "Local warp: 1" in result.stdout
     assert "Classification: unstable" in result.stdout
@@ -509,7 +508,7 @@ def test_recipe_bench_reports_content_weight_and_binary_file_content(
     )
     html = (project_root / ".enclosure/content.html").read_text(encoding="utf-8")
 
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 1
     assert "Content weight: 1" in result.stdout
     assert "Forbidden residue: 1" in result.stdout
     assert "Classification: local" in result.stdout

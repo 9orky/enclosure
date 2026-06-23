@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from pathlib import Path
 from pathlib import PurePosixPath
 
 from modwire import CodeMap
@@ -105,16 +106,17 @@ def target_from_path(
     target_path: str,
     streams: set[str],
     file_maps: dict[str, models.FileMap],
+    virtual_api_streams: set[str],
 ) -> models.ImportTarget | None:
     normalized = target_path.strip("/")
     for stream in sorted(streams, key=lambda value: (-len(value), value)):
         if normalized == stream:
-            return stream_api_target(stream, file_maps)
+            return stream_api_target(stream, file_maps, virtual_api_streams)
         if normalized.startswith(f"{stream}/"):
             return node_target(stream, normalized, file_maps)
         suffix = f"/{stream}"
         if normalized.endswith(suffix):
-            return stream_api_target(stream, file_maps)
+            return stream_api_target(stream, file_maps, virtual_api_streams)
         marker = f"/{stream}/"
         marker_index = normalized.rfind(marker)
         if marker_index == -1:
@@ -127,6 +129,7 @@ def target_from_path(
 def stream_api_target(
     stream: str,
     file_maps: dict[str, models.FileMap],
+    virtual_api_streams: set[str],
 ) -> models.ImportTarget:
     api_sources = tuple(
         file.source_id
@@ -135,6 +138,8 @@ def stream_api_target(
     )
     if api_sources:
         return models.ImportTarget(stream=stream, source_id=api_sources[0], is_api=True)
+    if stream in virtual_api_streams:
+        return models.ImportTarget(stream=stream, source_id=stream, is_api=True)
     return models.ImportTarget(stream=stream, source_id=stream, is_api=False)
 
 
@@ -162,6 +167,26 @@ def is_api_match(source_id: str, matcher: TagMatcher, api_rule: object | None) -
     if api_rule is None:
         return False
     return bool(matched_tag_path(source_id, matcher, api_rule))
+
+
+def virtual_api_streams(
+    stream_files_by_name: dict[str, tuple[models.FileMap, ...]],
+    config: object,
+    api_rule: object | None,
+    architecture_root: Path,
+) -> set[str]:
+    if api_rule is None:
+        return set()
+
+    matcher = TagMatcher(config)
+    streams: set[str] = set()
+    for stream in stream_files_by_name:
+        candidate = f"{stream}/__init__"
+        if not is_api_match(candidate, matcher, api_rule):
+            continue
+        if (architecture_root / f"{candidate}.py").is_file():
+            streams.add(stream)
+    return streams
 
 
 def layer_match(
@@ -195,4 +220,5 @@ __all__ = [
     "stream_rule",
     "tag_rule",
     "target_from_path",
+    "virtual_api_streams",
 ]

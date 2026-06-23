@@ -213,7 +213,7 @@ class RecipeBenchReport:
     violations: tuple[RecipeCheckViolation, ...] = ()
 
     def passed(self) -> bool:
-        return not self.violations
+        return not self.violations and self.local_warp_count == 0
 
     @property
     def subject_root(self) -> Path:
@@ -312,7 +312,11 @@ class RecipeBenchAllReport:
     violations: tuple[RecipeCheckViolation, ...] = ()
 
     def passed(self) -> bool:
-        return not self.violations and all(report.passed() for report in self.reports)
+        return (
+            not self.violations
+            and self.local_warp_count == 0
+            and all(report.passed() for report in self.reports)
+        )
 
     @property
     def subject_root(self) -> Path:

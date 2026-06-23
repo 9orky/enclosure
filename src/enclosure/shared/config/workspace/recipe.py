@@ -5,10 +5,10 @@ from fnmatch import fnmatch
 from pydantic import Field
 from pydantic import field_validator
 
-from ..base import StrictConfigModel
+from .. import base
 
 
-class RecipeConfig(StrictConfigModel):
+class RecipeConfig(base.StrictConfigModel):
     skip: tuple[str, ...] = ()
     roles_map: dict[str, str] = Field(default_factory=dict)
 
