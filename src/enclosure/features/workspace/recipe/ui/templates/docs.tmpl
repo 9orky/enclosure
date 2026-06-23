@@ -16,7 +16,7 @@ Inspect, validate, preview, and render recipes.
 - Compose reusable `fragment` recipes with `includes`.
 - Keep module-to-role ownership in `workspace.recipe.roles_map`.
 - Use `--drifts` to compare mapped trees to recipes.
-- Write bench HTML to `.enclosure/.cache/reports/<name>.html` or `/tmp/<name>.html`.
+- Write bench HTML to a caller-provided path such as `reports/<name>.html` or `/tmp/<name>.html`.
 - Never pass flags such as `--help`, `--docs`, or `--llm` as `--html`.
 
 ## Related Commands
@@ -24,6 +24,6 @@ Inspect, validate, preview, and render recipes.
 - `enclosure workspace recipe --help`
 - `enclosure workspace recipe --list`
 - `enclosure workspace recipe --check`
-- `enclosure workspace recipe --bench <module> --html .enclosure/.cache/reports/module-bench.html`
-- `enclosure workspace recipe --bench-all --html .enclosure/.cache/reports/workspace-bench.html`
+- `enclosure workspace recipe --bench <module> --html reports/module-bench.html`
+- `enclosure workspace recipe --bench-all --html reports/workspace-bench.html`
 - `enclosure workspace rules --docs`

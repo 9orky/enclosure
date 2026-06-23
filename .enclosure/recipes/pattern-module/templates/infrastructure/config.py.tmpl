@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from enclosure.shared.config import settings
-
 from ..domain import config
 
 
 def load_{{ target.snake }}_config() -> config.{{ target.class }}Config:
-    return config.{{ target.class }}Config.from_config(settings.query("workspace.recipe"))
+    return config.{{ target.class }}Config()
 
 
 __all__ = ["load_{{ target.snake }}_config"]

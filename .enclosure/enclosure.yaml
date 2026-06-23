@@ -77,7 +77,6 @@ workspace:
       architecture/boundaries: module-report-cli
       architecture/clusters: module-report-cli
       architecture/coherence: module-domain-package-cli
-      architecture/config: module-config-support
       architecture/health: module-report-cli
       architecture/map: module-report-cli
       architecture/pressure: module-report-cli
@@ -85,7 +84,6 @@ workspace:
       health/report: module-report-cli
       pattern/catalog: pattern-module
       pattern/fit: pattern-module
-      workspace/config: module-config-support
       workspace/health: module-report-cli
       workspace/plan: module-workspace-cli
       workspace/recipe: module-workspace-cli

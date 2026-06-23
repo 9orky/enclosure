@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from enclosure.shared.config import settings
+from pathlib import Path
 
 
 def current_workspace_name() -> str:
-    return settings.metadata.project_root.name
+    return Path.cwd().name
 
 
 __all__ = ["current_workspace_name"]

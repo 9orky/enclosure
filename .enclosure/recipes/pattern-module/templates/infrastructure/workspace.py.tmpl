@@ -2,15 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from enclosure.shared.config import settings
-
 
 def current_module_path() -> Path:
-    return settings.metadata.project_root / "{{ target.path }}"
+    return Path.cwd() / "{{ target.path }}"
 
 
 def current_pattern_root() -> Path:
-    return settings.metadata.recipes_dir
+    return Path.cwd() / ".enclosure" / "recipes"
 
 
 __all__ = [

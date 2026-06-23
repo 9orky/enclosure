@@ -23,8 +23,5 @@ def test_bench_all_preview_preserves_existing_workspace_findings() -> None:
 
     assert report.subject_root == report.architecture_root
     assert report.classification == "unstable"
-    assert {
-        violation.code
-        for violation in report.violations
-    } == {"mapped_module_missing"}
+    assert not report.violations
     assert "Workspace Warp Index" in bench_html.render_bench_all_html(report)

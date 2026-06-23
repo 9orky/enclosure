@@ -1,10 +1,9 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Annotated
 
 import typer
-
-from enclosure.shared import ui
 
 from .. import application
 
@@ -15,28 +14,34 @@ app = typer.Typer(
 
 
 @app.callback()
-@ui.command_error_boundary
 def {{ target.snake }}_command(
     llm: Annotated[
         bool,
         typer.Option("--llm", help="Print LLM-focused guidance for this command."),
-    ],
+    ] = False,
     docs: Annotated[
         bool,
         typer.Option("--docs", help="Print human-focused documentation for this command."),
-    ],
+    ] = False,
 ) -> None:
     if llm:
-        ui.render_llm("llm.tmpl")
+        typer.echo(_read_template("llm.tmpl"))
         return
     if docs:
-        ui.render_docs("docs.tmpl")
+        typer.echo(_read_template("docs.tmpl"))
         return
 
-    ui.render(application.describe_{{ target.snake }}(), template_name="report.tmpl", context={})
+    typer.echo(_render_report(application.describe_{{ target.snake }}()))
 
 
-ui.set_command_defaults({{ target.snake }}_command, {"llm": False, "docs": False})
+def _read_template(name: str) -> str:
+    return (Path(__file__).with_name("templates") / name).read_text(encoding="utf-8").strip()
+
+
+def _render_report(report: object) -> str:
+    lines = [f"{report.title}:"]
+    lines.extend(f"- {line}" for line in report.lines())
+    return "\n".join(lines)
 
 
 __all__ = ["app"]

@@ -22,7 +22,7 @@ Inspect, validate, preview, render, and bench recipes.
 
 - First run: `--list`, `<name> --show`, then `<name> <path> --shell`.
 - Keep ownership in `workspace.recipe.roles_map`.
-- Bench with `--html .enclosure/.cache/reports/<name>.html` or `/tmp/<name>.html`.
+- Bench with a caller-provided `--html reports/<name>.html` or `/tmp/<name>.html`.
 - Never pass `--help`, `--docs`, or `--llm` as `--html`.
 - Provide required inputs as variables.
 - Fix skipped dry runs or failed checks before generation.
