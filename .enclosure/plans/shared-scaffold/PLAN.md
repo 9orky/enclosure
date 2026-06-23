@@ -26,10 +26,13 @@ The implementation target is code and complexity reduction. The shared API shoul
 
 - Phase 1 is complete and `enclosure.shared.scaffolding` is stable for
   integration.
-- Phase 2 is ready to start. Treat the shared scaffolding package as complete;
-  do not add shared capabilities during recipe integration unless the UML and
-  Step 01 are reopened first.
-- Phase 3 remains pending until the workspace recipe proof is complete.
+- Phase 2 is complete. `workspace.recipe` now loads, composes, renders, parses
+  variables, and writes through the package-root shared scaffolding facade.
+  Recipe-owned report, drift, bench, preview, skip, and roles-map behavior
+  remains local.
+- Phase 3 is ready for acceptance. Treat the shared scaffolding package as
+  complete; do not add shared capabilities during pattern integration unless
+  the UML and Step 01 are reopened first.
 
 # Phases
 
@@ -47,30 +50,44 @@ The implementation target is code and complexity reduction. The shared API shoul
 
 ## Phase 2: Workspace Recipe Proof
 
-- Status: Ready.
+- Status: Complete.
 - Objective: integrate one bounded context as proof that the shared package reduces code without changing behavior.
 - Owner: `src/enclosure/features/workspace/recipe/`.
 - Inputs: shared scaffolding package and existing recipe application/report behavior.
 - Outputs: recipe code delegates manifest discovery, include composition, rendering, variable parsing, and file writing to `from enclosure.shared.scaffolding import scaffolding`; recipe-specific roles-map composition, drift, bench, preview planning, and report logic stays local.
 - Acceptance: existing workspace recipe CLI functional tests pass unchanged, and duplicated recipe manifest/render/write helpers are removed.
+- Verification evidence: `uv run pytest tests/features/workspace/recipe`,
+  `uv run pytest tests/shared/scaffolding tests/features/workspace/recipe`,
+  and `uv run ruff check src/enclosure/features/workspace/recipe
+  tests/features/workspace/recipe` pass. `enclosure health` runs and reports
+  recipe check clean while unrelated baseline findings remain.
 
 ## Phase 3: Remaining Modules and Cleanups
 
-- Status: Pending Phase 2.
+- Status: Ready for acceptance; do not implement until accepted.
 - Objective: move remaining pattern modules to the proven shared seam and delete obsolete duplicate code.
 - Owner: `src/enclosure/features/pattern/catalog/`, `src/enclosure/features/pattern/fit/`, and cleanup in affected recipe files.
-- Inputs: proven shared scaffolding package and recipe integration pattern.
+- Inputs: proven shared scaffolding package and completed recipe integration pattern.
 - Outputs: pattern catalog and pattern fit delegate scaffold mechanics, including include traversal and input aggregation, to shared code; feature-local wrappers, aliases, and dead helper code are removed.
-- Acceptance: run `uv run pytest tests/shared tests/features/workspace/recipe tests/features/pattern` and `uv run ruff check src tests`; follow with `enclosure health` if available in the active environment.
+- Acceptance: focused pattern tests are added under `tests/features/pattern/`;
+  `uv run pytest tests/shared/scaffolding tests/features/workspace/recipe
+  tests/features/pattern` and `uv run ruff check src tests` pass; follow with
+  `enclosure health` if available in the active environment.
 
 # Acceptance
 
 - `enclosure.shared.scaffolding.__init__` is the only public shared scaffolding seam.
 - `__init__.py` is export-only and contains no behavior implementation.
 - No feature imports `enclosure.shared.scaffolding` internals.
+- No feature mirrors private shared scaffolding abstractions through local
+  wrapper repositories, renderers, materializers, manifest readers, path
+  normalizers, input resolvers, or context builders.
 - Recipe and pattern features no longer define independent copies of scaffold manifest parsing, include traversal, input aggregation, file rendering, path normalization, or selective materialization.
 - Shared scaffolding does not import settings, resolve recipe/project roots, or bind caller roots into internal class constructors or state.
 - Shared `Scaffold.source_root` names the individual scaffold/template folder; caller-provided `scaffold_root` names the collection folder.
+- Private shared DTOs and helper classes remain private; callers may use only
+  package-root `scaffolding`, `Scaffold`, `RenderedScaffoldFile`, and
+  `ScaffoldError`.
 - Existing CLI commands keep their current output and exit behavior unless a test exposes an existing bug that is approved as a contract change.
 - The shared package does not import from `enclosure.features`.
 - Step 02 and Step 03 treat `shared.scaffolding` as complete; missing shared behavior requires updating UML and Step 01 before integration continues.
@@ -82,4 +99,4 @@ The implementation target is code and complexity reduction. The shared API shoul
 - Role and slot-state values remain validated strings in shared scaffolding.
   Enums can be introduced later only if they reduce consumer code.
 - Nested scaffold DTO types remain reachable only through exported `Scaffold`;
-  they are not promoted to package-root exports for Step 02.
+  they are not promoted to package-root exports for Step 03.

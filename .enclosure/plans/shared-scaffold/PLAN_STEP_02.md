@@ -4,20 +4,22 @@
 src/enclosure/features/workspace/recipe/
   domain.py
     recipe-specific report and bench dataclasses remain
-    recipe-local duplicates of scaffold models and include helpers removed or aliased only where public compatibility requires it
+    recipe-local duplicate scaffold inputs/files/render/context helpers removed
+    compatibility role/ladder/slot exports remain only where public API requires them
   infrastructure.py
-    recipe manifest repository/render/materializer duplicate code removed
-    thin calls to the imported `scaffolding` facade retained only if application imports need a local seam
+    deleted
   application.py
-    RecipeService uses shared load/compose/render/write/parse behavior
+    RecipeService uses shared load/compose/render/write/parse behavior from package root
     recipe drift, bench, show, list, check, and CLI-facing result behavior preserved
   __init__.py
     public recipe API remains stable
 tests/features/workspace/recipe/
   test_functional.py
+    unchanged functional proof covers list, show, check, dry-run, shell preview,
+    generate, bench, and bench-all behavior
 ```
 
-Status: Ready for acceptance; do not implement until accepted.
+Status: Complete.
 
 # Goal
 
@@ -89,4 +91,21 @@ CLI output local to `workspace.recipe`.
 
 Step 02 is complete when `workspace.recipe` behavior is unchanged, the bounded context imports only the shared package-root API, and deleted recipe-local scaffold code is larger than any new adapter code added for integration.
 
-Step 02 must not begin until this plan is accepted.
+## Result
+
+Step 02 completed with `workspace.recipe` importing only the
+`enclosure.shared.scaffolding` package root. `FileRecipeRepository`,
+`FileRecipeRenderer`, `FileRecipeMaterializer`, `_RecipeManifest`,
+recipe-local `_load_yaml_mapping`, `_included_recipes_for`,
+`_input_specs_for`, path normalization, target defaults, variable context, and
+local rendered-file/input/file DTOs were removed.
+
+Verification completed:
+
+- `uv run pytest tests/features/workspace/recipe`
+- `uv run pytest tests/shared/scaffolding tests/features/workspace/recipe`
+- `uv run ruff check src/enclosure/features/workspace/recipe tests/features/workspace/recipe`
+- forbidden dependency and duplicate-symbol `rg` scans
+- `uv run enclosure health` after an escalated retry; recipe checks were clean,
+  while unrelated baseline workspace rules, recipe drift, and architecture
+  findings remained.

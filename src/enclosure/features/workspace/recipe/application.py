@@ -3,15 +3,32 @@ from __future__ import annotations
 import html
 from collections import Counter
 from collections.abc import Mapping
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
 from enclosure.shared.config import settings
+from enclosure.shared.scaffolding import (
+    RenderedScaffoldFile,
+    Scaffold,
+    ScaffoldError,
+    scaffolding,
+)
 
-from . import domain, infrastructure
+from . import domain
 
 _BENCH_CONTENT_LIMIT = 12_000
+
+
+@dataclass(frozen=True)
+class _ComposedLadder:
+    family: str = ""
+    rung: str = ""
+    slots: tuple[Any, ...] = ()
+    declared: bool = False
+
+    def is_declared(self) -> bool:
+        return self.declared
 
 
 class _RecipeGenerationService:
@@ -21,13 +38,11 @@ class _RecipeGenerationService:
         recipe_root: Path,
         config: domain.RecipeGenerationConfig,
     ) -> None:
-        self._repository = infrastructure.FileRecipeRepository(recipe_root)
+        self._recipe_root = Path(recipe_root)
         self._config = config
-        self._renderer = infrastructure.FileRecipeRenderer()
-        self._materializer = infrastructure.FileRecipeMaterializer()
 
     def list_recipes(self) -> tuple[domain.RecipeSummary, ...]:
-        return tuple(self._summarize_recipe(recipe) for recipe in self._repository.find_all())
+        return tuple(self._summarize_recipe(recipe) for recipe in self._load_recipes())
 
     def show_recipe(self, recipe_name: str) -> domain.RecipeSummary | None:
         recipe = self._load_recipe(recipe_name)
@@ -47,11 +62,11 @@ class _RecipeGenerationService:
         violations: list[domain.RecipeCheckViolation] = []
 
         try:
-            recipes = self._repository.find_all()
-        except ValueError as exc:
+            recipes = self._load_recipes()
+        except ScaffoldError as exc:
             return domain.RecipeCheckReport(
                 project_root=project_root,
-                recipe_root=self._repository.root_path,
+                recipe_root=self._recipe_root,
                 recipes_discovered=0,
                 recipes_checked=0,
                 rendered_paths_checked=0,
@@ -84,7 +99,7 @@ class _RecipeGenerationService:
                 )
             return domain.RecipeCheckReport(
                 project_root=project_root,
-                recipe_root=self._repository.root_path,
+                recipe_root=self._recipe_root,
                 recipes_discovered=len(recipes),
                 recipes_checked=len(recipes),
                 rendered_paths_checked=rendered_paths_checked,
@@ -95,7 +110,7 @@ class _RecipeGenerationService:
         if recipe is None:
             return domain.RecipeCheckReport(
                 project_root=project_root,
-                recipe_root=self._repository.root_path,
+                recipe_root=self._recipe_root,
                 recipes_discovered=len(recipes),
                 recipes_checked=0,
                 rendered_paths_checked=0,
@@ -126,7 +141,7 @@ class _RecipeGenerationService:
 
         return domain.RecipeCheckReport(
             project_root=project_root,
-            recipe_root=self._repository.root_path,
+            recipe_root=self._recipe_root,
             recipes_discovered=len(recipes),
             recipes_checked=1,
             rendered_paths_checked=rendered_paths_checked,
@@ -136,9 +151,9 @@ class _RecipeGenerationService:
     def _check_recipe(
         self,
         violations: list[domain.RecipeCheckViolation],
-        recipe: domain.Recipe,
+        recipe: Scaffold,
         *,
-        recipes_by_name: Mapping[str, domain.Recipe],
+        recipes_by_name: Mapping[str, Scaffold],
         project_root: Path,
         target_path: Path | str,
         variables: Mapping[str, str],
@@ -168,8 +183,8 @@ class _RecipeGenerationService:
     def _validate_recipe_contract(
         self,
         violations: list[domain.RecipeCheckViolation],
-        recipe: domain.Recipe,
-        recipes_by_name: Mapping[str, domain.Recipe],
+        recipe: Scaffold,
+        recipes_by_name: Mapping[str, Scaffold],
     ) -> None:
         if recipe.roles_map:
             violations.append(
@@ -181,7 +196,7 @@ class _RecipeGenerationService:
             )
             return
         if (
-            recipe.role in {domain.RecipeRole.ARCHETYPE, domain.RecipeRole.FRAGMENT}
+            recipe.role in {"archetype", "fragment"}
             and not recipe.ladder.is_declared()
         ):
             violations.append(
@@ -192,7 +207,7 @@ class _RecipeGenerationService:
                 )
             )
             return
-        if recipe.role is domain.RecipeRole.ARCHETYPE and recipe.archetypes:
+        if recipe.role == "archetype" and recipe.archetypes:
             violations.append(
                 domain.RecipeCheckViolation(
                     code="unexpected_archetypes",
@@ -222,7 +237,7 @@ class _RecipeGenerationService:
                 "skipped_paths": (),
                 "preview_files": (),
             }
-        recipes_by_name = _recipes_by_name(self._repository.find_all())
+        recipes_by_name = _recipes_by_name(self._load_recipes())
 
         rendered_files = self._render_files(
             recipe,
@@ -262,7 +277,7 @@ class _RecipeGenerationService:
                 "created_paths": (),
                 "skipped_paths": (),
             }
-        recipes_by_name = _recipes_by_name(self._repository.find_all())
+        recipes_by_name = _recipes_by_name(self._load_recipes())
 
         rendered_files = self._render_files(
             recipe,
@@ -272,7 +287,7 @@ class _RecipeGenerationService:
             variables=variables,
         )
         create_paths, skipped_paths = self._plan_paths(rendered_files)
-        self._materializer.write_files(rendered_files, create_paths=create_paths)
+        scaffolding.write(rendered_files, create_paths=create_paths)
 
         return {
             "recipe_name": recipe.name,
@@ -283,78 +298,46 @@ class _RecipeGenerationService:
             "skipped_paths": skipped_paths,
         }
 
-    def _load_recipe(self, recipe_name: str) -> domain.Recipe | None:
+    def _load_recipes(self) -> tuple[Scaffold, ...]:
+        return scaffolding.load_all(self._recipe_root)
+
+    def _load_recipe(self, recipe_name: str) -> Scaffold | None:
         try:
-            return self._repository.get_by_name(recipe_name)
+            return scaffolding.load(self._recipe_root, recipe_name)
         except LookupError:
             return None
 
     def _render_files(
         self,
-        recipe: domain.Recipe,
+        recipe: Scaffold,
         *,
-        recipes_by_name: Mapping[str, domain.Recipe],
+        recipes_by_name: Mapping[str, Scaffold],
         project_root: Path,
         target_path: Path | str,
         variables: Mapping[str, str],
-    ) -> tuple[domain.RenderedFile, ...]:
-        target_relative_path = domain.normalize_target_path(project_root, target_path)
-        context = self._render_context(
+    ) -> tuple[RenderedScaffoldFile, ...]:
+        return scaffolding.render(
             recipe,
-            recipes_by_name=recipes_by_name,
-            target_relative_path=target_relative_path,
-            variables=variables,
+            tuple(recipes_by_name.values()),
+            project_root,
+            target_path,
+            dict(variables),
         )
-
-        rendered_files: list[domain.RenderedFile] = []
-        for included_recipe in _recipes_for_rendering(recipe, recipes_by_name):
-            rendered_files.extend(
-                self._renderer.render_files(
-                    included_recipe,
-                    project_root=project_root,
-                    context=context,
-                )
-            )
-        return tuple(rendered_files)
-
-    def _render_context(
-        self,
-        recipe: domain.Recipe,
-        *,
-        recipes_by_name: Mapping[str, domain.Recipe],
-        target_relative_path: domain.RelativePath,
-        variables: Mapping[str, str],
-    ) -> dict[str, Any]:
-        raw_variables = dict(variables)
-        defaults = domain.defaults_for(target_relative_path)
-        context: dict[str, Any] = {
-            "target": domain.target_context_for(target_relative_path),
-        }
-
-        for input_spec in _input_specs_for(recipe, recipes_by_name):
-            value = input_spec.resolve(raw_variables, defaults)
-            context[input_spec.name] = domain.variable_context_for(input_spec.name, value)
-
-        for name, value in raw_variables.items():
-            if name not in context:
-                context[name] = domain.variable_context_for(name, value)
-
-        return context
 
     def _plan_paths(
         self,
-        rendered_files: tuple[domain.RenderedFile, ...],
+        rendered_files: tuple[RenderedScaffoldFile, ...],
     ) -> tuple[tuple[Path, ...], tuple[Path, ...]]:
         return _paths_from_preview_files(self._plan_preview_files(rendered_files))
 
     def _plan_preview_files(
         self,
-        rendered_files: tuple[domain.RenderedFile, ...],
+        rendered_files: tuple[RenderedScaffoldFile, ...],
     ) -> tuple[domain.RecipePreviewFile, ...]:
         preview_files: list[domain.RecipePreviewFile] = []
         for rendered_file in rendered_files:
-            target_path = rendered_file["target_path"]
-            relative_path = rendered_file["relative_path"]
+            target_path = rendered_file.target_path
+            relative_path = rendered_file.relative_path
             if self._config.should_skip(relative_path):
                 status = domain.RecipePreviewStatus.SKIP_CONFIG
             elif target_path.exists():
@@ -364,11 +347,11 @@ class _RecipeGenerationService:
 
             preview_files.append(
                 domain.RecipePreviewFile(
-                    source_path=rendered_file["source_path"],
+                    source_path=rendered_file.source_path,
                     target_path=target_path,
                     relative_path=relative_path,
                     status=status,
-                    content=rendered_file["content"],
+                    content=rendered_file.content,
                 )
             )
 
@@ -378,11 +361,11 @@ class _RecipeGenerationService:
         project_root = Path(project_root).resolve()
         violations: list[domain.RecipeCheckViolation] = []
         try:
-            recipes = self._repository.find_all()
-        except ValueError as exc:
+            recipes = self._load_recipes()
+        except ScaffoldError as exc:
             return domain.RecipeDriftReport(
                 project_root=project_root,
-                recipe_root=self._repository.root_path,
+                recipe_root=self._recipe_root,
                 architecture_root=Path(),
                 modules_checked=0,
                 violations=(
@@ -479,7 +462,7 @@ class _RecipeGenerationService:
 
         return domain.RecipeDriftReport(
             project_root=project_root,
-            recipe_root=self._repository.root_path,
+            recipe_root=self._recipe_root,
             architecture_root=architecture_root,
             modules_checked=len(drifts),
             drifts=tuple(drifts),
@@ -491,11 +474,11 @@ class _RecipeGenerationService:
         selected_module = module_name.strip().replace("\\", "/")
         violations: list[domain.RecipeCheckViolation] = []
         try:
-            recipes = self._repository.find_all()
-        except ValueError as exc:
+            recipes = self._load_recipes()
+        except ScaffoldError as exc:
             return _empty_bench_report(
                 project_root=project_root,
-                recipe_root=self._repository.root_path,
+                recipe_root=self._recipe_root,
                 selected_module=selected_module,
                 violation=domain.RecipeCheckViolation(
                     code="invalid_manifest",
@@ -517,7 +500,7 @@ class _RecipeGenerationService:
         if not role_name:
             return _empty_bench_report(
                 project_root=project_root,
-                recipe_root=self._repository.root_path,
+                recipe_root=self._recipe_root,
                 architecture_root=architecture_root,
                 selected_module=selected_module,
                 violation=domain.RecipeCheckViolation(
@@ -534,7 +517,7 @@ class _RecipeGenerationService:
         if role_recipe is None:
             return _empty_bench_report(
                 project_root=project_root,
-                recipe_root=self._repository.root_path,
+                recipe_root=self._recipe_root,
                 architecture_root=architecture_root,
                 selected_module=selected_module,
                 role_name=role_name,
@@ -552,7 +535,7 @@ class _RecipeGenerationService:
         if not selected_path.is_dir():
             return _empty_bench_report(
                 project_root=project_root,
-                recipe_root=self._repository.root_path,
+                recipe_root=self._recipe_root,
                 architecture_root=architecture_root,
                 selected_module=selected_module,
                 role_name=role_name,
@@ -607,10 +590,7 @@ class _RecipeGenerationService:
 
             expected_files = _module_relative_rendered_paths(
                 rendered_files,
-                target_relative_path=domain.normalize_target_path(
-                    project_root,
-                    target_path,
-                ),
+                target_path=target_path,
             )
             actual_files = _actual_files_for(
                 module_path,
@@ -669,7 +649,7 @@ class _RecipeGenerationService:
         )
         return domain.RecipeBenchReport(
             project_root=project_root,
-            recipe_root=self._repository.root_path,
+            recipe_root=self._recipe_root,
             architecture_root=architecture_root,
             selected_module=selected_module,
             role_name=role_name,
@@ -689,7 +669,7 @@ class _RecipeGenerationService:
         except RuntimeError as exc:
             return domain.RecipeBenchAllReport(
                 project_root=project_root,
-                recipe_root=self._repository.root_path,
+                recipe_root=self._recipe_root,
                 architecture_root=Path(),
                 classification="local",
                 violations=(
@@ -711,18 +691,18 @@ class _RecipeGenerationService:
         )
         return domain.RecipeBenchAllReport(
             project_root=project_root,
-            recipe_root=self._repository.root_path,
+            recipe_root=self._recipe_root,
             architecture_root=architecture_root,
             classification=_bench_all_classification(reports),
             reports=reports,
             violations=violations,
         )
 
-    def _summarize_recipe(self, recipe: domain.Recipe) -> domain.RecipeSummary:
+    def _summarize_recipe(self, recipe: Scaffold) -> domain.RecipeSummary:
         return {
             "name": recipe.name,
             "description": recipe.description,
-            "role": recipe.role.value,
+            "role": recipe.role,
             "ladder": recipe.ladder.summary(),
             "includes": recipe.includes,
             "archetypes": recipe.archetypes,
@@ -858,7 +838,7 @@ def _load_recipe_generation_settings() -> domain.RecipeGenerationConfig:
 
 
 def _check_variables_for(
-    recipe: domain.Recipe,
+    recipe: Scaffold,
     variables: Mapping[str, str],
 ) -> dict[str, str]:
     check_variables = dict(variables)
@@ -872,18 +852,18 @@ def _check_variables_for(
 
 
 def _sample_variables_for_rendering(
-    recipe: domain.Recipe,
-    recipes_by_name: Mapping[str, domain.Recipe],
+    recipe: Scaffold,
+    recipes_by_name: Mapping[str, Scaffold],
 ) -> dict[str, str]:
     variables: dict[str, str] = {}
-    for input_spec in _input_specs_for(recipe, recipes_by_name):
+    for input_spec in _composed_recipe_inputs(recipe, recipes_by_name):
         if not input_spec.required or input_spec.name in variables:
             continue
         variables[input_spec.name] = _sample_value_for(input_spec)
     return variables
 
 
-def _sample_value_for(input_spec: domain.RecipeInputSpec) -> str:
+def _sample_value_for(input_spec: Any) -> str:
     if input_spec.choices:
         return input_spec.choices[0]
     if input_spec.value_type == "list":
@@ -911,14 +891,14 @@ def _paths_from_preview_files(
     return create_paths, skipped_paths
 
 
-def _recipes_by_name(recipes: tuple[domain.Recipe, ...]) -> dict[str, domain.Recipe]:
+def _recipes_by_name(recipes: tuple[Scaffold, ...]) -> dict[str, Scaffold]:
     return {recipe.name: recipe for recipe in recipes}
 
 
 def _recipe_for_role(
     role_name: str,
-    recipes_by_name: Mapping[str, domain.Recipe],
-) -> domain.Recipe | None:
+    recipes_by_name: Mapping[str, Scaffold],
+) -> Scaffold | None:
     if "+" not in role_name:
         return recipes_by_name.get(role_name)
 
@@ -928,14 +908,14 @@ def _recipe_for_role(
     if any(include_name not in recipes_by_name for include_name in include_names):
         return None
     if any(
-        recipes_by_name[include_name].role is domain.RecipeRole.CONTAINER
+        recipes_by_name[include_name].role == "container"
         for include_name in include_names
     ):
         return None
-    return domain.Recipe(
+    return Scaffold(
         name="composed-role",
-        root_path=Path("."),
-        role=domain.RecipeRole.ARCHETYPE,
+        source_root=Path("."),
+        role="archetype",
         description="Composed recipe role",
         ladder=domain.RecipeLadder(
             family="composed",
@@ -946,61 +926,23 @@ def _recipe_for_role(
     )
 
 
-def _recipes_for_rendering(
-    recipe: domain.Recipe,
-    recipes_by_name: Mapping[str, domain.Recipe],
-) -> tuple[domain.Recipe, ...]:
-    return _included_recipes_for(recipe, recipes_by_name, trail=()) + (recipe,)
-
-
-def _included_recipes_for(
-    recipe: domain.Recipe,
-    recipes_by_name: Mapping[str, domain.Recipe],
-    *,
-    trail: tuple[str, ...],
-) -> tuple[domain.Recipe, ...]:
-    recipes: list[domain.Recipe] = []
-    for include_name in recipe.includes:
-        if include_name in trail:
-            cycle = " -> ".join(trail + (include_name,))
-            raise ValueError(f"Recipe include cycle: {cycle}")
-        included_recipe = recipes_by_name.get(include_name)
-        if included_recipe is None:
-            raise ValueError(f"Recipe include not found: {include_name}")
-        recipes.extend(
-            _included_recipes_for(
-                included_recipe,
-                recipes_by_name,
-                trail=trail + (recipe.name,),
-            )
-        )
-        recipes.append(included_recipe)
-    return tuple(recipes)
-
-
-def _input_specs_for(
-    recipe: domain.Recipe,
-    recipes_by_name: Mapping[str, domain.Recipe],
-) -> tuple[domain.RecipeInputSpec, ...]:
-    input_specs: list[domain.RecipeInputSpec] = []
-    for included_recipe in _included_recipes_for(recipe, recipes_by_name, trail=()):
-        input_specs.extend(included_recipe.inputs)
-    input_specs.extend(recipe.inputs)
-    return tuple(input_specs)
+def _composed_recipe_inputs(
+    recipe: Scaffold,
+    recipes_by_name: Mapping[str, Scaffold],
+) -> tuple[Any, ...]:
+    composed_recipes = scaffolding.compose(recipe, tuple(recipes_by_name.values()))
+    return tuple(input_spec for scaffold in composed_recipes for input_spec in scaffold.inputs)
 
 
 def _composed_ladder_for(
-    recipe: domain.Recipe,
-    recipes_by_name: Mapping[str, domain.Recipe],
-) -> domain.RecipeLadder:
-    slots_by_name: dict[str, domain.RecipeSlot] = {}
-    for included_recipe in _included_recipes_for(recipe, recipes_by_name, trail=()):
-        for slot in included_recipe.ladder.slots:
-            slots_by_name[slot.name.value] = slot
-    for slot in recipe.ladder.slots:
-        slots_by_name[slot.name.value] = slot
-
-    return domain.RecipeLadder(
+    recipe: Scaffold,
+    recipes_by_name: Mapping[str, Scaffold],
+) -> Any:
+    slots_by_name: dict[str, Any] = {}
+    for composed_recipe in scaffolding.compose(recipe, tuple(recipes_by_name.values())):
+        for slot in composed_recipe.ladder.slots:
+            slots_by_name[_slot_name(slot)] = slot
+    return _ComposedLadder(
         family=recipe.ladder.family,
         rung=recipe.ladder.rung,
         slots=tuple(slots_by_name.values()),
@@ -1008,13 +950,27 @@ def _composed_ladder_for(
     )
 
 
+def _slot_name(slot: Any) -> str:
+    name = slot.name
+    return name.value if hasattr(name, "value") else str(name)
+
+
+def _slot_state(slot: Any) -> str:
+    state = slot.state
+    return state.value if hasattr(state, "value") else str(state)
+
+
+def _relative_path_text(path: Path | str) -> str:
+    return Path(path).as_posix().strip("/")
+
+
 def _validate_recipe_catalog(
     violations: list[domain.RecipeCheckViolation],
-    recipes: tuple[domain.Recipe, ...],
-    recipes_by_name: Mapping[str, domain.Recipe],
+    recipes: tuple[Scaffold, ...],
+    recipes_by_name: Mapping[str, Scaffold],
 ) -> None:
     containers = tuple(
-        recipe for recipe in recipes if recipe.role is domain.RecipeRole.CONTAINER
+        recipe for recipe in recipes if recipe.role == "container"
     )
     if not containers:
         violations.append(
@@ -1051,7 +1007,7 @@ def _validate_recipe_catalog(
     )
     _validate_includes(violations, recipes, recipes_by_name)
     archetype_names = {
-        recipe.name for recipe in recipes if recipe.role is domain.RecipeRole.ARCHETYPE
+        recipe.name for recipe in recipes if recipe.role == "archetype"
     }
     declared_archetype_names = set(container.archetypes)
     missing_archetype_names = tuple(sorted(archetype_names - declared_archetype_names))
@@ -1072,7 +1028,7 @@ def _validate_config_roles_map(
     violations: list[domain.RecipeCheckViolation],
     *,
     roles_map: Mapping[str, str],
-    recipes_by_name: Mapping[str, domain.Recipe],
+    recipes_by_name: Mapping[str, Scaffold],
 ) -> None:
     if not roles_map:
         violations.append(
@@ -1093,8 +1049,8 @@ def _validate_config_roles_map(
 
 def _validate_includes(
     violations: list[domain.RecipeCheckViolation],
-    recipes: tuple[domain.Recipe, ...],
-    recipes_by_name: Mapping[str, domain.Recipe],
+    recipes: tuple[Scaffold, ...],
+    recipes_by_name: Mapping[str, Scaffold],
 ) -> None:
     for recipe in recipes:
         for include_name in recipe.includes:
@@ -1108,7 +1064,7 @@ def _validate_includes(
                     )
                 )
                 continue
-            if included_recipe.role is domain.RecipeRole.CONTAINER:
+            if included_recipe.role == "container":
                 violations.append(
                     domain.RecipeCheckViolation(
                         code="container_include_recipe",
@@ -1123,7 +1079,7 @@ def _validate_archetypes(
     *,
     recipe_name: str,
     archetypes: tuple[str, ...],
-    recipes_by_name: Mapping[str, domain.Recipe],
+    recipes_by_name: Mapping[str, Scaffold],
 ) -> None:
     for archetype_name in archetypes:
         archetype = recipes_by_name.get(archetype_name)
@@ -1136,7 +1092,7 @@ def _validate_archetypes(
                 )
             )
             continue
-        if archetype.role is not domain.RecipeRole.ARCHETYPE:
+        if archetype.role != "archetype":
             violations.append(
                 domain.RecipeCheckViolation(
                     code="non_archetype_recipe",
@@ -1154,7 +1110,7 @@ def _validate_roles_map(
     *,
     recipe_name: str,
     roles_map: Mapping[str, str],
-    recipes_by_name: Mapping[str, domain.Recipe],
+    recipes_by_name: Mapping[str, Scaffold],
 ) -> None:
     for module_name, role_name in roles_map.items():
         role_recipe = _recipe_for_role(role_name, recipes_by_name)
@@ -1170,7 +1126,7 @@ def _validate_roles_map(
                 )
             )
             continue
-        if "+" not in role_name and role_recipe.role is not domain.RecipeRole.ARCHETYPE:
+        if "+" not in role_name and role_recipe.role != "archetype":
             violations.append(
                 domain.RecipeCheckViolation(
                     code="non_archetype_role_recipe",
@@ -1194,36 +1150,31 @@ def _architecture_root(project_root: Path) -> Path:
 
 def _expected_files_for(
     service: _RecipeGenerationService,
-    recipe: domain.Recipe,
+    recipe: Scaffold,
     *,
-    recipes_by_name: Mapping[str, domain.Recipe],
+    recipes_by_name: Mapping[str, Scaffold],
     project_root: Path,
     target_path: Path,
 ) -> set[str]:
-    target_relative_path = domain.normalize_target_path(project_root, target_path)
     rendered_files = service._render_files(
         recipe,
         recipes_by_name=recipes_by_name,
         project_root=project_root,
-        target_path=target_relative_path.value,
+        target_path=target_path,
         variables=_sample_variables_for_rendering(recipe, recipes_by_name),
     )
-    prefix = target_relative_path.as_posix() + "/"
-    return {
-        rendered_file["relative_path"].as_posix().removeprefix(prefix)
-        for rendered_file in rendered_files
-    }
+    return set(_module_relative_rendered_paths(rendered_files, target_path=target_path))
 
 
 def _module_relative_rendered_paths(
-    rendered_files: tuple[domain.RenderedFile, ...],
+    rendered_files: tuple[RenderedScaffoldFile, ...],
     *,
-    target_relative_path: domain.RelativePath,
+    target_path: Path | str,
 ) -> tuple[str, ...]:
-    prefix = target_relative_path.as_posix() + "/"
+    prefix = _relative_path_text(target_path) + "/"
     return tuple(
         sorted(
-            rendered_file["relative_path"].as_posix().removeprefix(prefix)
+            rendered_file.relative_path.as_posix().removeprefix(prefix)
             for rendered_file in rendered_files
         )
     )
@@ -1532,9 +1483,9 @@ def _module_file_contents(
 
 
 def _drift_files_for(
-    recipe: domain.Recipe,
+    recipe: Scaffold,
     *,
-    recipes_by_name: Mapping[str, domain.Recipe],
+    recipes_by_name: Mapping[str, Scaffold],
     expected_files: set[str],
     actual_files: set[str],
 ) -> tuple[tuple[str, ...], tuple[str, ...]]:
@@ -1552,22 +1503,23 @@ def _drift_files_for(
     forbidden_prefixes: set[str] = set()
 
     for slot in ladder.slots:
-        slot_path = slot.name.value
-        if slot.state is domain.RecipeSlotState.ABSENT:
+        slot_path = _slot_name(slot)
+        slot_state = _slot_state(slot)
+        if slot_state == "absent":
             forbidden_file_stems.add(slot_path)
             forbidden_prefixes.add(f"{slot_path}/")
             continue
 
-        if slot.state is domain.RecipeSlotState.FILE:
+        if slot_state == "file":
             forbidden_prefixes.add(f"{slot_path}/")
             continue
 
-        if slot.state is domain.RecipeSlotState.PACKAGE:
+        if slot_state == "package":
             allowed_prefixes.add(f"{slot_path}/")
             forbidden_file_stems.add(slot_path)
             continue
 
-        if slot.state is domain.RecipeSlotState.SPLIT_FILES:
+        if slot_state == "split-files":
             allowed_prefixes.add(f"{slot_path}/")
             forbidden_file_stems.add(slot_path)
             for slot_file in slot.files:
@@ -1577,10 +1529,10 @@ def _drift_files_for(
                 if Path(slot_file).suffix:
                     forbidden_prefixes.add(
                         f"{slot_path}/{Path(slot_file).with_suffix('').as_posix()}/"
-                    )
+            )
             continue
 
-        if slot.state is domain.RecipeSlotState.SPLIT_PACKAGES:
+        if slot_state == "split-packages":
             allowed_prefixes.add(f"{slot_path}/")
             forbidden_file_stems.add(slot_path)
             for slot_package in slot.packages:
@@ -1667,7 +1619,7 @@ def _should_skip_actual_file(
         relative_candidates.append(path.relative_to(project_root))
 
     return any(
-        config.should_skip(domain.RelativePath(relative_path))
+        config.should_skip(relative_path)
         for relative_path in relative_candidates
     )
 
@@ -2220,4 +2172,4 @@ RecipeGenerationReport = domain.RecipeGenerationReport
 RecipePreviewFile = domain.RecipePreviewFile
 RecipePreviewStatus = domain.RecipePreviewStatus
 RecipeSummary = domain.RecipeSummary
-parse_variables = domain.parse_variables
+parse_variables = scaffolding.parse_variables
