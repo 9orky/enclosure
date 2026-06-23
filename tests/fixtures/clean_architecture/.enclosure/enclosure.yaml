@@ -12,15 +12,15 @@ architecture:
     allowed_imports_crossing_types: [module]
   boundaries:
     tags:
-      - { name: module, match: "*/*", except: ["*/__init__"], exclude: [] }
-      - { name: domain, match: "*/*/domain", except: [], exclude: [] }
-      - { name: application, match: "*/*/application", except: [], exclude: [] }
+      - { name: _t_module, match: "*/*", except: ["*/__init__"], exclude: [] }
+      - { name: _t_domain, match: "*/*/domain", except: [], exclude: [] }
+      - { name: _t_application, match: "*/*/application", except: [], exclude: [] }
     rules:
       - { source: "*/*/domain", disallow: ["*/*/application"], allow: [], allow_same_match: false }
     flow:
-      layers: [application, domain]
+      layers: [_t_application, _t_domain]
       realms:
-        - { name: module, module_tag: module }
+        - { name: _r_module, module_tag: _t_module }
       analyzers: [backward-flow, no-cycles]
   map:
     top: -1

@@ -17,21 +17,21 @@ architecture:
     allowed_imports_crossing_types: [module]
   boundaries:
     tags:
-      - { name: module, match: "*/*", except: ["*/__init__"], exclude: [] }
-      - { name: module_api, match: "*/*/__init__", except: [], exclude: [] }
-      - { name: domain, match: "*/*/domain", except: [], exclude: [] }
-      - { name: application, match: "*/*/application", except: [], exclude: [] }
-      - { name: infrastructure, match: "*/*/infrastructure", except: [], exclude: [] }
-      - { name: ui, match: "*/*/ui", except: [], exclude: [] }
+      - { name: _t_module, match: "*/*", except: ["*/__init__"], exclude: [] }
+      - { name: _t_module_api, match: "*/*/__init__", except: [], exclude: [] }
+      - { name: _t_domain, match: "*/*/domain", except: [], exclude: [] }
+      - { name: _t_application, match: "*/*/application", except: [], exclude: [] }
+      - { name: _t_infrastructure, match: "*/*/infrastructure", except: [], exclude: [] }
+      - { name: _t_ui, match: "*/*/ui", except: [], exclude: [] }
     rules:
       - { source: "*/*", disallow: ["*/*"], allow: ["*/*/__init__"], allow_same_match: true }
       - { source: "*/*/domain", disallow: ["*/*/application", "*/*/infrastructure", "*/*/ui"], allow: [], allow_same_match: false }
       - { source: "*/*/application", disallow: ["*/*/ui"], allow: [], allow_same_match: false }
       - { source: "*/*/ui", disallow: ["*/*/infrastructure"], allow: [], allow_same_match: false }
     flow:
-      layers: [ui, application, infrastructure, domain]
+      layers: [_t_ui, _t_application, _t_infrastructure, _t_domain]
       realms:
-        - { name: module, module_tag: module }
+        - { name: _r_module, module_tag: _t_module }
       analyzers: [backward-flow, no-cycles]
   map:
     top: -1

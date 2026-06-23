@@ -40,5 +40,6 @@ def test_coherence_reports_cross_stream_dependency_and_seam_findings(
     assert "- Streams found: 2" in result.stdout
     assert "- Findings: 4" in result.stdout
     assert "sales/ledger dependency-pressure: cross-stream dependencies" in result.stdout
-    assert "sales/report flow: domain -> application" in result.stdout
+    assert "sales/report flow: _t_domain -> _t_application" in result.stdout
+    assert "sales/report flow: domain -> application" not in result.stdout
     assert "sales/report seam-use: sales/report -> sales/ledger" in result.stdout

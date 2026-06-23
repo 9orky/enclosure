@@ -17,7 +17,8 @@ def test_map_reports_module_layer_mapping_and_clean_dependency_counts(
     assert "- Modules found: 1" in result.stdout
     assert "- Cross-module dependencies: 0" in result.stdout
     assert "- Unknown files: 0" in result.stdout
-    assert "- sales/report: 3 file(s) (application 1, domain 1)" in result.stdout
+    assert "- sales/report: 3 file(s) (_t_application 1, _t_domain 1)" in result.stdout
+    assert "(application 1, domain 1)" not in result.stdout
 
 
 def test_map_still_reports_module_mapping_when_project_has_violations(
@@ -29,7 +30,8 @@ def test_map_still_reports_module_mapping_when_project_has_violations(
 
     assert result.returncode == 0, result.stderr
     assert "- Modules found: 1" in result.stdout
-    assert "- sales/report: 3 file(s) (application 1, domain 1)" in result.stdout
+    assert "- sales/report: 3 file(s) (_t_application 1, _t_domain 1)" in result.stdout
+    assert "(application 1, domain 1)" not in result.stdout
     assert "- Unknown files: 0" in result.stdout
 
 
@@ -44,8 +46,12 @@ def test_map_reports_cross_module_dependencies_hotspots_and_unknown_files(
     assert "- Modules found: 2" in result.stdout
     assert "- Cross-module dependencies: 1" in result.stdout
     assert "- Unknown files: 1" in result.stdout
-    assert "- sales/ledger: 2 file(s) (application 1)" in result.stdout
-    assert "- sales/report: 5 file(s) (application 1, domain 1, infrastructure 1, ui 1)" in result.stdout
+    assert "- sales/ledger: 2 file(s) (_t_application 1)" in result.stdout
+    assert (
+        "- sales/report: 5 file(s) "
+        "(_t_application 1, _t_domain 1, _t_infrastructure 1, _t_ui 1)"
+    ) in result.stdout
+    assert "(application 1" not in result.stdout
     assert "- sales/report -> sales/ledger: 1" in result.stdout
     assert "- unknown-files: unmapped" in result.stdout
     assert "Unknown Files:" in result.stdout

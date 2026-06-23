@@ -59,3 +59,7 @@ def test_boundaries_report_cross_module_ui_and_domain_violations(
         "blocked by */*/ui -> */*/infrastructure"
     ) in result.stdout
     assert "Cycle Violations:" in result.stdout
+    assert (
+        "- sales/report/application -> sales/report/domain -> "
+        "[sales/report/application]  no-cycles"
+    ) in result.stdout

@@ -4,11 +4,11 @@ architecture:
   exclusions: [__init__.py]
   boundaries:
     tags:
-      - { name: module, match: "*/*", except: ["*/__init__"], exclude: [] }
+      - { name: _t_module, match: "*/*", except: ["*/__init__"], exclude: [] }
     rules: []
     flow:
       realms:
-        - { name: module, module_tag: module }
+        - { name: _r_module, module_tag: _t_module }
   map:
     top: -1
 workspace:
