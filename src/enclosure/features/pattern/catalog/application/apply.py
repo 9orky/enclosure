@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from ..domain import manifest, report
+from enclosure.shared.scaffolding import Scaffold
+
+from ..domain import report
 from . import preview
 
 
@@ -10,7 +12,7 @@ def apply_roles_map(
     roles_map: Mapping[str, str],
     patterns_by_name: Mapping[
         str,
-        manifest.Pattern,
+        Scaffold,
     ],
 ) -> tuple[report.PatternCatalogViolation, ...]:
     if not roles_map:
@@ -38,8 +40,7 @@ def apply_roles_map(
             )
         elif (
             "+" not in role_name
-            and role_pattern.role
-            is not manifest.PatternRole.ARCHETYPE
+            and role_pattern.role != "archetype"
         ):
             violations.append(
                 _violation(

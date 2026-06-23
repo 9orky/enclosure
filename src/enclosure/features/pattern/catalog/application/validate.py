@@ -3,9 +3,11 @@ from __future__ import annotations
 from collections.abc import Mapping
 from pathlib import Path
 
-from ..domain import manifest, report
-from ..infrastructure import repository, workspace
 from enclosure.shared.config import settings
+from enclosure.shared.scaffolding import Scaffold, ScaffoldError, scaffolding
+
+from ..domain import report
+from ..infrastructure import workspace
 from . import apply
 
 
@@ -14,12 +16,11 @@ def validate_catalog(
     pattern_root: Path,
     roles_map: Mapping[str, str],
 ) -> report.PatternCatalogReport:
-    repository = _repository(pattern_root)
     try:
-        patterns = repository.find_all()
-    except ValueError as exc:
+        patterns = scaffolding.load_all(pattern_root)
+    except ScaffoldError as exc:
         return report.PatternCatalogReport(
-            pattern_root=repository.root_path,
+            pattern_root=pattern_root,
             patterns_discovered=0,
             patterns_checked=0,
             violations=(_violation("invalid_manifest", str(exc), ""),),
@@ -34,7 +35,7 @@ def validate_catalog(
         )
     )
     return report.PatternCatalogReport(
-        pattern_root=repository.root_path,
+        pattern_root=pattern_root,
         patterns_discovered=len(patterns),
         patterns_checked=len(patterns),
         violations=violations,
@@ -50,30 +51,23 @@ def validate_current_catalog() -> report.PatternCatalogReport:
     )
 
 
-def _repository(
-    pattern_root: Path,
-) -> repository.FilePatternRepository:
-    return repository.FilePatternRepository(pattern_root)
-
-
 def _patterns_by_name(
-    patterns: tuple[manifest.Pattern, ...],
-) -> dict[str, manifest.Pattern]:
+    patterns: tuple[Scaffold, ...],
+) -> dict[str, Scaffold]:
     return {pattern.name: pattern for pattern in patterns}
 
 
 def _catalog_violations(
-    patterns: tuple[manifest.Pattern, ...],
+    patterns: tuple[Scaffold, ...],
     patterns_by_name: Mapping[
         str,
-        manifest.Pattern,
+        Scaffold,
     ],
 ) -> tuple[report.PatternCatalogViolation, ...]:
     containers = tuple(
         pattern
         for pattern in patterns
-        if pattern.role
-        is manifest.PatternRole.CONTAINER
+        if pattern.role == "container"
     )
     if len(containers) != 1:
         code = "missing_container" if not containers else "multiple_containers"
@@ -94,8 +88,7 @@ def _catalog_violations(
                 _violation("missing_archetype_pattern", message, container.name)
             )
         elif (
-            archetype.role
-            is not manifest.PatternRole.ARCHETYPE
+            archetype.role != "archetype"
         ):
             violations.append(
                 _violation(
@@ -109,8 +102,7 @@ def _catalog_violations(
     missing_archetypes = sorted(
         pattern.name
         for pattern in patterns
-        if pattern.role
-        is manifest.PatternRole.ARCHETYPE
+        if pattern.role == "archetype"
         and pattern.name not in declared_archetypes
     )
     if missing_archetypes:
@@ -126,10 +118,10 @@ def _catalog_violations(
 
 
 def _include_violations(
-    patterns: tuple[manifest.Pattern, ...],
+    patterns: tuple[Scaffold, ...],
     patterns_by_name: Mapping[
         str,
-        manifest.Pattern,
+        Scaffold,
     ],
 ) -> tuple[report.PatternCatalogViolation, ...]:
     violations: list[report.PatternCatalogViolation] = []
@@ -145,8 +137,7 @@ def _include_violations(
                     )
                 )
             elif (
-                included_pattern.role
-                is manifest.PatternRole.CONTAINER
+                included_pattern.role == "container"
             ):
                 violations.append(
                     _violation(

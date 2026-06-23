@@ -2,15 +2,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ..domain import manifest, reference
-from ..infrastructure import repository, templates, workspace
+from enclosure.shared.scaffolding import Scaffold, scaffolding
+
+from ..domain import reference
+from ..infrastructure import workspace
 
 
 def list_patterns(
     *,
     pattern_root: Path,
 ) -> tuple[reference.PatternSummary, ...]:
-    return tuple(_summarize(pattern) for pattern in _repository(pattern_root).find_all())
+    return tuple(_summarize(pattern) for pattern in scaffolding.load_all(pattern_root))
 
 
 def list_current_patterns(
@@ -24,30 +26,24 @@ def show_pattern(
     pattern_root: Path,
 ) -> reference.PatternSummary | None:
     try:
-        return _summarize(_repository(pattern_root).get_by_name(pattern_name))
+        return _summarize(scaffolding.load(pattern_root, pattern_name))
     except LookupError:
         return None
 
 
-def _repository(
-    pattern_root: Path,
-) -> repository.FilePatternRepository:
-    return repository.FilePatternRepository(pattern_root)
-
-
 def _summarize(
-    pattern: manifest.Pattern,
+    pattern: Scaffold,
 ) -> reference.PatternSummary:
     return {
         "name": pattern.name,
         "description": pattern.description,
-        "role": pattern.role.value,
-        "ladder": reference.ladder_summary(pattern.ladder),
+        "role": pattern.role,
+        "ladder": pattern.ladder.summary(),
         "includes": pattern.includes,
         "archetypes": pattern.archetypes,
         "roles_map": pattern.roles_map,
         "inputs": tuple(input_spec.name for input_spec in pattern.inputs),
-        "files": templates.pattern_template_targets(pattern),
+        "files": tuple(pattern_file.target for pattern_file in pattern.files),
     }
 
 
