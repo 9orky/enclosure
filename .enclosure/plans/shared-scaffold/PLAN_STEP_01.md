@@ -1,11 +1,10 @@
 # Step 01: Standalone Shared Scaffolding Package
 
-Status: Revision planned; pending plan acceptance
+Status: Complete; stable; closed for Step 02 handoff.
 
 ## Target Shape
 
-This step describes the target shape after the accepted scaffolding fixes are
-implemented. It is not a description of the current partially implemented code.
+This step describes the implemented and verified shared scaffolding package.
 
 The Step 01 file layout, class names, properties, methods, relationships, and
 public seam are owned by [UML.md](UML.md). Do not duplicate the file tree here.
@@ -63,28 +62,28 @@ the UML.
 
 ## Work Items
 
-- Implement the package layout exactly as defined in [UML.md](UML.md).
-- Keep `__init__.py` export-only.
-- Export only the `scaffolding` facade instance and required DTOs/errors named by the UML public seam.
-- Keep nested manifest/value-object DTOs internal unless the UML is first updated.
-- Keep internal class behavior stateless with respect to caller roots; pass
+- [x] Implement the package layout exactly as defined in [UML.md](UML.md).
+- [x] Keep `__init__.py` export-only.
+- [x] Export only the `scaffolding` facade instance and required DTOs/errors named by the UML public seam.
+- [x] Keep nested manifest/value-object DTOs internal unless the UML is first updated.
+- [x] Keep internal class behavior stateless with respect to caller roots; pass
   `scaffold_root` and `target_root` as operation inputs through the facade.
-- Do not introduce standalone helper functions. Private behavior belongs to
+- [x] Do not introduce standalone helper functions. Private behavior belongs to
   private classes and private methods.
-- Implement behavior directly inside `shared.scaffolding`; do not delegate to existing feature-module repositories, renderers, materializers, config loaders, or manifest parsers.
-- Implement scaffold manifest discovery and YAML validation for the existing
+- [x] Implement behavior directly inside `shared.scaffolding`; do not delegate to existing feature-module repositories, renderers, materializers, config loaders, or manifest parsers.
+- [x] Implement scaffold manifest discovery and YAML validation for the existing
   `recipe.yaml` file name, with the filename owned in `_ScaffoldManifestRepository`.
-- Rename the public scaffold source-folder field to `source_root`; keep it
+- [x] Rename the public scaffold source-folder field to `source_root`; keep it
   distinct from caller-provided `scaffold_root`.
-- Implement relative path validation without exporting path value objects.
-- Implement include traversal, missing include failures, cycle detection, and
+- [x] Implement relative path validation without exporting path value objects.
+- [x] Implement include traversal, missing include failures, cycle detection, and
   ordered scaffold composition in `_ScaffoldComposer`, exposed through
   `scaffolding.compose(...)` and used by `scaffolding.render(...)`.
-- Implement variable parsing, composed input resolution, target defaults, and
+- [x] Implement variable parsing, composed input resolution, target defaults, and
   naming context behind the public render behavior.
-- Implement template target/content rendering behind the public render behavior.
-- Implement selective file writes behind the public write behavior.
-- Add standalone tests through the package-root seam only.
+- [x] Implement template target/content rendering behind the public render behavior.
+- [x] Implement selective file writes behind the public write behavior.
+- [x] Add standalone tests through the package-root seam only.
 
 ## Acceptance
 
@@ -101,14 +100,32 @@ the UML.
 
 ## Verification
 
-- [ ] Run standalone shared scaffolding tests.
-- [ ] Compare Step 01 implementation against [UML.md](UML.md).
-- [ ] Run an import scan proving `src/enclosure/shared/scaffolding/` has no imports from existing feature modules, recipe modules, pattern modules, or scaffolding consumers.
-- [ ] Run a forbidden-delegation scan proving Step 01 does not call old recipe/pattern repository, renderer, materializer, config loader, or manifest parser symbols.
-- [ ] Verify valid manifest loading through the package-root seam.
-- [ ] Verify invalid YAML, non-mapping YAML, unsupported `schema_version`, and unsafe paths fail loudly.
-- [ ] Verify `scaffold_root`, `target_root`, and `source_root` semantics through the package-root seam.
-- [ ] Verify include composition order, missing include errors, and cycle detection through the package-root seam.
-- [ ] Verify variable parsing and composed input resolution through the package-root seam.
-- [ ] Verify target and content rendering through the package-root seam.
-- [ ] Verify selective writes through the package-root seam.
+- [x] Run standalone shared scaffolding tests.
+- [x] Compare Step 01 implementation against [UML.md](UML.md).
+- [x] Run an import scan proving `src/enclosure/shared/scaffolding/` has no imports from existing feature modules, recipe modules, pattern modules, or scaffolding consumers.
+- [x] Run a forbidden-delegation scan proving Step 01 does not call old recipe/pattern repository, renderer, materializer, config loader, or manifest parser symbols.
+- [x] Verify valid manifest loading through the package-root seam.
+- [x] Verify invalid YAML, non-mapping YAML, unsupported `schema_version`, and unsafe paths fail loudly.
+- [x] Verify `scaffold_root`, `target_root`, and `source_root` semantics through the package-root seam.
+- [x] Verify include composition order, missing include errors, and cycle detection through the package-root seam.
+- [x] Verify variable parsing and composed input resolution through the package-root seam.
+- [x] Verify target and content rendering through the package-root seam.
+- [x] Verify selective writes through the package-root seam.
+
+## Completion
+
+Step 01 is closed. `enclosure.shared.scaffolding` is stable for Step 02 and
+must be treated as complete during workspace recipe integration.
+
+Final checks:
+
+- `uv run pytest tests/shared/scaffolding`
+- `uv run pytest`
+- `uv run ruff check src tests`
+- public export check for only `RenderedScaffoldFile`, `Scaffold`,
+  `ScaffoldError`, and `scaffolding`
+- AST shape check proving no module-level functions in
+  `src/enclosure/shared/scaffolding`
+- forbidden import/delegation scan proving no feature, recipe, or pattern
+  dependency from shared scaffolding
+- real `.enclosure/recipes` smoke render through the package-root seam

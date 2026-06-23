@@ -2,30 +2,37 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from . import manifest as _manifest
-from . import render as _render
-from . import write as _write
-from .composition import compose_scaffolds
-from .context import parse_variables as _parse_variables
+from .composition import _ScaffoldComposer
+from .context import _ScaffoldVariableParser
+from .manifest import _ScaffoldManifestRepository
+from .render import _ScaffoldRenderer
 from .scaffold import RenderedScaffoldFile, Scaffold
+from .write import _ScaffoldRenderedFileWriter
 
 
 class ScaffoldFacade:
+    def __init__(self) -> None:
+        self._repository = _ScaffoldManifestRepository()
+        self._variable_parser = _ScaffoldVariableParser()
+        self._composer = _ScaffoldComposer()
+        self._renderer = _ScaffoldRenderer()
+        self._writer = _ScaffoldRenderedFileWriter()
+
     def load_all(self, scaffold_root: Path) -> tuple[Scaffold, ...]:
-        return _manifest.find_all(scaffold_root)
+        return self._repository.find_all(scaffold_root)
 
     def load(self, scaffold_root: Path, name: str) -> Scaffold:
-        return _manifest.get_by_name(scaffold_root, name)
+        return self._repository.get_by_name(scaffold_root, name)
 
     def parse_variables(self, values: tuple[str, ...]) -> dict[str, str]:
-        return _parse_variables(values)
+        return self._variable_parser.parse(values)
 
     def compose(
         self,
         scaffold: Scaffold,
         scaffolds: tuple[Scaffold, ...],
     ) -> tuple[Scaffold, ...]:
-        return compose_scaffolds(scaffold, scaffolds)
+        return self._composer.compose(scaffold, scaffolds)
 
     def render(
         self,
@@ -35,11 +42,11 @@ class ScaffoldFacade:
         target_path: Path | str,
         variables: dict[str, str],
     ) -> tuple[RenderedScaffoldFile, ...]:
-        return _render.render(scaffold, scaffolds, target_root, target_path, variables)
+        return self._renderer.render(scaffold, scaffolds, target_root, target_path, variables)
 
     def write(
         self,
         rendered_files: tuple[RenderedScaffoldFile, ...],
         create_paths: tuple[Path, ...],
     ) -> None:
-        _write.write(rendered_files, create_paths)
+        self._writer.write(rendered_files, create_paths)

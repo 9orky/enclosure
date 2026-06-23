@@ -3,12 +3,12 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from enclosure.shared import naming
 
 from .errors import ScaffoldError
-from .relative_path import _RelativePath, _relative_path_text, _relative_path_value
+from .relative_path import _ScaffoldRelativePath, _ScaffoldRelativePathNormalizer
 
 _SCAFFOLD_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 _VARIABLE_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -55,21 +55,8 @@ class Scaffold:
     files: tuple["_ScaffoldFile", ...] = ()
 
     def __post_init__(self) -> None:
-        normalized_name = self.name.strip()
-        if not normalized_name:
-            raise ScaffoldError("Scaffold names must not be empty")
-        name_path = Path(normalized_name)
-        if (
-            len(name_path.parts) != 1
-            or name_path.parts[0] in {".", ".."}
-            or not _SCAFFOLD_NAME_PATTERN.match(normalized_name)
-        ):
-            raise ScaffoldError("Scaffold names must be a single folder name")
-
-        normalized_role = self.role.strip()
-        if normalized_role not in _SUPPORTED_ROLES:
-            raise ScaffoldError(f"Unsupported scaffold role: {self.role}")
-
+        normalized_name = self._validate_name(self.name)
+        normalized_role = self._validate_role(self.role)
         object.__setattr__(self, "name", normalized_name)
         object.__setattr__(self, "source_root", Path(self.source_root))
         object.__setattr__(self, "role", normalized_role)
@@ -83,6 +70,26 @@ class Scaffold:
     def is_empty(self) -> bool:
         return len(self.files) == 0 and len(self.includes) == 0
 
+    @staticmethod
+    def _validate_name(name: str) -> str:
+        normalized_name = name.strip()
+        if not normalized_name:
+            raise ScaffoldError("Scaffold names must not be empty")
+        name_path = Path(normalized_name)
+        if (
+            len(name_path.parts) != 1
+            or name_path.parts[0] in {".", ".."}
+            or not _SCAFFOLD_NAME_PATTERN.match(normalized_name)
+        ):
+            raise ScaffoldError("Scaffold names must be a single folder name")
+        return normalized_name
+
+    def _validate_role(self, role: str) -> str:
+        normalized_role = role.strip()
+        if normalized_role not in _SUPPORTED_ROLES:
+            raise ScaffoldError(f"Unsupported scaffold role: {role}")
+        return normalized_role
+
 
 @dataclass(frozen=True)
 class _ScaffoldInput:
@@ -94,31 +101,48 @@ class _ScaffoldInput:
     choices: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
-        normalized_name = self.name.strip()
-        if not _VARIABLE_NAME_PATTERN.match(normalized_name):
-            raise ScaffoldError(f"Invalid scaffold input name: {self.name}")
-
-        normalized_type = self.value_type.strip() or "string"
-        if normalized_type not in _SUPPORTED_INPUT_TYPES:
-            raise ScaffoldError(f"Unsupported input type for {normalized_name}: {normalized_type}")
-        if normalized_type == "choice" and not self.choices:
-            raise ScaffoldError(f"Choice input must declare choices: {normalized_name}")
-
+        normalized_name = self._validate_name(self.name)
+        normalized_type = self._validate_type(self.value_type)
+        choices = self._validate_choices(normalized_type, tuple(self.choices))
         object.__setattr__(self, "name", normalized_name)
         object.__setattr__(self, "value_type", normalized_type)
-        object.__setattr__(self, "choices", tuple(self.choices))
+        object.__setattr__(self, "choices", choices)
+
+    def _validate_name(self, name: str) -> str:
+        normalized_name = name.strip()
+        if not _VARIABLE_NAME_PATTERN.match(normalized_name):
+            raise ScaffoldError(f"Invalid scaffold input name: {name}")
+        return normalized_name
+
+    def _validate_type(self, value_type: str) -> str:
+        normalized_type = value_type.strip() or "string"
+        if normalized_type not in _SUPPORTED_INPUT_TYPES:
+            raise ScaffoldError(f"Unsupported input type for {self.name}: {normalized_type}")
+        return normalized_type
+
+    def _validate_choices(
+        self,
+        value_type: str,
+        choices: tuple[str, ...],
+    ) -> tuple[str, ...]:
+        if value_type == "choice" and not choices:
+            raise ScaffoldError(f"Choice input must declare choices: {self.name}")
+        return choices
 
 
 @dataclass(frozen=True)
 class _ScaffoldFile:
-    source: _RelativePath
+    source: _ScaffoldRelativePath
     target: str
 
     def __post_init__(self) -> None:
-        normalized_target = self.target.strip()
+        object.__setattr__(self, "target", self._validate_target(self.target))
+
+    def _validate_target(self, target: str) -> str:
+        normalized_target = target.strip()
         if not normalized_target:
             raise ScaffoldError("Scaffold files must declare a target")
-        object.__setattr__(self, "target", normalized_target)
+        return normalized_target
 
 
 @dataclass(frozen=True)
@@ -129,13 +153,8 @@ class _ScaffoldLadder:
     declared: bool = False
 
     def __post_init__(self) -> None:
-        normalized_family = self.family.strip()
-        normalized_rung = self.rung.strip()
-        if self.declared and not normalized_family:
-            raise ScaffoldError("Scaffold ladder family must not be empty")
-        if self.declared and not normalized_rung:
-            raise ScaffoldError("Scaffold ladder rung must not be empty")
-
+        normalized_family = self._validate_family(self.family, self.declared)
+        normalized_rung = self._validate_rung(self.rung, self.declared)
         object.__setattr__(self, "family", normalized_family)
         object.__setattr__(self, "rung", normalized_rung)
         object.__setattr__(self, "slots", tuple(self.slots))
@@ -152,26 +171,34 @@ class _ScaffoldLadder:
             "slots": {slot.name: slot.summary() for slot in self.slots},
         }
 
+    def _validate_family(self, family: str, declared: bool) -> str:
+        normalized_family = family.strip()
+        if declared and not normalized_family:
+            raise ScaffoldError("Scaffold ladder family must not be empty")
+        return normalized_family
+
+    def _validate_rung(self, rung: str, declared: bool) -> str:
+        normalized_rung = rung.strip()
+        if declared and not normalized_rung:
+            raise ScaffoldError("Scaffold ladder rung must not be empty")
+        return normalized_rung
+
 
 @dataclass(frozen=True)
 class _ScaffoldSlot:
+    _paths: ClassVar[_ScaffoldRelativePathNormalizer] = _ScaffoldRelativePathNormalizer()
+
     name: str
     state: str
     files: tuple[str, ...] = ()
     packages: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
-        normalized_name = _relative_path_text(self.name)
-        normalized_state = self.state.strip()
-        if normalized_state not in _SUPPORTED_SLOT_STATES:
-            raise ScaffoldError(f"Unsupported scaffold ladder state for {normalized_name}: {self.state}")
-
-        files = tuple(_relative_path_text(file_path) for file_path in self.files)
-        packages = tuple(_relative_path_text(package_path) for package_path in self.packages)
-        if normalized_state == "split-files" and not files:
-            raise ScaffoldError(f"Scaffold slot {normalized_name} must declare files")
-        if normalized_state == "split-packages" and not packages:
-            raise ScaffoldError(f"Scaffold slot {normalized_name} must declare packages")
+        normalized_name = self._paths.text(self.name, "Scaffold ladder slot name")
+        normalized_state = self._validate_state(self.state)
+        files = self._normalize_paths(tuple(self.files))
+        packages = self._normalize_paths(tuple(self.packages))
+        self._validate_split_state(normalized_state, files, packages)
 
         object.__setattr__(self, "name", normalized_name)
         object.__setattr__(self, "state", normalized_state)
@@ -185,21 +212,65 @@ class _ScaffoldSlot:
             "packages": self.packages,
         }
 
+    def _validate_state(self, state: str) -> str:
+        normalized_state = state.strip()
+        if normalized_state not in _SUPPORTED_SLOT_STATES:
+            raise ScaffoldError(f"Unsupported scaffold ladder state for {self.name}: {state}")
+        return normalized_state
 
-def _validate_input_value(input_spec: _ScaffoldInput, value: str) -> Any:
-    if input_spec.value_type == "list":
+    def _normalize_paths(self, values: tuple[str, ...]) -> tuple[str, ...]:
+        return tuple(
+            self._paths.text(value, "Scaffold ladder slot path")
+            for value in values
+        )
+
+    def _validate_split_state(
+        self,
+        state: str,
+        files: tuple[str, ...],
+        packages: tuple[str, ...],
+    ) -> None:
+        if state == "split-files" and not files:
+            raise ScaffoldError(f"Scaffold slot {self.name} must declare files")
+        if state == "split-packages" and not packages:
+            raise ScaffoldError(f"Scaffold slot {self.name} must declare packages")
+
+
+class _ScaffoldInputValueValidator:
+    _paths: ClassVar[_ScaffoldRelativePathNormalizer] = _ScaffoldRelativePathNormalizer()
+
+    def validate(self, input_spec: _ScaffoldInput, value: str) -> object:
+        if input_spec.value_type == "list":
+            return self._parse_list(value)
+
+        normalized_value = value.strip()
+        self._validate_identifier(input_spec, normalized_value)
+        self._validate_dotted_name(input_spec, normalized_value)
+        self._validate_path(input_spec, normalized_value)
+        self._validate_slug(input_spec, normalized_value)
+        self._validate_choice(input_spec, normalized_value)
+        return normalized_value
+
+    def _validate_identifier(self, input_spec: _ScaffoldInput, value: str) -> None:
+        if input_spec.value_type == "identifier" and not _IDENTIFIER_PATTERN.match(value):
+            raise ScaffoldError(f"Scaffold variable {input_spec.name} must be an identifier")
+
+    def _validate_dotted_name(self, input_spec: _ScaffoldInput, value: str) -> None:
+        if input_spec.value_type == "dotted_name" and not _DOTTED_NAME_PATTERN.match(value):
+            raise ScaffoldError(f"Scaffold variable {input_spec.name} must be a dotted name")
+
+    def _validate_path(self, input_spec: _ScaffoldInput, value: str) -> None:
+        if input_spec.value_type == "path":
+            self._paths.normalize(value, "Scaffold variable path")
+
+    def _validate_slug(self, input_spec: _ScaffoldInput, value: str) -> None:
+        if input_spec.value_type == "slug" and value != naming.kebab_case(value):
+            raise ScaffoldError(f"Scaffold variable {input_spec.name} must be a kebab-case slug")
+
+    def _validate_choice(self, input_spec: _ScaffoldInput, value: str) -> None:
+        if input_spec.value_type == "choice" and value not in input_spec.choices:
+            choices = ", ".join(input_spec.choices)
+            raise ScaffoldError(f"Scaffold variable {input_spec.name} must be one of: {choices}")
+
+    def _parse_list(self, value: str) -> tuple[str, ...]:
         return tuple(item.strip() for item in value.split(",") if item.strip())
-
-    normalized_value = value.strip()
-    if input_spec.value_type == "identifier" and not _IDENTIFIER_PATTERN.match(normalized_value):
-        raise ScaffoldError(f"Scaffold variable {input_spec.name} must be an identifier")
-    if input_spec.value_type == "dotted_name" and not _DOTTED_NAME_PATTERN.match(normalized_value):
-        raise ScaffoldError(f"Scaffold variable {input_spec.name} must be a dotted name")
-    if input_spec.value_type == "path":
-        _relative_path_value(normalized_value)
-    if input_spec.value_type == "slug" and normalized_value != naming.kebab_case(normalized_value):
-        raise ScaffoldError(f"Scaffold variable {input_spec.name} must be a kebab-case slug")
-    if input_spec.value_type == "choice" and normalized_value not in input_spec.choices:
-        choices = ", ".join(input_spec.choices)
-        raise ScaffoldError(f"Scaffold variable {input_spec.name} must be one of: {choices}")
-    return normalized_value

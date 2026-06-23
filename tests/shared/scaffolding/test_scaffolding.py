@@ -102,6 +102,14 @@ def test_load_all_discovers_child_manifests_in_name_order(tmp_path: Path) -> Non
     assert scaffolding.load_all(tmp_path / "missing") == ()
 
 
+def test_load_rejects_nested_scaffold_names(tmp_path: Path) -> None:
+    nested_root = tmp_path / "nested"
+    _write_scaffold(nested_root, "child")
+
+    with pytest.raises(ScaffoldError, match="single folder name"):
+        scaffolding.load(tmp_path, "nested/child")
+
+
 @pytest.mark.parametrize(
     ("manifest", "message"),
     [
@@ -313,6 +321,66 @@ files:
             target_path=tmp_path.resolve() / "src" / "app" / "10_feature_component.py",
             relative_path=Path("src/app/10_feature_component.py"),
             content="feature=FeatureComponent\n",
+        ),
+    )
+
+
+def test_public_scaffold_supports_synthetic_composed_roles(tmp_path: Path) -> None:
+    _write_scaffold(
+        tmp_path,
+        "base",
+        manifest="""
+schema_version: 1
+role: fragment
+inputs:
+  component:
+    type: identifier
+    default_from: target_name
+files:
+  - source: base.tmpl
+    target: "{{ target.path }}/base_{{ component.snake }}.py"
+""",
+        files={"base.tmpl": "base={{ component.value }}\n"},
+    )
+    _write_scaffold(
+        tmp_path,
+        "extra",
+        manifest="""
+schema_version: 1
+role: fragment
+files:
+  - source: extra.tmpl
+    target: "{{ target.path }}/extra.py"
+""",
+        files={"extra.tmpl": "extra={{ target.name }}\n"},
+    )
+    scaffolds = scaffolding.load_all(tmp_path)
+    composed_role = Scaffold(
+        name="composed-role",
+        source_root=tmp_path,
+        role="archetype",
+        includes=("base", "extra"),
+    )
+
+    assert tuple(item.name for item in scaffolding.compose(composed_role, scaffolds)) == (
+        "base",
+        "extra",
+        "composed-role",
+    )
+    rendered = scaffolding.render(composed_role, scaffolds, tmp_path, "src/service", {})
+
+    assert rendered == (
+        RenderedScaffoldFile(
+            source_path=tmp_path / "base" / "base.tmpl",
+            target_path=tmp_path.resolve() / "src" / "service" / "base_service.py",
+            relative_path=Path("src/service/base_service.py"),
+            content="base=service\n",
+        ),
+        RenderedScaffoldFile(
+            source_path=tmp_path / "extra" / "extra.tmpl",
+            target_path=tmp_path.resolve() / "src" / "service" / "extra.py",
+            relative_path=Path("src/service/extra.py"),
+            content="extra=service\n",
         ),
     )
 

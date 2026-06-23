@@ -22,18 +22,32 @@ The target owner is `enclosure.shared.scaffolding`. It owns generic scaffolding 
 
 The implementation target is code and complexity reduction. The shared API should be smaller than the duplicated behavior it replaces, and each integration should remove local code rather than introduce adapters that preserve the same complexity under new names.
 
+# Current Status
+
+- Phase 1 is complete and `enclosure.shared.scaffolding` is stable for
+  integration.
+- Phase 2 is ready to start. Treat the shared scaffolding package as complete;
+  do not add shared capabilities during recipe integration unless the UML and
+  Step 01 are reopened first.
+- Phase 3 remains pending until the workspace recipe proof is complete.
+
 # Phases
 
 ## Phase 1: Fresh Shared Scaffolding Package
 
+- Status: Complete; stable.
 - Objective: create the new SSOT package for generic scaffold behavior.
 - Owner: `src/enclosure/shared/scaffolding/`.
 - Inputs: behavioral requirements observed in current recipe, pattern fit, and pattern catalog code; no imports from those modules.
 - Outputs: a complete package-root `scaffolding` facade instance backed by `ScaffoldFacade`; merged scaffold and manifest ownership files; private classes and methods for YAML parsing, conversion, include composition, rendering, and writing.
 - Acceptance: shared tests prove manifest loading, schema validation, path normalization, include composition, context defaults, rendering, and materialization without importing or modifying feature internals.
+- Stability evidence: standalone shared scaffolding tests, full test suite, full
+  lint, export checks, class-only shape checks, forbidden dependency scans, and
+  real `.enclosure/recipes` smoke rendering all pass.
 
 ## Phase 2: Workspace Recipe Proof
 
+- Status: Ready.
 - Objective: integrate one bounded context as proof that the shared package reduces code without changing behavior.
 - Owner: `src/enclosure/features/workspace/recipe/`.
 - Inputs: shared scaffolding package and existing recipe application/report behavior.
@@ -42,6 +56,7 @@ The implementation target is code and complexity reduction. The shared API shoul
 
 ## Phase 3: Remaining Modules and Cleanups
 
+- Status: Pending Phase 2.
 - Objective: move remaining pattern modules to the proven shared seam and delete obsolete duplicate code.
 - Owner: `src/enclosure/features/pattern/catalog/`, `src/enclosure/features/pattern/fit/`, and cleanup in affected recipe files.
 - Inputs: proven shared scaffolding package and recipe integration pattern.
@@ -62,6 +77,9 @@ The implementation target is code and complexity reduction. The shared API shoul
 
 # Open Questions
 
-- Should `pattern.fit` remain a visible feature after the extraction, or should it be folded into `pattern.catalog` later as a separate follow-up?
-- Should role and slot-state values remain validated strings permanently, or should enums be introduced later only if they reduce consumer code?
-- Should nested scaffold DTO types stay reachable only through `Scaffold`, or should any be promoted to package-root exports after the proof integration?
+- `pattern.fit` remains a visible feature for this extraction. Any merge into
+  `pattern.catalog` is a separate follow-up.
+- Role and slot-state values remain validated strings in shared scaffolding.
+  Enums can be introduced later only if they reduce consumer code.
+- Nested scaffold DTO types remain reachable only through exported `Scaffold`;
+  they are not promoted to package-root exports for Step 02.

@@ -22,6 +22,8 @@ tests/features/pattern/
   catalog and fit proof tests
 ```
 
+Status: Pending Step 02 completion; not ready for implementation.
+
 # Goal
 
 Move remaining modules to the proven shared scaffolding facade seam and clean up the temporary complexity left by the extraction.
@@ -37,6 +39,20 @@ This step should finish the reduction: the same manifest/include/render/write be
 - Owner: pattern modules own pattern vocabulary and user-facing behavior; `shared.scaffolding` owns scaffold mechanics.
 - Dependency direction: pattern modules import only the shared package root facade; `shared.scaffolding` remains feature-independent.
 - Step 03 must treat `shared.scaffolding` as complete. If remaining modules need new shared behavior, stop and update `UML.md` and Step 01 before continuing.
+
+## Step 02 Dependency
+
+Do not start Step 03 until Step 02 proves the shared seam in
+`workspace.recipe`.
+
+The expected reusable integration pattern is:
+
+- load manifests through `scaffolding.load_all()` and `scaffolding.load()`;
+- compose includes through `scaffolding.compose()`;
+- render files through `scaffolding.render()`;
+- materialize selected paths through `scaffolding.write()`;
+- keep pattern vocabulary, summaries, catalog validation, preview statuses, and
+  CLI output local to pattern modules.
 
 # Execution
 
@@ -54,6 +70,8 @@ This step should finish the reduction: the same manifest/include/render/write be
 12. Review `workspace.recipe` after pattern integration and remove any aliases or wrappers that were kept only for migration confidence.
 13. Run a search for duplicate scaffold symbols and remove remaining private copies unless they are feature-specific by behavior, not just by name.
 14. Do not add back-calls from `shared.scaffolding` into pattern or recipe code.
+15. Do not add new shared scaffolding API unless Step 01 and [UML.md](UML.md)
+    are reopened first.
 
 # Verification
 
@@ -68,3 +86,5 @@ This step should finish the reduction: the same manifest/include/render/write be
 # Completion
 
 Step 03 is complete when recipe, pattern catalog, and pattern fit all use one shared scaffolding facade implementation, duplicate behavior is deleted, tests pass, and no cleanup wrappers remain without a current caller.
+
+Step 03 remains blocked until Step 02 is accepted and completed.
