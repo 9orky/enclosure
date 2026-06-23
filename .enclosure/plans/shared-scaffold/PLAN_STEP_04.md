@@ -29,7 +29,27 @@ tests/features/shared-scaffold/
   mechanics
 ```
 
-Status: Ready for acceptance; do not implement until accepted.
+Status: Complete.
+
+Implementation evidence:
+
+- Removed unused `workspace.recipe` public ladder/slot compatibility aliases:
+  `RecipeLadder`, `RecipeSlot`, `RecipeSlotName`, `RecipeSlotState`, and
+  `RecipeRole`.
+- Kept synthetic composed-role handling private to `workspace.recipe.application`
+  while still delegating include composition and rendering to package-root
+  `enclosure.shared.scaffolding`.
+- Added focused guard tests under `tests/features/shared-scaffold/` for feature
+  deep imports, shared-to-feature imports, and duplicate scaffold mechanics in
+  feature code and `.enclosure/recipes/` templates.
+- Confirmed `workspace.plan`, `workspace.sync`, and `workspace.rules` remain
+  non-integrations because they do not consume recipe-style scaffold manifests.
+- Verification passed:
+  `uv run pytest tests/shared/scaffolding tests/features/workspace/recipe tests/features/pattern tests/features/shared-scaffold`
+  and `uv run ruff check src tests`.
+- `enclosure health` ran; recipe checks were clean and unrelated baseline
+  findings remained in workspace rules, recipe drift, architecture shape,
+  pressure, coherence, and clusters.
 
 # Goal
 

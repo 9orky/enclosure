@@ -917,7 +917,7 @@ def _recipe_for_role(
         source_root=Path("."),
         role="archetype",
         description="Composed recipe role",
-        ladder=domain.RecipeLadder(
+        ladder=_ComposedLadder(
             family="composed",
             rung=role_name,
             declared=True,

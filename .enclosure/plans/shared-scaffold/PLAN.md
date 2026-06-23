@@ -34,9 +34,10 @@ The implementation target is code and complexity reduction. The shared API shoul
 - Phase 3 is complete. `pattern.catalog` and `pattern.fit` now use the
   package-root shared scaffolding facade for scaffold mechanics; duplicate
   pattern manifest, repository, render, context, and write code is removed.
-- Phase 4 gathers the remaining integration audit and cleanup items. Treat
-  shared scaffolding as complete; do not add shared capabilities unless the UML
-  and Step 01 are reopened first.
+- Phase 4 is complete. The final integration audit removed unused recipe
+  compatibility aliases, added focused boundary guard tests, confirmed template
+  stubs do not regenerate old scaffold mechanics, and verified recipe, pattern,
+  shared scaffolding, and lint checks.
 
 # Phases
 
@@ -80,7 +81,7 @@ The implementation target is code and complexity reduction. The shared API shoul
 
 ## Phase 4: Final Integration Audit
 
-- Status: Ready for acceptance; do not implement until accepted.
+- Status: Complete.
 - Objective: gather and close the remaining integration questions after recipe
   and pattern migration, without expanding the shared scaffolding API.
 - Owner: `src/enclosure/features/workspace/recipe/`, `.enclosure/recipes/`,
@@ -96,6 +97,12 @@ The implementation target is code and complexity reduction. The shared API shoul
   shared scaffolding consumers, no feature imports shared internals, recipe
   template stubs do not regenerate removed scaffold mechanics, and existing
   recipe/pattern/shared tests plus lint pass.
+- Verification: `uv run pytest tests/shared/scaffolding
+  tests/features/workspace/recipe tests/features/pattern
+  tests/features/shared-scaffold` and `uv run ruff check src tests` pass.
+  `enclosure health` reports recipe checks clean with unrelated baseline
+  findings in workspace rules, recipe drift, architecture shape, pressure,
+  coherence, and clusters.
 
 # Acceptance
 
