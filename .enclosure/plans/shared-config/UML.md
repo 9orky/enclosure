@@ -1,6 +1,6 @@
 # Shared Config UML
 
-Status: Aligned after Step 02; Step 03 migration units may proceed
+Status: Aligned after Step 02; Step 03 may proceed root by root
 
 This diagram describes the intended `enclosure.shared.config` package outcome for the shared config plan. It uses Mermaid so it can live in Markdown preview.
 

@@ -1,42 +1,41 @@
 # Step 02: Migrate Architecture Bounded Context
 
-Status: Ready for implementation after Step 01 verification
+Status: Implemented; Step 03 handoff ready
 
-## Implementation Tree
+## Implementation Summary
 
 - `src/enclosure/shared/architecture_code.py`
   - `extract_architecture_code() -> ArchitectureCodeMap`
   - `_architecture_root(project_root: Path, architecture_config: object) -> Path`
   - `_extraction_exclusions(architecture_config: object) -> tuple[str, ...]`
   - `_matching_config(architecture_config: object) -> object`
-- `src/enclosure/features/architecture/config/` (delete)
-  - `__init__.py` (delete)
-  - `domain.py` (delete)
-  - `infrastructure.py` (delete)
+- `src/enclosure/features/architecture/config/`
+  - source files deleted
+  - ignored `__pycache__` remnants may still exist locally
 - `src/enclosure/features/architecture/boundaries/domain.py`
-  - remove `BoundaryRule`, `ConfigTagRule`, `FlowRealmRule`, `FlowRuleSet`, and
-    `BoundariesConfig` config ownership after callers move to shared config
+  - removed `BoundaryRule`, `ConfigTagRule`, `FlowRealmRule`, `FlowRuleSet`, and
+    `BoundariesConfig` config ownership
   - keep `BoundariesReport`
 - `src/enclosure/features/architecture/clusters/domain.py`
-  - remove `ClustersConfig` config ownership after callers move to shared config
+  - removed `ClustersConfig` config ownership
   - keep report and cluster domain types
 - `src/enclosure/features/architecture/health/domain.py`
-  - remove `HealthConfig` config ownership after callers move to shared config
+  - removed `HealthConfig` config ownership
   - keep report and finding domain types
 - `src/enclosure/features/architecture/map/domain.py`
-  - remove `MapConfig` config ownership after callers move to shared config
+  - removed `MapConfig` config ownership
   - keep report, dependency, and map domain types
 - `src/enclosure/features/architecture/pressure/domain.py`
-  - remove `PressureConfig` config ownership after callers move to shared config
+  - removed `PressureConfig` config ownership
   - keep report and pressure domain types
 - `src/enclosure/features/architecture/shape/domain.py`
-  - remove `ImportCrossingType`, `ShapeConfigError`, and `ShapeConfig` config
-    ownership after callers move to shared config
+  - removed `ImportCrossingType`, `ShapeConfigError`, and `ShapeConfig` config
+    ownership
   - keep `ShapeViolation`, `ShapeReport`, and shape evaluation functions
 - `src/enclosure/features/architecture/*/__init__.py`
-  - remove exports that expose deleted architecture-owned config classes
+  - removed exports that expose deleted architecture-owned config classes
 - `tests/features/architecture/`
-  - update tests to construct or patch architecture inputs through
+  - updated tests to construct or patch architecture inputs through
     `enclosure.shared.config.settings`, `settings.metadata`, and
     `settings.query("architecture...")`
 
@@ -112,61 +111,34 @@ Stop conditions:
 - If work requires edits outside the roots declared here, stop and move that
   work to Step 03 or to the owning step.
 
-## Execution
+## Execution Record
 
-1. Verify the Step 01 prerequisite before editing architecture.
-   - Run `uv run pytest tests/shared/config`.
-   - Confirm `settings.query("architecture")`,
-     `settings.metadata.project_root`, and
-     `settings.metadata.canonical_config_path` exist.
-2. Replace the architecture extraction entry point.
-   - In `src/enclosure/shared/architecture_code.py`, import `settings` from
-     `enclosure.shared.config`.
-   - Replace `config.load_project_mapping()` and
-     `ArchitectureConfig.validate_mapping(...)` with
-     `settings.metadata.project_root`,
-     `settings.metadata.canonical_config_path`, and
-     `settings.query("architecture")`.
-   - Keep `ArchitectureCodeMap.report_fields()` output shape stable; derive
-     `config_format` from `settings.metadata.canonical_config_path`.
-   - Replace the cache root with `settings.metadata.cache_dir / "modwire"`.
-3. Remove architecture-owned config classes.
-   - Delete `src/enclosure/features/architecture/config/`.
-   - Remove config classes from architecture domain modules after all local
-     callers/tests import the equivalent shared-config classes or use simple
-     non-pydantic test doubles.
-   - Remove config class exports from architecture package `__init__.py` files.
-4. Update architecture tests.
-   - Replace imports from `enclosure.features.architecture.config.*` with
-     `enclosure.shared.config` or shared config class imports where direct class
-     construction is still useful.
-   - Replace `current_project_root` and raw config loader patches with
-     patches/fixtures around `settings.metadata` and
-     `settings.query("architecture...")`.
-   - Move invalid architecture config-section validation expectations to
-     `tests/shared/config` if Step 01 does not already cover them.
-5. Scan for forbidden remnants inside architecture.
-   - No imports from `enclosure.features.architecture.config`.
-   - No `load_project_mapping()`, section-level `validate_mapping(...)`, raw
-     YAML parsing, or `current_project_root` use in architecture code.
-   - No architecture-owned pydantic config classes remain in architecture
-     production modules.
-6. Run architecture-focused verification.
+1. Verified the Step 01 prerequisite with `uv run pytest tests/shared/config`.
+2. Replaced `src/enclosure/shared/architecture_code.py` with
+   `settings.metadata` and `settings.query("architecture")`.
+3. Removed architecture-owned config source files and config class exports.
+4. Updated architecture tests to use shared-config classes, `settings.metadata`,
+   and `settings.query("architecture...")`.
+5. Scanned Step 02 roots for forbidden config remnants.
+6. Ran architecture-focused verification and documented non-Step-02 failures.
 
 ## Verification
 
-- [ ] Compare Step 02 architecture integration against [UML.md](UML.md).
-- [ ] Run `uv run pytest tests/shared/config`.
-- [ ] Run architecture tests affected by config migration.
-- [ ] Run `uv run pytest tests/features/architecture`.
-- [ ] Run `enclosure architecture boundaries`.
-- [ ] Run `enclosure architecture shape`.
-- [ ] Run `enclosure architecture health`.
-- [ ] Run `rg -n "features\\.architecture\\.config|load_project_mapping|validate_mapping\\(|current_project_root|yaml\\.safe_load|from enclosure\\.shared import config" src/enclosure/features/architecture tests/features/architecture src/enclosure/shared/architecture_code.py` and confirm no forbidden production remnants.
+- [x] Compared Step 02 architecture integration against [UML.md](UML.md).
+- [x] `uv run pytest tests/shared/config`: 16 passed.
+- [x] `uv run pytest tests/features/architecture`: 29 passed.
+- [x] `enclosure architecture boundaries`: passed.
+- [x] Forbidden-remnant scan across Step 02 roots: no matches.
+- [x] `enclosure architecture shape`: executed; fails on 25 known findings in
+  `workspace/recipe`, `workspace/rules`, and `workspace/sync`, which are outside
+  Step 02 roots and belong to Step 03.
+- [x] `enclosure architecture health`: executed; fails because it includes the
+  same Step 03-owned shape findings plus non-blocking pressure/coherence
+  findings.
 
 ## Completion
 
-Step 02 is complete when:
+Step 02 is complete:
 
 - Architecture production callers use `from enclosure.shared.config import settings`
   where runtime config is needed.

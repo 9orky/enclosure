@@ -1,6 +1,6 @@
 # Step 03: Migrate Remaining Bounded Contexts
 
-Status: Ready to split into migration units after Step 02 completion
+Status: Ready for first migration unit; start with `workspace/sync`
 
 ## Goal
 
@@ -16,10 +16,17 @@ capabilities here unless Step 01 is first updated and completed again.
 
 ## Current Post-Step-02 State
 
-Architecture has already migrated to `shared.config` and
-`src/enclosure/features/architecture/config/` has been deleted. Remaining
-imports of `enclosure.features.architecture.config` are therefore broken on
-execution and are intentional Step 03 cleanup targets, not Step 02 leftovers.
+Architecture has already migrated to `shared.config` and the
+`src/enclosure/features/architecture/config/` source files have been deleted.
+Remaining imports of `enclosure.features.architecture.config` are therefore
+broken on execution and are intentional Step 03 cleanup targets, not Step 02
+leftovers.
+
+Step 02 verification passed for shared-config tests, architecture tests,
+architecture boundaries, and forbidden architecture remnants. Full
+`architecture shape` and `architecture health` still report known findings in
+workspace roots owned by Step 03, especially `workspace/recipe`,
+`workspace/rules`, and `workspace/sync`.
 
 Known remaining production callers include:
 
@@ -131,11 +138,11 @@ Optional later cleanup units, only when their roots are explicitly active:
 
 ## Work Items
 
+- Start with the `workspace/sync` migration unit, because it currently
+  imports the deleted architecture config package and blocks `workspace sync`.
 - Migrate workspace callers to `from enclosure.shared.config import settings`.
 - Migrate pattern callers to `from enclosure.shared.config import settings`.
 - Migrate health callers to `from enclosure.shared.config import settings`.
-- Prefer the first migration unit to be `workspace/sync`, because it currently
-  imports the deleted architecture config package and blocks `workspace sync`.
 - Replace remaining section-level config loading with `settings.query("...")` calls inside the active migration root.
 - Replace remaining project-root discovery with `settings.metadata.project_root` inside the active migration root.
 - Replace standard workspace path construction with metadata paths such as `settings.metadata.plans_dir`, `settings.metadata.recipes_dir`, `settings.metadata.rules_dir`, `settings.metadata.local_rules_dir`, `settings.metadata.cache_dir`, and `settings.metadata.dev_dir`.

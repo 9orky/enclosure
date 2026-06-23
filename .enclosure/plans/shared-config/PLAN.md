@@ -1,6 +1,6 @@
 # Shared Config
 
-Status: Step 01 and Step 02 implemented; Step 03 ready to split into migration units
+Status: Step 01 and Step 02 implemented; Step 03 ready for root-scoped migration units
 
 ## File Tree
 
@@ -82,13 +82,18 @@ Current state after Step 02:
 
 - Architecture production callers and `src/enclosure/shared/architecture_code.py`
   use `enclosure.shared.config.settings`.
-- `src/enclosure/features/architecture/config/` has been deleted.
+- `src/enclosure/features/architecture/config/` source files have been deleted;
+  ignored `__pycache__` remnants are not part of the source tree.
 - Remaining imports of deleted architecture config modules are outside the
   architecture root and belong to Step 03 migration units, especially workspace
   sync and workspace rules.
 - The root settings graph currently contains `architecture` and `workspace`.
   Pattern callers that read recipe skip or role data should query
   `workspace.recipe`; no top-level `pattern` manifest section exists.
+- Step 02 verification passed for shared-config tests, architecture tests,
+  architecture boundaries, and forbidden architecture remnants. Full
+  `architecture shape` and `architecture health` still report known findings in
+  Step 03-owned workspace roots.
 
 ## Root Boundary Rule
 
@@ -358,18 +363,16 @@ compatibility bridges are introduced, and Step 03 does not add new
 
 ## Verification Checklist
 
-- [ ] Run Step 01 standalone shared config tests.
-- [ ] Compare implementation against [UML.md](UML.md).
-- [ ] Confirm `src/enclosure/shared/config/` imports no existing enclosure feature modules, bounded-context config modules, or other shared modules/packages.
-- [ ] Run shared config tests covering root graph validation and dot-path queries.
-- [ ] Run tests for features migrated from bounded-context config imports.
-- [ ] Run tests that cover invalid manifests and fail-fast behavior.
-- [ ] Run `uv run pytest tests/shared/config`.
-- [ ] Run `enclosure health`.
-- [ ] Run `enclosure workspace health` if workspace files changed.
-- [ ] Run `enclosure architecture boundaries`.
-- [ ] Run `enclosure architecture shape`.
-- [ ] Run `enclosure architecture health` if architecture-sensitive code changed.
+- [x] Run `uv run pytest tests/shared/config`.
+- [x] Run `uv run pytest tests/features/architecture`.
+- [x] Confirm no forbidden architecture config remnants in Step 02 roots.
+- [x] Run `enclosure architecture boundaries`.
+- [x] Run `enclosure architecture shape`; known failures are in Step 03-owned
+  workspace roots.
+- [x] Run `enclosure architecture health`; known failures are caused by the same
+  Step 03-owned workspace findings.
+- [ ] Run verification for each active Step 03 migration unit before starting
+  the next unit.
 
 ## Open Questions
 
