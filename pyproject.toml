@@ -93,7 +93,6 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 enclosure = [
-    "resources/enclosure.yaml",
     "resources/AGENTS.md",
     "resources/copilot-instructions.md",
     "resources/rules/*.md",

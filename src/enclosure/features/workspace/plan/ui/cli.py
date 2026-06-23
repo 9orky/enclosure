@@ -56,11 +56,19 @@ def plan_command(
 
     if show:
         document = application.describe_plan_document(name)
-        ui.render(document, template_name="show.tmpl", context={})
+        ui.render(
+            document,
+            template_name="show.tmpl",
+            context={"project_root": document.project_root},
+        )
         return
 
     result = application.create_plan_document(name, force=force)
-    ui.render(result, template_name="result.tmpl", context={})
+    ui.render(
+        result,
+        template_name="result.tmpl",
+        context={"project_root": result.document.project_root},
+    )
     if result.preserved:
         ui.exit_with_error()
 

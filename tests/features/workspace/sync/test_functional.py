@@ -7,12 +7,15 @@ import yaml
 from modwire import supported_languages as supported_source_kinds
 
 from enclosure.__main__ import app
-from enclosure.shared import layout
 from tests.support.projects import FixtureProject
 
 
 def _packaged_instruction(name: str) -> str:
     return files("enclosure").joinpath("resources", name).read_text(encoding="utf-8")
+
+
+def _recipe_manifest_path(recipe_root):
+    return recipe_root / "recipe.yaml"
 
 
 @pytest.mark.parametrize("source_kind", supported_source_kinds())
@@ -96,7 +99,7 @@ def test_workspace_sync_update_preserves_local_recipes_without_resource_recipe_s
 ) -> None:
     project = fixture_project("enclosure-workspace")
     use_project(project)
-    local_recipe_path = layout.recipe_manifest_path(project.recipes_dir / "custom-local")
+    local_recipe_path = _recipe_manifest_path(project.recipes_dir / "custom-local")
     local_recipe_path.parent.mkdir(parents=True)
     local_recipe_content = "schema_version: 1\nrole: archetype\n"
     local_recipe_path.write_text(local_recipe_content, encoding="utf-8")
@@ -105,7 +108,7 @@ def test_workspace_sync_update_preserves_local_recipes_without_resource_recipe_s
 
     assert result.exit_code == 0, result.output
     assert local_recipe_path.read_text(encoding="utf-8") == local_recipe_content
-    assert not layout.recipe_manifest_path(project.recipes_dir / "module-report-cli").exists()
+    assert not _recipe_manifest_path(project.recipes_dir / "module-report-cli").exists()
     assert project.copilot_instructions_path.read_text(
         encoding="utf-8"
     ) == _packaged_instruction("copilot-instructions.md")
@@ -121,7 +124,7 @@ def test_workspace_sync_migrate_preserves_local_recipes_without_resource_recipe_
 ) -> None:
     project = fixture_project("enclosure-workspace")
     use_project(project)
-    local_recipe_path = layout.recipe_manifest_path(project.recipes_dir / "custom-local")
+    local_recipe_path = _recipe_manifest_path(project.recipes_dir / "custom-local")
     local_recipe_path.parent.mkdir(parents=True)
     local_recipe_content = "schema_version: 1\nrole: archetype\n"
     local_recipe_path.write_text(local_recipe_content, encoding="utf-8")
@@ -130,7 +133,7 @@ def test_workspace_sync_migrate_preserves_local_recipes_without_resource_recipe_
 
     assert result.exit_code == 0, result.output
     assert local_recipe_path.read_text(encoding="utf-8") == local_recipe_content
-    assert not layout.recipe_manifest_path(project.recipes_dir / "module-report-cli").exists()
+    assert not _recipe_manifest_path(project.recipes_dir / "module-report-cli").exists()
     assert project.copilot_instructions_path.read_text(
         encoding="utf-8"
     ) == _packaged_instruction("copilot-instructions.md")

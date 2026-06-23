@@ -8,4 +8,4 @@ Use this module when working inside `src/enclosure/features/pattern/fit`.
 - Keep workspace access and filesystem adapters in `infrastructure`.
 - Keep use-case orchestration in `application`.
 - Keep CLI and presentation in `ui`.
-- Use `enclosure.shared.layout.recipe_manifest_path(...)` for recipe manifests; do not hardcode manifest filenames.
+- Use `settings.metadata.recipes_dir` for the recipe root and feature-owned recipe path helpers for manifest filenames.

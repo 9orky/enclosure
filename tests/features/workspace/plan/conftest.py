@@ -6,7 +6,6 @@ from types import SimpleNamespace
 import pytest
 
 from enclosure.features.workspace.plan import application
-from enclosure.shared import layout as project_layout
 from tests.support.projects import FixtureProject
 
 
@@ -24,6 +23,5 @@ class ProjectSettings:
 def use_project(monkeypatch: pytest.MonkeyPatch) -> Callable[[FixtureProject], None]:
     def apply(project: FixtureProject) -> None:
         monkeypatch.setattr(application, "settings", ProjectSettings(project))
-        monkeypatch.setattr(project_layout, "current_project_root", lambda: project.root)
 
     return apply

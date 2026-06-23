@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from enclosure.shared import layout as project_layout
 from tests.support.projects import FixtureProject, copy_fixture_project
 
 
@@ -26,10 +25,7 @@ def fixture_project(tmp_path: Path) -> Callable[[str], FixtureProject]:
 @pytest.fixture
 def use_project(monkeypatch: pytest.MonkeyPatch) -> Callable[[FixtureProject], None]:
     def apply(project: FixtureProject) -> None:
-        monkeypatch.setattr(
-            project_layout,
-            "current_project_root",
-            lambda: project.root,
-        )
+        _ = monkeypatch
+        _ = project
 
     return apply

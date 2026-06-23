@@ -11,7 +11,6 @@ from enclosure.features.workspace.health import application as workspace_health_
 from enclosure.features.workspace.recipe import application as recipe_application
 from enclosure.features.workspace.rules import application as rules_application
 from enclosure.shared import architecture_code
-from enclosure.shared import layout as project_layout
 from enclosure.shared.config.facade import SettingsFacade
 from enclosure.shared.config.manifest import Manifest
 from tests.support.projects import FixtureProject
@@ -91,6 +90,5 @@ def use_project(monkeypatch: pytest.MonkeyPatch) -> Callable[[FixtureProject], N
             "settings",
             SettingsFacade(Manifest(project.root)),
         )
-        monkeypatch.setattr(project_layout, "current_project_root", lambda: project.root)
 
     return apply

@@ -51,7 +51,14 @@ def health_command(
 
     report = application.build_workspace_health_report()
     verbosity = report_verbosity.report_verbosity_from_flags(v=v, vv=vv, vvv=vvv)
-    ui.render(report, template_name="report.tmpl", context={"verbosity": verbosity.value})
+    ui.render(
+        report,
+        template_name="report.tmpl",
+        context={
+            "project_root": report.project_root,
+            "verbosity": verbosity.value,
+        },
+    )
     ui.exit_if_findings(report.blocking_findings)
 
 

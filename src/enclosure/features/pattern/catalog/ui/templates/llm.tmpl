@@ -9,4 +9,4 @@ or `workspace.recipe.roles_map`.
 - Keep YAML/config/workspace loading in `infrastructure.py`.
 - Keep catalog queries and validation orchestration in `application.py`.
 - Do not move rendering, file materialization, drift, or bench logic here.
-- Use `enclosure.shared.layout.recipe_manifest_path(...)` for recipe manifests; do not hardcode manifest filenames.
+- Use `settings.metadata.recipes_dir` for the recipe root and feature-owned recipe path helpers for manifest filenames.

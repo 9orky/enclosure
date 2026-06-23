@@ -7,8 +7,8 @@ from importlib import resources
 from pathlib import Path
 from typing import Any, ParamSpec, TypeVar, get_type_hints
 
-import typer
 import modwire.architecture.render
+import typer
 from jinja2 import Environment, StrictUndefined
 from rich import box
 from rich.console import Console, Group
@@ -16,7 +16,7 @@ from rich.panel import Panel
 from rich.padding import Padding
 from rich.text import Text
 
-from enclosure.shared import architecture, guild, layout, limits
+from enclosure.shared import architecture, guild, limits
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -60,7 +60,6 @@ def render(
             }
         )
     render_context.update(dict(context))
-    render_context["project_root"] = layout.current_project_root()
     typer.echo(
         _render_text(
             _local_template_text(template_name),
@@ -73,10 +72,7 @@ def render_llm(template_name: str) -> None:
     typer.echo(
         _render_text(
             _local_template_text(template_name),
-            {
-                "project_root": layout.current_project_root(),
-                "config_yaml": _packaged_resource_text("enclosure.yaml"),
-            },
+            {},
         ).rstrip("\n")
     )
 
@@ -85,9 +81,7 @@ def render_docs(template_name: str) -> None:
     typer.echo(
         _render_text(
             _local_template_text(template_name),
-            {
-                "project_root": layout.current_project_root(),
-            },
+            {},
         ).rstrip("\n")
     )
 
@@ -123,11 +117,6 @@ def _local_template_text(template_name: str) -> str:
 
     template_path = resources.files(anchor).joinpath("templates", template_name)
     return template_path.read_text(encoding="utf-8")
-
-
-def _packaged_resource_text(name: str) -> str:
-    resource_path = resources.files("enclosure").joinpath("resources", name)
-    return resource_path.read_text(encoding="utf-8").rstrip("\n")
 
 
 def _render_text(template: str, context: Mapping[str, Any]) -> str:

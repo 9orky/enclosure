@@ -71,7 +71,11 @@ def init_command(
         return
 
     result = application.bootstrap_project(source_kind=source_kind)
-    ui.render(result, template_name="bootstrap_result.tmpl", context={})
+    ui.render(
+        result,
+        template_name="bootstrap_result.tmpl",
+        context={"project_root": result["project_root"]},
+    )
 
 
 @app.command(
@@ -100,7 +104,11 @@ def update_command(
         return
 
     result = application.update_project()
-    ui.render(result, template_name="update_result.tmpl", context={})
+    ui.render(
+        result,
+        template_name="update_result.tmpl",
+        context={"project_root": result["project_root"]},
+    )
 
 
 @app.command(
@@ -129,7 +137,11 @@ def migrate_command(
         return
 
     result = application.migrate_project()
-    ui.render(result, template_name="migrate_result.tmpl", context={})
+    ui.render(
+        result,
+        template_name="migrate_result.tmpl",
+        context={"project_root": result["project_root"]},
+    )
 
 
 ui.set_command_defaults(sync_command, {"llm": False, "docs": False})

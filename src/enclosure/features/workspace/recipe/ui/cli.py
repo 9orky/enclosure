@@ -142,6 +142,7 @@ def recipe_command(
             context={
                 "report": report,
                 "html_report_path": html_report_path,
+                "project_root": report.project_root,
             },
         )
         if not report.passed():
@@ -167,6 +168,7 @@ def recipe_command(
             context={
                 "report": report,
                 "html_report_path": html_report_path,
+                "project_root": report.project_root,
             },
         )
         if not report.passed():

@@ -8,7 +8,6 @@ import yaml
 
 from enclosure.features.workspace.recipe import application
 from enclosure.features.workspace.recipe.ui import cli
-from enclosure.shared import layout as project_layout
 from tests.support.projects import FixtureProject
 
 
@@ -52,6 +51,5 @@ def use_project(monkeypatch: pytest.MonkeyPatch) -> Callable[[FixtureProject], N
         project_settings = ProjectSettings(project)
         monkeypatch.setattr(application, "settings", project_settings)
         monkeypatch.setattr(cli, "settings", project_settings)
-        monkeypatch.setattr(project_layout, "current_project_root", lambda: project.root)
 
     return apply

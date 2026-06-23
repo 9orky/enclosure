@@ -529,6 +529,7 @@ class WorkspaceWritePlanMaterializer:
                 updated_files.append(change.target_path)
 
         return {
+            "project_root": write_plan.project_root,
             "target_dir": write_plan.target_dir,
             "created_dir": created_dir,
             "created_files": tuple(created_files),

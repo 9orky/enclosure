@@ -67,6 +67,7 @@ class WorkspaceContractSummary:
 
 @dataclass(frozen=True)
 class WorkspaceWritePlan:
+    project_root: Path
     target_dir: Path
     required_dirs: tuple[Path, ...] = ()
     changes: tuple[SyncChange, ...] = ()
@@ -80,6 +81,7 @@ class WorkspaceMigrationPlan:
 
 
 class ProjectSyncResult(TypedDict):
+    project_root: Path
     target_dir: Path
     created_dir: bool
     created_files: tuple[Path, ...]
@@ -243,6 +245,7 @@ class Workspace:
             )
 
         return WorkspaceWritePlan(
+            project_root=self.project_root,
             target_dir=self.paths.target_dir,
             required_dirs=_sort_paths(
                 (
