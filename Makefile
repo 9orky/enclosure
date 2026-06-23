@@ -1,6 +1,6 @@
 DEV_REFRESH_VERSION ?= 0.0.0.dev0
 LOCAL_CACHE_DIR ?= .enclosure/.cache
-WARP_MODULE ?= $(shell uv run python -c 'import yaml; data = yaml.safe_load(open(".enclosure/enclosure.yaml", encoding="utf-8")) or {}; roles = data.get("workspace", {}).get("recipe", {}).get("roles_map", {}); print(sorted(roles)[0] if roles else "")')
+WARP_MODULE ?= workspace/recipe
 WARP_REPORT ?= $(LOCAL_CACHE_DIR)/warp/$(subst /,-,$(WARP_MODULE)).html
 WARP_ALL_REPORT ?= $(LOCAL_CACHE_DIR)/warp/index.html
 OPEN ?= open

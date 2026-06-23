@@ -28,6 +28,7 @@ describe_recipe_generation = application.describe_recipe_generation
 generate_recipe = application.generate_recipe
 list_recipes = application.list_recipes
 show_recipe = application.show_recipe
+write_html_report = application.write_html_report
 
 __all__ = [
     "RecipeGenerationConfig",
@@ -56,4 +57,5 @@ __all__ = [
     "generate_recipe",
     "list_recipes",
     "show_recipe",
+    "write_html_report",
 ]

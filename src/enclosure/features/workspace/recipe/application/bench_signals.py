@@ -86,6 +86,13 @@ def reports_by_role(
 ) -> dict[str, tuple[domain.RecipeBenchReport, ...]]:
     grouped_reports: dict[str, list[domain.RecipeBenchReport]] = {}
     for report in reports:
+        if not report.selected.module_name:
+            continue
+        if any(
+            violation.code in {"missing_role_recipe", "non_archetype_role_recipe"}
+            for violation in report.violations
+        ):
+            continue
         grouped_reports.setdefault(report.role_name or "unknown", []).append(report)
     return {
         role_name: tuple(role_reports)

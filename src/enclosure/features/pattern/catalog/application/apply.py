@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
+from enclosure.shared.scaffolding import catalog_policy
 from enclosure.shared.scaffolding import Scaffold
 
 from ..domain import report
-from . import preview
 
 
 def apply_roles_map(
@@ -15,41 +15,16 @@ def apply_roles_map(
         Scaffold,
     ],
 ) -> tuple[report.PatternCatalogViolation, ...]:
-    if not roles_map:
-        return (
-            _violation(
-                "missing_roles_map",
-                "workspace.recipe.roles_map must declare module Patterns",
-                "workspace.recipe.roles_map",
-            ),
-        )
-
-    violations: list[report.PatternCatalogViolation] = []
-    for module_name, role_name in roles_map.items():
-        role_pattern = preview._pattern_for_role(
-            role_name,
+    return _violations(
+        catalog_policy.validate_roles_map(
+            roles_map,
             patterns_by_name,
+            code_suffix="pattern",
+            item_label="Pattern",
+            item_plural_label="Patterns",
+            subject_name="workspace.recipe.roles_map",
         )
-        if role_pattern is None:
-            violations.append(
-                _violation(
-                    "missing_role_pattern",
-                    f"roles_map references missing Pattern {role_name} for {module_name}",
-                    "workspace.recipe.roles_map",
-                )
-            )
-        elif (
-            "+" not in role_name
-            and role_pattern.role != "archetype"
-        ):
-            violations.append(
-                _violation(
-                    "non_archetype_role_pattern",
-                    f"roles_map must reference archetype Patterns: {role_name} for {module_name}",
-                    "workspace.recipe.roles_map",
-                )
-            )
-    return tuple(violations)
+    )
 
 
 def _violation(
@@ -61,6 +36,19 @@ def _violation(
         code=code,
         message=message,
         pattern_name=pattern_name,
+    )
+
+
+def _violations(
+    violations: tuple[catalog_policy.CatalogPolicyViolation, ...],
+) -> tuple[report.PatternCatalogViolation, ...]:
+    return tuple(
+        _violation(
+            violation.code,
+            violation.message,
+            violation.subject_name,
+        )
+        for violation in violations
     )
 
 

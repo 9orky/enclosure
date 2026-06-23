@@ -405,7 +405,7 @@ def test_recipe_bench_reports_unmapped_modules_and_writes_html(tmp_path: Path) -
     assert result.returncode == 1
     assert "Bench preview for module 'billing/report'." in result.stdout
     assert "Role: unknown" in result.stdout
-    assert "Classification: local" in result.stdout
+    assert "Classification: unstable" in result.stdout
     assert "module_unmapped" in result.stdout
     assert (project_root / ".enclosure/unmapped.html").is_file()
 
@@ -545,15 +545,92 @@ def test_recipe_bench_all_aggregates_violations_without_hiding_clean_modules(
     assert (project_root / ".enclosure/index.html").is_file()
 
 
+def test_recipe_bench_all_marks_missing_role_recipes_as_blocking(
+    tmp_path: Path,
+) -> None:
+    project_root = copy_fixture(tmp_path, "recipe_workspace")
+    _configure_recipe_workspace(
+        project_root,
+        {"orders/report": "compact", "billing/report": "no-such-recipe"},
+    )
+
+    result = run_cli(
+        project_root,
+        "workspace",
+        "recipe",
+        "--bench-all",
+        "--html",
+        ".enclosure/index.html",
+    )
+    html = (project_root / ".enclosure/index.html").read_text(encoding="utf-8")
+
+    assert result.returncode == 1
+    assert "Workspace warp index." in result.stdout
+    assert "Recipe roles: 1" in result.stdout
+    assert "Classification: unstable" in result.stdout
+    assert "missing_role_recipe" in result.stdout
+    assert "<h3>no-such-recipe</h3>" not in html
+
+
+def test_recipe_bench_marks_global_role_map_failures_as_unstable(
+    tmp_path: Path,
+) -> None:
+    project_root = copy_fixture(tmp_path, "recipe_workspace")
+    _configure_recipe_workspace(
+        project_root,
+        {"orders/report": "compact", "billing/report": "no-such-recipe"},
+    )
+
+    result = run_cli(
+        project_root,
+        "workspace",
+        "recipe",
+        "--bench",
+        "orders/report",
+        "--html",
+        ".enclosure/orders.html",
+    )
+
+    assert result.returncode == 1
+    assert "Bench preview for module 'orders/report'." in result.stdout
+    assert "Local warp: 0" in result.stdout
+    assert "Classification: unstable" in result.stdout
+    assert "missing_role_recipe" in result.stdout
+
+
+def test_recipe_bench_all_validates_empty_roles_map(tmp_path: Path) -> None:
+    project_root = copy_fixture(tmp_path, "recipe_workspace")
+    _configure_recipe_workspace(project_root, {})
+
+    result = run_cli(
+        project_root,
+        "workspace",
+        "recipe",
+        "--bench-all",
+        "--html",
+        ".enclosure/index.html",
+    )
+
+    assert result.returncode == 1
+    assert "Mapped modules: 0" in result.stdout
+    assert "Recipe roles: 0" in result.stdout
+    assert "Classification: unstable" in result.stdout
+    assert "missing_roles_map" in result.stdout
+
+
 def _write_file(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(dedent(content).lstrip(), encoding="utf-8")
 
 
 def _configure_recipe_workspace(project_root: Path, roles_map: dict[str, str]) -> None:
-    role_lines = "\n".join(
-        f"      {module_name}: {role_name}"
-        for module_name, role_name in sorted(roles_map.items())
+    role_lines = (
+        "\n".join(
+            f"      {module_name}: {role_name}"
+            for module_name, role_name in sorted(roles_map.items())
+        )
+        if roles_map
+        else "      {}"
     )
     _write_file(
         project_root / ".enclosure/enclosure.yaml",

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 
+from enclosure.shared.scaffolding import catalog_policy
 from enclosure.shared.scaffolding import Scaffold
 from .. import infrastructure
 
@@ -24,30 +24,16 @@ def recipe_for_role(
     role_name: str,
     recipes_by_name: Mapping[str, Scaffold],
 ) -> Scaffold | None:
-    if "+" not in role_name:
-        return recipes_by_name.get(role_name)
-
-    include_names = tuple(part.strip() for part in role_name.split("+") if part.strip())
-    if not include_names:
-        return None
-    if any(include_name not in recipes_by_name for include_name in include_names):
-        return None
-    if any(
-        recipes_by_name[include_name].role == "container"
-        for include_name in include_names
-    ):
-        return None
-    return Scaffold(
-        name="composed-role",
-        source_root=Path("."),
-        role="archetype",
-        description="Composed recipe role",
-        ladder=_ComposedLadder(
+    return catalog_policy.scaffold_for_role(
+        role_name,
+        recipes_by_name,
+        composed_name="composed-role",
+        composed_description="Composed recipe role",
+        composed_ladder=_ComposedLadder(
             family="composed",
             rung=role_name,
             declared=True,
         ),
-        includes=include_names,
     )
 
 

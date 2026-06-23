@@ -12,6 +12,7 @@ generate_recipe = commands.generate_recipe
 list_recipes = queries.list_recipes
 recipe_command_context = infrastructure.recipe_command_context
 show_recipe = queries.show_recipe
+write_html_report = commands.write_html_report
 
 __all__ = [
     "bench_all_preview",
@@ -23,4 +24,5 @@ __all__ = [
     "list_recipes",
     "recipe_command_context",
     "show_recipe",
+    "write_html_report",
 ]

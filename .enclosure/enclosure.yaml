@@ -6,8 +6,8 @@
 
 architecture:
   language: python
-  root: src/enclosure/features
-  exclusions: [.venv/**, .enclosure/**, tests/**, libraries/**, __init__.py, architecture/__init__.py, health/__init__.py, pattern/__init__.py, workspace/__init__.py]
+  root: src/enclosure
+  exclusions: [.venv/**, .enclosure/**, tests/**, libraries/**, __pycache__/**, "**/__pycache__/**", "**/__init__.py"]
 
   shape:
     max_classes_per_file: -1
@@ -73,21 +73,21 @@ workspace:
       - "**/__pycache__/**"
       - "__pycache__/**"
     roles_map:
-      architecture/boundaries: module-report-cli
-      architecture/clusters: module-report-cli
-      architecture/coherence: module-domain-package-cli
-      architecture/health: module-report-cli
-      architecture/map: module-report-cli
-      architecture/pressure: module-report-cli
-      architecture/shape: module-report-cli
-      health/report: module-report-cli
-      pattern/catalog: pattern-module
-      pattern/fit: pattern-module
-      workspace/health: module-report-cli
-      workspace/plan: module-workspace-cli
-      workspace/recipe: module-workspace-cli
-      workspace/rules: module-domain-package-cli+slot-infrastructure-file
-      workspace/sync: module-workspace-cli
+      features/architecture/boundaries: module-report-cli
+      features/architecture/clusters: module-report-cli
+      features/architecture/coherence: module-domain-package-cli
+      features/architecture/health: module-report-cli
+      features/architecture/map: module-report-cli
+      features/architecture/pressure: module-report-cli
+      features/architecture/shape: module-report-cli
+      features/health/report: module-report-cli
+      features/pattern/catalog: pattern-module
+      features/pattern/fit: pattern-module
+      features/workspace/health: module-report-cli
+      features/workspace/plan: module-workspace-cli
+      features/workspace/recipe: module-workspace-cli
+      features/workspace/rules: module-domain-package-cli+slot-infrastructure-file
+      features/workspace/sync: module-workspace-cli
   rules:
     local:
       max_content_chars: 1200

@@ -324,7 +324,19 @@ class RecipeBenchAllReport:
 
     @property
     def role_count(self) -> int:
-        return len({report.role_name for report in self.reports if report.role_name})
+        return len(
+            {
+                report.role_name
+                for report in self.reports
+                if report.role_name
+                and report.selected.module_name
+                and not any(
+                    violation.code
+                    in {"missing_role_recipe", "non_archetype_role_recipe"}
+                    for violation in report.violations
+                )
+            }
+        )
 
     @property
     def local_residue_count(self) -> int:

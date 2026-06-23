@@ -37,4 +37,14 @@ def generate_recipe(
     ).generate(recipe_name, target_path, variables=variables)
 
 
-__all__ = ["describe_recipe_generation", "generate_recipe"]
+def write_html_report(
+    html_report_path: Path,
+    html: str,
+) -> None:
+    if html_report_path.name.startswith("-"):
+        raise ValueError("--html must be a file path, not an option flag")
+    html_report_path.parent.mkdir(parents=True, exist_ok=True)
+    html_report_path.write_text(html, encoding="utf-8")
+
+
+__all__ = ["describe_recipe_generation", "generate_recipe", "write_html_report"]
