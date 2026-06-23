@@ -3,14 +3,17 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from pydantic import Field, ValidationError
+import yaml
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from enclosure.shared import config, layout, templates
+from enclosure.shared import templates
 
 from . import domain
 
 
-class _RecipeManifest(config.StrictConfigModel):
+class _RecipeManifest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     schema_version: int
     role: domain.RecipeRole
     description: str = ""
@@ -22,16 +25,6 @@ class _RecipeManifest(config.StrictConfigModel):
     files: list[dict[str, Any]] = Field(default_factory=list)
 
 
-def load_recipe_generation_config() -> domain.RecipeGenerationConfig:
-    _project_root, config_path, raw_data = config.load_project_mapping()
-    return config.section(
-        raw_data,
-        "workspace.recipe",
-        domain.RecipeConfig,
-        config_path,
-    )
-
-
 class FileRecipeRepository:
     def __init__(self, root_path: Path) -> None:
         self.root_path = Path(root_path)
@@ -41,7 +34,7 @@ class FileRecipeRepository:
             return ()
 
         return tuple(
-            self._load_recipe(recipe_root, layout.recipe_manifest_path(recipe_root))
+            self._load_recipe(recipe_root, _recipe_manifest_path(recipe_root))
             for recipe_root in sorted(
                 self._iter_recipe_roots(),
                 key=lambda path: path.name,
@@ -50,7 +43,7 @@ class FileRecipeRepository:
 
     def get_by_name(self, name: str) -> domain.Recipe:
         recipe_root = self.root_path / name
-        manifest_path = layout.recipe_manifest_path(recipe_root)
+        manifest_path = _recipe_manifest_path(recipe_root)
         if not manifest_path.is_file():
             raise LookupError(name)
 
@@ -60,15 +53,11 @@ class FileRecipeRepository:
         for child in self.root_path.iterdir():
             if child.name.startswith("."):
                 continue
-            if child.is_dir() and layout.recipe_manifest_path(child).is_file():
+            if child.is_dir() and _recipe_manifest_path(child).is_file():
                 yield child
 
     def _load_recipe(self, recipe_root: Path, manifest_path: Path) -> domain.Recipe:
-        raw_data = config.load_yaml_mapping(
-            manifest_path,
-            label="Recipe manifest",
-            error_type=ValueError,
-        )
+        raw_data = _load_yaml_mapping(manifest_path)
         return _recipe_from_manifest(recipe_root, manifest_path, raw_data)
 
 
@@ -153,6 +142,23 @@ def _recipe_from_manifest(
         inputs=inputs,
         files=files,
     )
+
+
+def _recipe_manifest_path(recipe_root: Path) -> Path:
+    return recipe_root / "recipe.yaml"
+
+
+def _load_yaml_mapping(path: Path) -> dict[str, Any]:
+    try:
+        raw_data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except OSError as exc:
+        raise ValueError(f"Could not read recipe manifest: {path}") from exc
+    except yaml.YAMLError as exc:
+        raise ValueError(f"Invalid recipe manifest syntax in {path}") from exc
+
+    if not isinstance(raw_data, dict):
+        raise ValueError(f"Recipe manifest must contain a mapping at the top level: {path}")
+    return raw_data
 
 
 def _input_specs_from(raw_inputs: Any) -> tuple[domain.RecipeInputSpec, ...]:

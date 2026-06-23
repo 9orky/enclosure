@@ -3,7 +3,6 @@ from __future__ import annotations
 from importlib import import_module
 from pathlib import Path
 
-_config = import_module("enclosure.features.workspace.rules.domain.config")
 _documents = import_module("enclosure.features.workspace.rules.domain.documents")
 _graph = import_module("enclosure.features.workspace.rules.domain.graph")
 _metadata = import_module("enclosure.features.workspace.rules.domain.metadata")
@@ -17,7 +16,6 @@ RuleReadStep = _graph.RuleReadStep
 RuleSchemaReport = _documents.RuleSchemaReport
 RuleSchemaPolicy = _policy.RuleSchemaPolicy
 RuleSchemaViolation = _documents.RuleSchemaViolation
-RulesConfig = _config.RulesConfig
 
 
 def build_rule_schema_report() -> RuleSchemaReport:
@@ -44,7 +42,6 @@ __all__ = [
     "RuleSchemaReport",
     "RuleSchemaPolicy",
     "RuleSchemaViolation",
-    "RulesConfig",
     "build_rule_read_plan",
     "build_rule_schema_report",
 ]

@@ -6,7 +6,6 @@ from typing import Mapping
 
 from . import domain
 
-RecipeConfig = domain.RecipeConfig
 RecipeGenerationConfig = domain.RecipeGenerationConfig
 RecipeLadder = domain.RecipeLadder
 RecipeSlot = domain.RecipeSlot
@@ -120,7 +119,6 @@ def show_recipe(
     return application.show_recipe(recipe_name, recipe_root=recipe_root)
 
 __all__ = [
-    "RecipeConfig",
     "RecipeGenerationConfig",
     "RecipeLadder",
     "RecipeSlot",

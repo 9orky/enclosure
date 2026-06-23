@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
-from enclosure.features.workspace.rules.domain import config as rules_config
 from enclosure.features.workspace.rules.domain import documents, graph, inference, policy
 
 
@@ -54,9 +54,7 @@ escalation_paths: []
 
     def test_local_content_threshold_reports_oversized_body(self) -> None:
         rule_schema_policy = policy.RuleSchemaPolicy.from_config(
-            rules_config.RulesConfig(
-                local=rules_config.LocalRulesConfig(max_content_chars=8),
-            )
+            SimpleNamespace(local=SimpleNamespace(max_content_chars=8))
         )
         document_file = documents.RuleDocumentFile(
             path=Path("local/structure/MODULE.md"),

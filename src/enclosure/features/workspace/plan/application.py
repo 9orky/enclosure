@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from enclosure.shared import layout
+from enclosure.shared.config import settings
 
 from . import domain, infrastructure
 
@@ -17,14 +17,13 @@ def create_plan_document(name: str, *, force: bool) -> domain.PlanWriteResult:
 
 
 def _build_document(name: str) -> domain.PlanDocument:
-    project_root = layout.current_project_root()
-    current_layout = layout.current_layout()
-    target_dir = current_layout.target_dir(project_root)
+    project_root = settings.metadata.project_root
+    target_dir = settings.metadata.target_dir
     if not target_dir.is_dir():
         raise RuntimeError(
             "Could not find .enclosure/. Run `enclosure workspace sync init` first."
         )
-    plans_root = current_layout.plans_dir(project_root)
+    plans_root = settings.metadata.plans_dir
     plan_name = domain.PlanName(name)
     return domain.PlanDocument(
         name=plan_name,

@@ -3,14 +3,15 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from pydantic import Field, ValidationError
-
-from enclosure.shared import config
+import yaml
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from ..domain import manifest
 
 
-class _PatternManifest(config.StrictConfigModel):
+class _PatternManifest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     schema_version: int
     role: manifest.PatternRole
     description: str = ""
@@ -26,11 +27,7 @@ def load_pattern_manifest(
     pattern_root: Path,
     manifest_path: Path,
 ) -> manifest.Pattern:
-    raw_data = config.load_yaml_mapping(
-        manifest_path,
-        label="Pattern manifest",
-        error_type=ValueError,
-    )
+    raw_data = _load_yaml_mapping(manifest_path)
     return _pattern_from_manifest(pattern_root, manifest_path, raw_data)
 
 
@@ -203,6 +200,19 @@ def _string_list(value: Any, message: str) -> tuple[str, ...]:
     if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
         raise ValueError(message)
     return tuple(value)
+
+
+def _load_yaml_mapping(path: Path) -> dict[str, Any]:
+    try:
+        raw_data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except OSError as exc:
+        raise ValueError(f"Could not read Pattern manifest: {path}") from exc
+    except yaml.YAMLError as exc:
+        raise ValueError(f"Invalid Pattern manifest syntax in {path}") from exc
+
+    if not isinstance(raw_data, dict):
+        raise ValueError(f"Pattern manifest must contain a mapping at the top level: {path}")
+    return raw_data
 
 
 __all__ = ["load_pattern_manifest"]

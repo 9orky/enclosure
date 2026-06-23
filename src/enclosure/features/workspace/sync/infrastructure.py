@@ -12,16 +12,26 @@ from modwire.extractors.loader import (
     supported_languages as supported_source_kinds,
 )
 
-import enclosure.features.architecture.config
-import enclosure.features.workspace.config
 import enclosure.features.workspace.rules
-from enclosure.shared import layout
 
 from . import domain
 
 _PROJECT_OWNED_CONFIG_MAPS = {
     ("workspace", "recipe", "roles_map"),
 }
+
+
+def _workspace_paths(metadata: object) -> domain.WorkspacePaths:
+    return domain.WorkspacePaths(
+        target_dir=metadata.target_dir,
+        config_path=metadata.canonical_config_path,
+        rules_dir=metadata.rules_dir,
+        local_rules_dir=metadata.local_rules_dir,
+        plans_dir=metadata.plans_dir,
+        recipes_dir=metadata.recipes_dir,
+        bootstrap_instruction_path=metadata.bootstrap_instruction_path,
+        agent_instruction_path=metadata.agent_instruction_path,
+    )
 
 
 class _FlowMapping(dict[object, object]):
@@ -48,13 +58,19 @@ class _MigratedConfig:
 
 
 class FileRepository:
-    def load(self, path: Path, *, source_kind: str = "") -> domain.Workspace:
-        project_root = Path(path).resolve()
-        workspace_layout = layout.EnclosureProjectLayout()
+    def load(
+        self,
+        metadata: object,
+        *,
+        default_config_content: str,
+        source_kind: str = "",
+    ) -> domain.Workspace:
+        project_root = metadata.project_root.resolve()
+        workspace_paths = _workspace_paths(metadata)
         shared_rule_documents = self._load_shared_rule_documents()
-        packaged_config_content = _packaged_text("enclosure.yaml")
+        packaged_config_content = default_config_content
         selected_extractor = source_kind or _existing_config_extractor(
-            workspace_layout.config_path(project_root, None)
+            workspace_paths.config_path
         )
         config_content = _bootstrap_config_content(
             project_root,
@@ -63,7 +79,7 @@ class FileRepository:
         )
         migrated_config = self._migrated_config(
             project_root,
-            workspace_layout,
+            workspace_paths,
             config_content,
             fallback_config_content=config_content,
         )
@@ -79,6 +95,7 @@ class FileRepository:
 
         return domain.Workspace(
             project_root=project_root,
+            paths=workspace_paths,
             shared_rule_documents=shared_rule_documents,
             config_content=config_content,
             migrated_config_content=migrated_config.content,
@@ -87,22 +104,16 @@ class FileRepository:
             bootstrap_instruction_content=bootstrap_instruction_content,
             agent_instruction_content=agent_instruction_content,
             existing_shared_rule_paths=self._existing_shared_rule_paths(
-                project_root,
-                workspace_layout,
+                workspace_paths,
                 shared_rule_documents,
             ),
             local_paths=self._list_workspace_files(
-                workspace_layout.local_rules_dir(project_root)
+                workspace_paths.local_rules_dir
             ),
-            enclosure_dir_exists=workspace_layout.target_dir(project_root).is_dir(),
-            config_exists=workspace_layout.config_path(project_root, None).is_file(),
-            bootstrap_instruction_exists=workspace_layout.bootstrap_instruction_path(
-                project_root
-            ).is_file(),
-            agent_instruction_exists=workspace_layout.agent_instruction_path(
-                project_root
-            ).is_file(),
-            layout=workspace_layout,
+            enclosure_dir_exists=workspace_paths.target_dir.is_dir(),
+            config_exists=workspace_paths.config_path.is_file(),
+            bootstrap_instruction_exists=workspace_paths.bootstrap_instruction_path.is_file(),
+            agent_instruction_exists=workspace_paths.agent_instruction_path.is_file(),
         )
 
     def _load_shared_rule_documents(self) -> tuple[domain.SharedRuleDocument, ...]:
@@ -121,15 +132,13 @@ class FileRepository:
 
     def _existing_shared_rule_paths(
         self,
-        project_root: Path,
-        workspace_layout: layout.EnclosureProjectLayout,
+        workspace_paths: domain.WorkspacePaths,
         shared_rule_documents: tuple[domain.SharedRuleDocument, ...],
     ) -> tuple[Path, ...]:
-        rules_dir = workspace_layout.rules_dir(project_root)
         return tuple(
             target_path
             for target_path in (
-                rules_dir / document.shared_rule_path.value
+                workspace_paths.rules_dir / document.shared_rule_path.value
                 for document in shared_rule_documents
             )
             if target_path.is_file()
@@ -149,12 +158,12 @@ class FileRepository:
     def _migrated_config(
         self,
         project_root: Path,
-        workspace_layout: layout.EnclosureProjectLayout,
+        workspace_paths: domain.WorkspacePaths,
         packaged_config_content: str,
         *,
         fallback_config_content: str,
     ) -> "_MigratedConfig":
-        config_path = workspace_layout.config_path(project_root, None)
+        config_path = workspace_paths.config_path
         if not config_path.is_file():
             return _MigratedConfig(
                 content=fallback_config_content,
@@ -235,25 +244,11 @@ def validate_generated_assets(
 
 
 def _validate_generated_config(content: str) -> None:
-    raw_data = _load_generated_yaml_mapping(
+    _load_generated_yaml_mapping(
         content,
         label="Generated config asset",
-        path=Path("resources/enclosure.yaml"),
+        path=Path("settings.dump_manifest()"),
     )
-    try:
-        enclosure.features.architecture.config.ArchitectureConfig.validate_mapping(
-            raw_data,
-            Path("resources/enclosure.yaml"),
-        )
-        enclosure.features.workspace.config.WorkspaceConfig.validate_mapping(
-            raw_data,
-            Path("resources/enclosure.yaml"),
-        )
-    except (
-        enclosure.features.architecture.config.ArchitectureConfigError,
-        enclosure.features.workspace.config.WorkspaceConfigError,
-    ) as exc:
-        raise ValueError(f"Invalid generated config asset: {exc}") from exc
 
 
 def _validate_generated_instruction(name: str, content: str) -> None:
@@ -340,7 +335,7 @@ def _bootstrap_config_content(
     raw_data = _load_generated_yaml_mapping(
         packaged_config_content,
         label="Generated config asset",
-        path=Path("resources/enclosure.yaml"),
+        path=Path("settings.dump_manifest()"),
     )
     selected_extractor = _selected_extractor(project_root, source_kind)
     contract_section = _mapping_section(raw_data, "architecture")

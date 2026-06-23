@@ -3,15 +3,18 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from pydantic import Field, ValidationError
+import yaml
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from enclosure.shared import config, layout
 from enclosure.shared import templates
+from enclosure.shared.config import settings
 
 from . import domain
 
 
-class _PatternManifest(config.StrictConfigModel):
+class _PatternManifest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     schema_version: int
     role: str = ""
     description: str = ""
@@ -24,17 +27,11 @@ class _PatternManifest(config.StrictConfigModel):
 
 
 def current_pattern_root() -> Path:
-    return layout.current_recipes_root()
+    return settings.metadata.recipes_dir
 
 
 def load_fit_config() -> domain.PatternFitConfig:
-    _project_root, config_path, raw_data = config.load_project_mapping()
-    return config.section(
-        raw_data,
-        "workspace.recipe",
-        domain.PatternFitConfig,
-        config_path,
-    )
+    return domain.PatternFitConfig.from_config(settings.query("workspace.recipe"))
 
 
 class FilePatternRepository:
@@ -46,7 +43,7 @@ class FilePatternRepository:
             return ()
 
         return tuple(
-            self._load_pattern(pattern_root, layout.recipe_manifest_path(pattern_root))
+            self._load_pattern(pattern_root, _pattern_manifest_path(pattern_root))
             for pattern_root in sorted(
                 self._iter_pattern_roots(),
                 key=lambda path: path.name,
@@ -55,7 +52,7 @@ class FilePatternRepository:
 
     def get_by_name(self, name: str) -> domain.Pattern:
         pattern_root = self.root_path / name
-        manifest_path = layout.recipe_manifest_path(pattern_root)
+        manifest_path = _pattern_manifest_path(pattern_root)
         if not manifest_path.is_file():
             raise LookupError(name)
 
@@ -65,15 +62,11 @@ class FilePatternRepository:
         for child in self.root_path.iterdir():
             if child.name.startswith("."):
                 continue
-            if child.is_dir() and layout.recipe_manifest_path(child).is_file():
+            if child.is_dir() and _pattern_manifest_path(child).is_file():
                 yield child
 
     def _load_pattern(self, pattern_root: Path, manifest_path: Path) -> domain.Pattern:
-        raw_data = config.load_yaml_mapping(
-            manifest_path,
-            label="Pattern manifest",
-            error_type=ValueError,
-        )
+        raw_data = _load_yaml_mapping(manifest_path)
         return _pattern_from_manifest(pattern_root, manifest_path, raw_data)
 
 
@@ -165,6 +158,23 @@ def _pattern_from_manifest(
         inputs=tuple(_input_specs_from(manifest.inputs)),
         files=tuple(_pattern_files_from(manifest.files)),
     )
+
+
+def _pattern_manifest_path(pattern_root: Path) -> Path:
+    return pattern_root / "recipe.yaml"
+
+
+def _load_yaml_mapping(path: Path) -> dict[str, Any]:
+    try:
+        raw_data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except OSError as exc:
+        raise ValueError(f"Could not read Pattern manifest: {path}") from exc
+    except yaml.YAMLError as exc:
+        raise ValueError(f"Invalid Pattern manifest syntax in {path}") from exc
+
+    if not isinstance(raw_data, dict):
+        raise ValueError(f"Pattern manifest must contain a mapping at the top level: {path}")
+    return raw_data
 
 
 def _input_specs_from(raw_inputs: Any) -> tuple[domain.PatternInputSpec, ...]:

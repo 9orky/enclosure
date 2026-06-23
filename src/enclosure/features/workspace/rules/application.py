@@ -6,20 +6,16 @@ from modwire.architecture import TagMatcher
 from modwire.extractors.loader import load_extractor
 
 from enclosure.features.architecture import flow
-from enclosure.shared import layout
-import enclosure.features.architecture.config
-import enclosure.features.workspace.config
+from enclosure.shared.config import settings
 
 from . import infrastructure
 from .domain import documents, graph, inference, metadata, policy
 
 
 def build_rule_schema_report() -> documents.RuleSchemaReport:
-    project_root, _config_path, workspace_settings = (
-        enclosure.features.workspace.config.load_config()
-    )
+    workspace_settings = settings.query("workspace")
     rule_schema_policy = policy.RuleSchemaPolicy.from_config(workspace_settings.rules)
-    rules_root = layout.current_layout().rules_dir(project_root)
+    rules_root = settings.metadata.rules_dir
     document_files = infrastructure.file_repository.find(rules_root)
     known_paths = {document.path for document in document_files}
     document_checks = tuple(
@@ -71,13 +67,9 @@ def build_rule_read_plan(
     paths: tuple[Path, ...] = (),
     task: str = "",
 ) -> graph.RuleReadPlan:
-    project_root, _config_path, _workspace_settings = (
-        enclosure.features.workspace.config.load_config()
-    )
-    _architecture_project_root, _architecture_config_path, architecture_settings = (
-        enclosure.features.architecture.config.load_config()
-    )
-    rules_root = layout.current_layout().rules_dir(project_root)
+    project_root = settings.metadata.project_root
+    architecture_settings = settings.query("architecture")
+    rules_root = settings.metadata.rules_dir
     document_files = infrastructure.file_repository.find(rules_root)
     rule_documents: list[documents.RuleDocument] = []
     parse_errors: list[str] = []

@@ -4,10 +4,47 @@ import tempfile
 import textwrap
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
+
+import yaml
 
 from enclosure.features.workspace.recipe import application
 from enclosure.shared import layout
+
+
+class ConfigNode(SimpleNamespace):
+    pass
+
+
+class TestSettings:
+    @property
+    def metadata(self) -> SimpleNamespace:
+        return SimpleNamespace(project_root=application.layout.current_project_root())
+
+    def query(self, path: str) -> object:
+        config_path = application.layout.current_project_root() / ".enclosure" / "enclosure.yaml"
+        value: object = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+        for part in tuple(part.strip() for part in path.split(".") if part.strip()):
+            value = value[part]
+        return _config_object(value)
+
+
+def _config_object(value: object) -> object:
+    if isinstance(value, dict):
+        return ConfigNode(
+            **{
+                key: item if key == "roles_map" else _config_object(item)
+                for key, item in value.items()
+            }
+        )
+    if isinstance(value, list):
+        return tuple(_config_object(item) for item in value)
+    return value
+
+
+application.layout = SimpleNamespace(current_project_root=lambda: Path.cwd())
+application.settings = TestSettings()
 
 
 class WorkspaceRecipeCheckTest(unittest.TestCase):

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from enclosure.shared import layout
+from enclosure.shared.config import settings
 
 from . import domain, infrastructure
 
@@ -32,6 +32,7 @@ def describe_workspace_contract() -> domain.WorkspaceContractSummary:
 
 def _workspace(*, source_kind: str = "") -> domain.Workspace:
     return infrastructure.file_repository.load(
-        layout.current_project_root(),
+        settings.metadata,
+        default_config_content=settings.dump_manifest(),
         source_kind=source_kind,
     )

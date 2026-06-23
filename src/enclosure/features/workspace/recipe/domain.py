@@ -7,9 +7,7 @@ from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any, TypedDict
 
-from pydantic import Field, field_validator
-
-from enclosure.shared import config, naming
+from enclosure.shared import naming
 
 _VARIABLE_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _DOTTED_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$")
@@ -131,38 +129,48 @@ class RelativePath:
         return root_path / self.value
 
 
-class RecipeConfig(config.StrictConfigModel):
-    skip: tuple[str, ...]
-    roles_map: dict[str, str] = Field(default_factory=dict)
+@dataclass(frozen=True)
+class RecipeGenerationConfig:
+    skip: tuple[str, ...] = ()
+    roles_map: dict[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "skip",
+            tuple(
+                value.strip().replace("\\", "/")
+                for value in self.skip
+                if value.strip()
+            ),
+        )
+        object.__setattr__(
+            self,
+            "roles_map",
+            {
+                module_name.strip().replace("\\", "/"): role_name.strip()
+                for module_name, role_name in self.roles_map.items()
+                if module_name.strip() and role_name.strip()
+            },
+        )
 
     @property
     def skip_globs(self) -> tuple[str, ...]:
         return self.skip
 
-    @field_validator("skip")
-    @classmethod
-    def normalize_skip_globs(cls, values: tuple[str, ...]) -> tuple[str, ...]:
-        return tuple(
-            value.strip().replace("\\", "/")
-            for value in values
-            if value.strip()
-        )
-
-    @field_validator("roles_map")
-    @classmethod
-    def normalize_roles_map(cls, values: dict[str, str]) -> dict[str, str]:
-        return {
-            module_name.strip().replace("\\", "/"): role_name.strip()
-            for module_name, role_name in values.items()
-            if module_name.strip() and role_name.strip()
-        }
-
     def should_skip(self, relative_path: RelativePath) -> bool:
         relative_path_text = relative_path.as_posix()
         return any(fnmatch(relative_path_text, pattern) for pattern in self.skip)
 
-
-RecipeGenerationConfig = RecipeConfig
+    @classmethod
+    def from_config(cls, value: object) -> RecipeGenerationConfig:
+        roles_map = getattr(value, "roles_map", {})
+        if not isinstance(roles_map, dict):
+            roles_map = vars(roles_map)
+        return cls(
+            skip=tuple(getattr(value, "skip", ())),
+            roles_map=dict(roles_map),
+        )
 
 
 @dataclass(frozen=True)

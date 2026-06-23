@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from enclosure.shared import layout
-
 from ..domain import manifest
 from . import manifests
 
@@ -19,7 +17,7 @@ class FilePatternRepository:
             return ()
 
         return tuple(
-            self._load_pattern(pattern_root, layout.recipe_manifest_path(pattern_root))
+            self._load_pattern(pattern_root, _pattern_manifest_path(pattern_root))
             for pattern_root in sorted(
                 self._iter_pattern_roots(),
                 key=lambda path: path.name,
@@ -31,7 +29,7 @@ class FilePatternRepository:
         name: str,
     ) -> manifest.Pattern:
         pattern_root = self.root_path / name
-        manifest_path = layout.recipe_manifest_path(pattern_root)
+        manifest_path = _pattern_manifest_path(pattern_root)
         if not manifest_path.is_file():
             raise LookupError(name)
 
@@ -41,7 +39,7 @@ class FilePatternRepository:
         for child in self.root_path.iterdir():
             if child.name.startswith("."):
                 continue
-            if child.is_dir() and layout.recipe_manifest_path(child).is_file():
+            if child.is_dir() and _pattern_manifest_path(child).is_file():
                 yield child
 
     def _load_pattern(
@@ -53,6 +51,10 @@ class FilePatternRepository:
             pattern_root,
             manifest_path,
         )
+
+
+def _pattern_manifest_path(pattern_root: Path) -> Path:
+    return pattern_root / "recipe.yaml"
 
 
 __all__ = ["FilePatternRepository"]

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import enclosure.features.architecture.health
 import enclosure.features.workspace.health
-from enclosure.shared import layout
+from enclosure.shared.config import settings
 
 from . import domain
 
@@ -12,7 +12,7 @@ def build_health_report() -> domain.HealthReport:
 
 
 def build_health_report_for_top(top: int | None) -> domain.HealthReport:
-    project_root = layout.current_project_root()
+    project_root = settings.metadata.project_root
     findings: list[domain.HealthFinding] = []
     workspace_report = None
     architecture_report = None

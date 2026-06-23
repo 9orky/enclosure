@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .config import RulesConfig
 from .documents import (
     RuleDocument,
     RuleDocumentCheck,
@@ -39,10 +38,21 @@ class RuleSchemaPolicy:
 
     @classmethod
     def default(cls) -> RuleSchemaPolicy:
-        return cls.from_config(RulesConfig())
+        return cls._build(local_max_content_chars=1200)
 
     @classmethod
-    def from_config(cls, rules_config: RulesConfig) -> RuleSchemaPolicy:
+    def from_config(cls, rules_config: object) -> RuleSchemaPolicy:
+        local_rules_config = getattr(rules_config, "local", object())
+        return cls._build(
+            local_max_content_chars=getattr(
+                local_rules_config,
+                "max_content_chars",
+                1200,
+            )
+        )
+
+    @classmethod
+    def _build(cls, *, local_max_content_chars: int) -> RuleSchemaPolicy:
         return cls(
             navigational_schema=RuleDocumentSchema.navigational(),
             policy_schema=RuleDocumentSchema.policy(),
@@ -51,7 +61,7 @@ class RuleSchemaPolicy:
             execution_big_picture_schema=RuleDocumentSchema.execution_big_picture(),
             execution_step_schema=RuleDocumentSchema.execution_step(),
             local_execution_schema=RuleDocumentSchema.local_execution(),
-            local_max_content_chars=rules_config.local.max_content_chars,
+            local_max_content_chars=local_max_content_chars,
         )
 
     def schema_for(

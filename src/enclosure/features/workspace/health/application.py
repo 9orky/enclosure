@@ -1,30 +1,26 @@
 from __future__ import annotations
 
-import enclosure.features.workspace.config
 import enclosure.features.workspace.recipe
 import enclosure.features.workspace.rules
-from enclosure.shared import layout
+from enclosure.shared.config import settings
 
 from . import domain
 
 
 def build_workspace_health_report() -> domain.WorkspaceHealthReport:
-    project_root = layout.current_project_root()
-    project_layout = layout.current_layout()
-    target_dir = project_layout.target_dir(project_root)
-    rules_dir = project_layout.rules_dir(project_root)
-    local_rules_dir = project_layout.local_rules_dir(project_root)
+    project_root = settings.metadata.project_root
+    target_dir = settings.metadata.target_dir
+    rules_dir = settings.metadata.rules_dir
+    local_rules_dir = settings.metadata.local_rules_dir
     shared_rules_dir = rules_dir / "shared"
-    recipes_dir = layout.current_recipes_root()
+    recipes_dir = settings.metadata.recipes_dir
 
     findings: list[domain.WorkspaceHealthFinding] = []
-    config_path = project_layout.config_path(project_root, None)
+    config_path = settings.metadata.canonical_config_path
     config_present = False
 
     try:
-        _project_root, config_path, _workspace_settings = (
-            enclosure.features.workspace.config.load_config()
-        )
+        settings.query("workspace")
         config_present = config_path.is_file()
     except Exception as exc:
         findings.append(

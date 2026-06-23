@@ -5,11 +5,17 @@ from enum import StrEnum
 from pathlib import Path
 from typing import TypedDict
 
-from enclosure.shared import config, layout
 
-
-class SyncConfig(config.StrictConfigModel):
-    pass
+@dataclass(frozen=True)
+class WorkspacePaths:
+    target_dir: Path
+    config_path: Path
+    rules_dir: Path
+    local_rules_dir: Path
+    plans_dir: Path
+    recipes_dir: Path
+    bootstrap_instruction_path: Path
+    agent_instruction_path: Path
 
 
 @dataclass(frozen=True)
@@ -92,6 +98,7 @@ class MigrateProjectResult(ProjectSyncResult):
 @dataclass(frozen=True)
 class Workspace:
     project_root: Path
+    paths: WorkspacePaths
     shared_rule_documents: tuple[SharedRuleDocument, ...]
     config_content: str
     migrated_config_content: str
@@ -105,7 +112,6 @@ class Workspace:
     config_exists: bool = False
     bootstrap_instruction_exists: bool = False
     agent_instruction_exists: bool = False
-    layout: layout.EnclosureProjectLayout = layout.EnclosureProjectLayout()
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -130,9 +136,8 @@ class Workspace:
         )
 
     def expected_shared_rule_paths(self) -> tuple[Path, ...]:
-        rules_dir = self.layout.rules_dir(self.project_root)
         return tuple(
-            rules_dir / document.shared_rule_path.value
+            self.paths.rules_dir / document.shared_rule_path.value
             for document in self.shared_rule_documents
         )
 
@@ -168,8 +173,8 @@ class Workspace:
         existing_shared_rule_paths = set(self.existing_shared_rule_paths)
         return WorkspaceContractSummary(
             project_root=self.project_root,
-            target_dir=self.layout.target_dir(self.project_root),
-            config_path=self.layout.config_path(self.project_root, None),
+            target_dir=self.paths.target_dir,
+            config_path=self.paths.config_path,
             enclosure_dir_exists=self.enclosure_dir_exists,
             config_exists=self.config_exists,
             shared_rule_paths=tuple(
@@ -198,19 +203,19 @@ class Workspace:
 
         for target_path, exists, content, overwrite in (
             (
-                self.layout.config_path(self.project_root, None),
+                self.paths.config_path,
                 self.config_exists,
                 config_content,
                 overwrite_config,
             ),
             (
-                self.layout.bootstrap_instruction_path(self.project_root),
+                self.paths.bootstrap_instruction_path,
                 self.bootstrap_instruction_exists,
                 self.bootstrap_instruction_content,
                 overwrite_bootstrap_instruction,
             ),
             (
-                self.layout.agent_instruction_path(self.project_root),
+                self.paths.agent_instruction_path,
                 self.agent_instruction_exists,
                 self.agent_instruction_content,
                 overwrite_bootstrap_instruction,
@@ -226,9 +231,8 @@ class Workspace:
             )
 
         existing_shared_rule_paths = set(self.existing_shared_rule_paths)
-        rules_dir = self.layout.rules_dir(self.project_root)
         for document in self.shared_rule_documents:
-            target_path = rules_dir / document.shared_rule_path.value
+            target_path = self.paths.rules_dir / document.shared_rule_path.value
             _append_file_plan(
                 changes,
                 preserved_paths,
@@ -239,12 +243,12 @@ class Workspace:
             )
 
         return WorkspaceWritePlan(
-            target_dir=self.layout.target_dir(self.project_root),
+            target_dir=self.paths.target_dir,
             required_dirs=_sort_paths(
                 (
-                    self.layout.plans_dir(self.project_root),
-                    self.layout.recipes_dir(self.project_root),
-                    self.layout.local_rules_dir(self.project_root),
+                    self.paths.plans_dir,
+                    self.paths.recipes_dir,
+                    self.paths.local_rules_dir,
                 )
             ),
             changes=tuple(changes),

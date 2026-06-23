@@ -4,7 +4,8 @@ from collections.abc import Mapping
 from pathlib import Path
 
 from ..domain import manifest, report
-from ..infrastructure import config, repository, workspace
+from ..infrastructure import repository, workspace
+from enclosure.shared.config import settings
 from . import apply
 
 
@@ -42,7 +43,7 @@ def validate_catalog(
 
 def validate_current_catalog() -> report.PatternCatalogReport:
     pattern_root = workspace.current_pattern_root()
-    roles_map = config.load_pattern_config().roles_map
+    roles_map = getattr(settings.query("workspace.recipe"), "roles_map", {})
     return validate_catalog(
         pattern_root=pattern_root,
         roles_map=roles_map,

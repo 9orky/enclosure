@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import unittest
-from importlib.resources import files
 from pathlib import Path
 
 import yaml
 
 from enclosure.features.workspace.sync import domain, infrastructure
+from enclosure.shared.config import settings
 
 
 class WorkspaceSyncGeneratedAssetValidationTest(unittest.TestCase):
@@ -44,10 +44,7 @@ class WorkspaceSyncGeneratedAssetValidationTest(unittest.TestCase):
 
 
 def _packaged_config_content() -> str:
-    raw_text = files("enclosure").joinpath("resources", "enclosure.yaml").read_text(
-        encoding="utf-8"
-    )
-    raw_data = yaml.safe_load(raw_text)
+    raw_data = yaml.safe_load(settings.dump_manifest())
     raw_data["architecture"]["language"] = "python"
     return yaml.dump(raw_data, sort_keys=False)
 

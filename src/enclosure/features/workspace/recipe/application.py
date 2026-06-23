@@ -7,8 +7,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
-from enclosure.shared import config
-from enclosure.shared import layout
+from enclosure.shared.config import settings
 
 from . import domain, infrastructure
 
@@ -740,7 +739,7 @@ def generate_recipe(
     recipe_root: Path,
     variables: Mapping[str, str],
 ) -> domain.GenerateRecipeResult:
-    project_root = layout.current_project_root()
+    project_root = settings.metadata.project_root
     return _RecipeGenerationService(
         recipe_root=recipe_root,
         config=_load_recipe_generation_settings(),
@@ -754,7 +753,7 @@ def describe_recipe_generation(
     recipe_root: Path,
     variables: Mapping[str, str],
 ) -> domain.RecipeGenerationReport:
-    project_root = layout.current_project_root()
+    project_root = settings.metadata.project_root
     return _RecipeGenerationService(
         recipe_root=recipe_root,
         config=_load_recipe_generation_settings(),
@@ -789,7 +788,7 @@ def check_recipes(
     target_path: Path | str | None,
     variables: Mapping[str, str],
 ) -> domain.RecipeCheckReport:
-    project_root = layout.current_project_root()
+    project_root = settings.metadata.project_root
     recipe_settings = _load_recipe_generation_settings()
     return _RecipeGenerationService(
         recipe_root=recipe_root,
@@ -809,7 +808,7 @@ def check_recipe_drifts(
     *,
     recipe_root: Path,
 ) -> domain.RecipeDriftReport:
-    project_root = layout.current_project_root()
+    project_root = settings.metadata.project_root
     return _RecipeGenerationService(
         recipe_root=recipe_root,
         config=_load_recipe_generation_settings(),
@@ -821,7 +820,7 @@ def bench_preview(
     *,
     recipe_root: Path,
 ) -> domain.RecipeBenchReport:
-    project_root = layout.current_project_root()
+    project_root = settings.metadata.project_root
     return _RecipeGenerationService(
         recipe_root=recipe_root,
         config=_load_recipe_generation_settings(),
@@ -832,7 +831,7 @@ def bench_all_preview(
     *,
     recipe_root: Path,
 ) -> domain.RecipeBenchAllReport:
-    project_root = layout.current_project_root()
+    project_root = settings.metadata.project_root
     return _RecipeGenerationService(
         recipe_root=recipe_root,
         config=_load_recipe_generation_settings(),
@@ -848,7 +847,7 @@ def render_recipe_bench_all_html(report: domain.RecipeBenchAllReport) -> str:
 
 
 def _load_recipe_generation_settings() -> domain.RecipeGenerationConfig:
-    return infrastructure.load_recipe_generation_config()
+    return domain.RecipeGenerationConfig.from_config(settings.query("workspace.recipe"))
 
 
 def _check_variables_for(
@@ -1179,18 +1178,10 @@ def _validate_roles_map(
 
 
 def _architecture_root(project_root: Path) -> Path:
-    config_path = project_root / ".enclosure" / "enclosure.yaml"
-    raw_data = config.load_yaml_mapping(
-        config_path,
-        label="Config file",
-        error_type=RuntimeError,
-    )
-    architecture = raw_data.get("architecture")
-    if not isinstance(architecture, dict):
-        raise RuntimeError(f"Missing architecture config section in {config_path}")
-    root = architecture.get("root")
+    architecture = settings.query("architecture")
+    root = getattr(architecture, "root", "")
     if not isinstance(root, str) or not root.strip():
-        raise RuntimeError(f"Missing architecture.root in {config_path}")
+        raise RuntimeError("Missing architecture.root in shared settings")
     return project_root / root
 
 

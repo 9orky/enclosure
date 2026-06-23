@@ -5,19 +5,27 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
-from pydantic import field_validator
-
-from enclosure.shared import config
 from enclosure.shared import naming
 
 
-class PatternFitConfig(config.StrictConfigModel):
-    skip: tuple[str, ...]
+@dataclass(frozen=True)
+class PatternFitConfig:
+    skip: tuple[str, ...] = ()
 
-    @field_validator("skip")
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "skip",
+            tuple(
+                value.strip().replace("\\", "/")
+                for value in self.skip
+                if value.strip()
+            ),
+        )
+
     @classmethod
-    def normalize_skip_globs(cls, values: tuple[str, ...]) -> tuple[str, ...]:
-        return tuple(value.strip().replace("\\", "/") for value in values if value.strip())
+    def from_config(cls, value: object) -> PatternFitConfig:
+        return cls(skip=tuple(getattr(value, "skip", ())))
 
 
 @dataclass(frozen=True)
