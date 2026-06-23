@@ -43,7 +43,10 @@ class PlanName:
         object.__setattr__(self, "value", normalized_value)
 
     def document_path(self, plans_root: Path) -> Path:
-        return plans_root / f"{self.value}.md"
+        return self.folder_path(plans_root) / "PLAN.md"
+
+    def folder_path(self, plans_root: Path) -> Path:
+        return plans_root / self.value
 
 
 @dataclass(frozen=True)
@@ -61,6 +64,28 @@ class PlanWriteResult:
     created: bool = False
     overwritten: bool = False
     preserved: bool = False
+
+
+@dataclass(frozen=True)
+class PlanViolation:
+    code: str
+    message: str
+
+
+@dataclass(frozen=True)
+class CurrentPlanReport:
+    project_root: Path
+    plans_root: Path
+    current_slug: str = ""
+    plan_files: tuple[Path, ...] = ()
+    violations: tuple[PlanViolation, ...] = ()
+
+    def passed(self) -> bool:
+        return not self.violations
+
+    @property
+    def has_plan_file(self) -> bool:
+        return bool(self.plan_files)
 
 
 def render_plan_scaffold(plan_name: PlanName) -> str:
@@ -140,8 +165,10 @@ What should the agent know before editing files?
 
 __all__ = [
     "PLAN_SECTION_HEADINGS",
+    "CurrentPlanReport",
     "PlanDocument",
     "PlanName",
+    "PlanViolation",
     "PlanWriteResult",
     "render_plan_scaffold",
 ]

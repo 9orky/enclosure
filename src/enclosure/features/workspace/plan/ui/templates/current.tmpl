@@ -1,0 +1,12 @@
+Plan report.
+Plans root: {{ report.plans_root|present_path(project_root) }}
+Current plan: {{ report.current_slug if report.current_slug else "none" }}
+Plan files: {{ report.plan_files|length }}
+Has plan file: {{ "yes" if report.has_plan_file else "no" }}
+Status: {{ "ok" if report.passed() else "error" }}
+{% if report.violations %}
+Errors:
+{% for violation in report.violations -%}
+- {{ violation.code }}: {{ violation.message }}
+{% endfor -%}
+{% endif %}

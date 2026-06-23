@@ -32,6 +32,10 @@ escalation_paths:
 
 ## Rules
 
+- Manage planning documents with `enclosure plan` and `enclosure plan <kebab-slug>`.
+- Store planning documents only under `.enclosure/plans/`.
+- Use `--show` to preview; use `--force` only after explicit approval.
+- Do not create ad hoc `PLAN.md`, `UML.md`, or step files outside `.enclosure/plans/`.
 - Plan around compact rendered layer files for `domain`, `infrastructure`,
   `application`, and `ui`.
 - Phase order follows configured dependency direction from inner to outer layer.
@@ -42,5 +46,6 @@ escalation_paths:
 
 ## Checks
 
+- The plan path is `.enclosure/plans/<kebab-slug>/PLAN.md`.
 - Phases match files and owners.
 - Verification uses a public seam when practical.

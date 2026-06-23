@@ -32,6 +32,7 @@ escalation_paths:
 
 ## Rules
 
+- Keep step detail in the relevant `.enclosure/plans/<kebab-slug>.md` document.
 - Keep each step owned by one file/layer.
 - Execute in approved inner-to-outer layer order.
 - Do not reach forward into a later layer to finish an earlier step.
@@ -43,5 +44,6 @@ escalation_paths:
 
 ## Checks
 
+- No ad hoc step artifact exists outside `.enclosure/plans/`.
 - Step matches the approved phase.
 - Dependencies point only to completed earlier layers.

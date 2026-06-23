@@ -11,6 +11,7 @@ class FilePlanMaterializer:
         force: bool,
     ) -> domain.PlanWriteResult:
         document.plans_root.mkdir(parents=True, exist_ok=True)
+        document.target_path.parent.mkdir(parents=True, exist_ok=True)
 
         if document.target_path.exists() and not force:
             return domain.PlanWriteResult(document=document, preserved=True)

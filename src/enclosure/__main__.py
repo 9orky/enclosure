@@ -175,6 +175,7 @@ _add_callback_app(
 
 app.add_typer(workspace_app, name="workspace")
 app.add_typer(architecture_app, name="architecture")
+_add_callback_app(app, enclosure.features.workspace.plan.ui.app, name="plan")
 _add_callback_app(app, enclosure.features.health.report.ui.app, name="health")
 
 ui.set_command_defaults(root_command, {"llm": False, "docs": False})

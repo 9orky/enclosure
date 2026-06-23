@@ -29,8 +29,8 @@ escalation_paths: []
 ## Implementation Tree Rules
 
 - Put `Implementation Tree` first.
-- Name the artifact `PLAN_STEP_0X.md`.
-- Match `0X` to approved phase order.
+- Store step detail in the approved planning location.
+- Match the step to approved phase order.
 - Reuse the big-picture tree and add planned signatures.
 
 ## Step Contract Rules
@@ -46,7 +46,7 @@ escalation_paths: []
 
 ## Review Checks
 
-- Tree first, step filename correct, signatures present.
+- Tree first, approved planning location, signatures present.
 - Scope and verification are narrow.
 - Completion state is explicit.
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Use this command to create a repo-local planning document for a human to fill before module implementation.
+Use this command to inspect or create a repo-local planning document for a human to fill before module implementation.
 
 ## When To Run
 
@@ -12,12 +12,14 @@ Use this command to create a repo-local planning document for a human to fill be
 
 ## How To Read The Result
 
-- Created means a new draft exists in `.enclosure/plans/`.
+- Created means a new draft exists in `.enclosure/plans/<name>/`.
+- The no-argument report is clean only when exactly one current plan folder exists and it contains at least one Markdown plan file.
 - Preserved means a draft already exists and was not overwritten.
 - `--show` prints the scaffold without writing files.
 
 ## Agent Tips
 
 - Treat plan documents as user-owned local artifacts.
+- Use `enclosure plan` before creating ad hoc planning files.
 - Do not overwrite an existing plan unless explicitly asked to use `--force`.
 - Read a completed plan before editing application code.

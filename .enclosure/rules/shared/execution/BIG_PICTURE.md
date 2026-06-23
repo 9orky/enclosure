@@ -33,7 +33,7 @@ escalation_paths: []
 ## File Tree Rules
 
 - Put `File Tree` first.
-- Name the artifact `PLAN.md`.
+- Use the project-approved planning location; do not invent a root-level file.
 - List folders and files only; no signatures.
 - If phases name layers, the tree uses the same layer set.
 
@@ -49,7 +49,7 @@ escalation_paths: []
 
 ## Review Checks
 
-- Tree first, `PLAN.md`, phase-level only.
+- Tree first, approved planning location, phase-level only.
 - Phases map directly to steps.
 - Acceptance and open questions are explicit.
 

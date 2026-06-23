@@ -52,7 +52,15 @@ def plan_command(
         return
 
     if name is None:
-        raise ValueError("Plan name is required")
+        report = application.current_plan_report()
+        ui.render(
+            report,
+            template_name="current.tmpl",
+            context={"project_root": report.project_root},
+        )
+        if not report.passed():
+            ui.exit_with_error()
+        return
 
     if show:
         document = application.describe_plan_document(name)
