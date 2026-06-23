@@ -31,7 +31,7 @@ Use the matching current recipe as the preferred shape for new or refactored mod
 - Use legacy code only to preserve observable behavior.
 - Do not import from, re-export, or wrap the old module as a shortcut.
 - Keep side-by-side code temporary.
-- Prefer functional tests through the CLI or public module seam.
+- Prefer functional tests through CLI commands only.
 
 ## Checks
 

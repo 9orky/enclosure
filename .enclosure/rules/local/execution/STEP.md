@@ -39,7 +39,7 @@ escalation_paths:
   adding or forwarding alternate project-root/config inputs.
 - Add public seam and command wiring as soon as they can honestly expose
   completed behavior.
-- Prefer verification through public CLI/module seams.
+- Prefer verification through functional CLI commands only.
 
 ## Checks
 

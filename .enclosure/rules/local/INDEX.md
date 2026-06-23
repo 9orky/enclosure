@@ -21,6 +21,7 @@ child_paths:
   - structure/INDEX.md
   - change/INDEX.md
   - execution/INDEX.md
+  - verification/INDEX.md
 ---
 
 # Local Rules
@@ -41,6 +42,7 @@ child_paths:
 - Read [structure/INDEX.md](structure/INDEX.md) for local seams, layers, or starter files.
 - Read [change/INDEX.md](change/INDEX.md) for local fresh-start refactoring rules.
 - Read [execution/INDEX.md](execution/INDEX.md) for local phase or step order.
+- Read [verification/INDEX.md](verification/INDEX.md) for the local test seam policy.
 - Stop when shared rules already decide the case.
 
 ## Review Checks
