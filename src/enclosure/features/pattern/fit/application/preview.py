@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from fnmatch import fnmatch
 from pathlib import Path
 
 from enclosure.shared.scaffolding import RenderedScaffoldFile, Scaffold, scaffolding
 
-from . import domain, infrastructure
+from .. import domain, infrastructure
+from . import validate
 
 
 class PatternFitService:
@@ -115,7 +115,10 @@ class PatternFitService:
                 source_path=rendered_file.source_path,
                 target_path=rendered_file.target_path,
                 relative_path=rendered_file.relative_path,
-                status=_preview_status_for(rendered_file, self._pattern_config),
+                status=validate.preview_status_for(
+                    rendered_file,
+                    self._pattern_config,
+                ),
                 content=rendered_file.content,
             )
             for rendered_file in rendered_files
@@ -128,22 +131,14 @@ def preview_pattern(
     target_path: Path | str,
     variables: Mapping[str, str],
 ) -> domain.PatternFitReport:
-    return _current_service().preview(pattern_name, project_root, target_path, variables)
-
-
-def materialize_pattern(
-    pattern_name: str,
-    project_root: Path,
-    target_path: Path | str,
-    variables: Mapping[str, str],
-) -> domain.MaterializePatternResult:
-    return _current_service().materialize(pattern_name, project_root, target_path, variables)
-
-
-def _current_service() -> PatternFitService:
     return PatternFitService(
         infrastructure.current_pattern_root(),
         infrastructure.load_fit_config(),
+    ).preview(
+        pattern_name,
+        project_root,
+        target_path,
+        variables,
     )
 
 
@@ -156,18 +151,6 @@ def _preview_file_to_rendered_file(
         relative_path=preview_file.relative_path,
         content=preview_file.content,
     )
-
-
-def _preview_status_for(
-    rendered_file: RenderedScaffoldFile,
-    pattern_config: domain.PatternFitConfig,
-) -> domain.PatternPreviewStatus:
-    relative_path = rendered_file.relative_path.as_posix()
-    if any(fnmatch(relative_path, pattern) for pattern in pattern_config.skip):
-        return domain.PatternPreviewStatus.SKIP_CONFIG
-    if rendered_file.target_path.exists():
-        return domain.PatternPreviewStatus.SKIP_EXISTS
-    return domain.PatternPreviewStatus.CREATE
 
 
 def _paths_from_preview_files(
@@ -188,6 +171,5 @@ def _paths_from_preview_files(
 
 __all__ = [
     "PatternFitService",
-    "materialize_pattern",
     "preview_pattern",
 ]

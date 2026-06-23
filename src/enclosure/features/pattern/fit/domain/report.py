@@ -5,15 +5,6 @@ from enum import StrEnum
 from pathlib import Path
 
 
-@dataclass(frozen=True)
-class PatternFitConfig:
-    skip: tuple[str, ...] = ()
-
-    @classmethod
-    def from_config(cls, value: object) -> PatternFitConfig:
-        return cls(skip=tuple(getattr(value, "skip", ())))
-
-
 class PatternPreviewStatus(StrEnum):
     CREATE = "create"
     SKIP_EXISTS = "skip_exists"
@@ -53,7 +44,6 @@ class MaterializePatternResult:
 __all__ = [
     "MaterializePatternResult",
     "PatternFitReport",
-    "PatternFitConfig",
     "PatternPreviewFile",
     "PatternPreviewStatus",
 ]

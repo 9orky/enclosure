@@ -4,7 +4,7 @@ from pathlib import Path
 
 from enclosure.shared.config import settings
 
-from . import domain
+from .. import domain
 
 
 def current_pattern_root() -> Path:

@@ -1,6 +1,6 @@
 # Step 02 - Refactor `pattern/fit`
 
-Status: Draft
+Status: Complete
 
 ## Implementation Tree
 
@@ -129,8 +129,9 @@ Expected:
 
 - `pattern/fit` is absent from drift findings.
 - Existing pattern-fit CLI output remains stable.
+- Later-step drift may remain for `workspace/plan` and `workspace/sync`.
 
 ## Completion
 
-Complete when `pattern/fit` matches the normalized `pattern-module` tree and no
-legacy compact residue remains.
+Completed with `pattern/fit` matching the normalized `pattern-module` tree and
+no legacy compact residue remaining.

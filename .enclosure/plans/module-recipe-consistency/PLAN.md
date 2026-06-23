@@ -60,6 +60,7 @@ argument violations, symbol imports, and a few oversized owned files.
 
 2. Refactor `pattern/fit`.
    Step doc: `PLAN_STEP_02.md`.
+   Status: Complete.
    Outcome: `pattern/fit` matches the normalized `pattern-module` shape.
 
 3. Refactor workspace CLI application slots.
