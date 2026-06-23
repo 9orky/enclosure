@@ -746,6 +746,13 @@ def generate_recipe(
     ).generate(recipe_name, project_root, target_path, variables=variables)
 
 
+def recipe_command_context() -> domain.RecipeCommandContext:
+    return domain.RecipeCommandContext(
+        project_root=settings.metadata.project_root,
+        recipe_root=settings.metadata.recipes_dir,
+    )
+
+
 def describe_recipe_generation(
     recipe_name: str,
     target_path: Path | str,

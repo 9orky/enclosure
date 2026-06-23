@@ -15,6 +15,12 @@ _IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _RECIPE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 
 
+@dataclass(frozen=True)
+class RecipeCommandContext:
+    project_root: Path
+    recipe_root: Path
+
+
 def _normalize_relative_path(value: Path | str, label: str) -> Path:
     normalized_value = Path(str(value).strip().replace("\\", "/"))
     if normalized_value.is_absolute():

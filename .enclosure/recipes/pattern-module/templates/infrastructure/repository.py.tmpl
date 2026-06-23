@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from enclosure.shared import layout
-
 from ..domain import manifest, reference
 from . import manifests
 
@@ -21,7 +19,7 @@ class File{{ target.class }}Repository:
         )
 
     def get_by_name(self, name: str) -> reference.{{ target.class }}Reference:
-        manifest_path = layout.recipe_manifest_path(self.root_path / name)
+        manifest_path = _recipe_manifest_path(self.root_path / name)
         if not manifest_path.is_file():
             raise LookupError(name)
         return self._reference_for(manifest_path)
@@ -30,7 +28,7 @@ class File{{ target.class }}Repository:
         for child in self.root_path.iterdir():
             if child.name.startswith("."):
                 continue
-            manifest_path = layout.recipe_manifest_path(child)
+            manifest_path = _recipe_manifest_path(child)
             if child.is_dir() and manifest_path.is_file():
                 yield manifest_path
 
@@ -40,6 +38,10 @@ class File{{ target.class }}Repository:
             name=manifest.manifest_identity(manifest_path),
             root_path=manifest_path.parent,
         )
+
+
+def _recipe_manifest_path(recipe_root: Path) -> Path:
+    return recipe_root / "recipe.yaml"
 
 
 __all__ = ["File{{ target.class }}Repository"]

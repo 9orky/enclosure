@@ -6,7 +6,6 @@ from typing import Annotated
 import typer
 
 from enclosure.shared import ui
-from enclosure.shared.config import settings
 
 from .. import application
 
@@ -121,8 +120,9 @@ def recipe_command(
         ui.render_docs("docs.tmpl")
         return
 
-    project_root = settings.metadata.project_root
-    recipe_root = settings.metadata.recipes_dir
+    command_context = application.recipe_command_context()
+    project_root = command_context.project_root
+    recipe_root = command_context.recipe_root
     recipe_root_label = ui.present_path(recipe_root, project_root)
     variables = application.parse_variables(tuple(raw_variables or ()))
 
