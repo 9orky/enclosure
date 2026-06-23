@@ -14,12 +14,6 @@ from modwire import (
 from enclosure.shared.config import settings
 from enclosure.shared.config.errors import ConfigError
 
-DEFAULT_ARCHITECTURE_EXCLUSIONS = (
-    ".git/**",
-    "build/**",
-    "dist/**",
-)
-
 
 @dataclass(frozen=True)
 class ArchitectureCodeMap:
@@ -70,10 +64,7 @@ def extract_architecture_code() -> ArchitectureCodeMap:
 
 
 def _extraction_exclusions(architecture_config: object) -> tuple[str, ...]:
-    exclusions = tuple(getattr(architecture_config, "exclusions", ()))
-    if not getattr(architecture_config, "architecture_root", ""):
-        return exclusions
-    return tuple(dict.fromkeys((*exclusions, *DEFAULT_ARCHITECTURE_EXCLUSIONS)))
+    return tuple(getattr(architecture_config, "exclusions", ()) or ())
 
 
 class _ArchitectureMatchingConfig:

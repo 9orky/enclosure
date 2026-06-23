@@ -27,6 +27,10 @@ src/
 .enclosure/
   .cache/
     modwire/
+pyproject.toml
+tests/
+  shared/
+    test_architecture_code.py
 ```
 
 ## Goal
@@ -39,8 +43,9 @@ Define only Enclosure-owned behavior:
 - For this alignment, `.enclosure/.cache` is used by Modwire extraction cache.
 - Architecture extraction uses only exclusions declared by the project contract.
 
-Project implementation-environment sinks, including this repository's Python
-tooling output, are outside this step and must not be planned here.
+Project implementation-environment cache contents are not Enclosure-managed
+state. This step only aligns source configuration when it would otherwise write
+project tool output into `.enclosure/.cache`.
 
 ## Step Contract
 
@@ -53,14 +58,17 @@ Outputs:
 - `ConfigMetadata.cache_dir` remains `.enclosure/.cache` for Enclosure-owned
   managed cache.
 - Modwire extraction uses `.enclosure/.cache/modwire`.
+- Project tool cache configuration in `pyproject.toml` does not write to
+  `.enclosure/.cache`.
 - Architecture extraction uses only `architecture.exclusions` from
   `.enclosure/enclosure.yaml`; there is no hard-coded default exclusion list.
 - Enclosure runtime/config code does not expose or depend on `.dev`.
 
-Scope: cache ownership and path alignment only.
+Scope: cache ownership, source configuration that prevents `.enclosure/.cache`
+pollution, and architecture extraction path alignment only.
 
-Out Of Scope: project implementation-environment cache layout, Python tool
-configuration, recipe template rewriting, and shared-rule language changes.
+Out Of Scope: project implementation-environment cache contents, recipe
+template rewriting, and shared-rule language changes.
 
 Owner: shared config, architecture extraction, and workspace sync.
 
@@ -125,12 +133,13 @@ classDiagram
    `architecture.exclusions` list only.
 4. Keep workspace sync from treating `.dev` as Enclosure-managed source,
    contract, or migration material.
-5. Delete only stale generated Modwire cache files that embed obsolete managed
+5. Move Python tool cache source configuration out of `.enclosure/.cache`.
+6. Delete only stale generated Modwire cache files that embed obsolete managed
    paths.
 
 ## Verification
 
-- Run `rg -n "DEFAULT_ARCHITECTURE_EXCLUSIONS|default architecture extraction|default exclusions" src .enclosure docs tests`.
+- Run `rg -n "DEFAULT_ARCHITECTURE_EXCLUSIONS|default architecture extraction|default exclusions" src .enclosure/rules .enclosure/recipes docs tests`.
 - Run `rg -n "\\.dev|dev_dir" src/enclosure .enclosure/rules .enclosure/recipes docs tests`.
 - Accept only unrelated version/domain strings such as `.dev0` and `szpak.dev`,
   and no Enclosure-managed runtime/config dependency on `.dev`.
@@ -139,8 +148,9 @@ classDiagram
 
 ## Completion
 
-Status: Needs Correction.
+Status: Done.
 
-Known Drift: `architecture_code.py` currently contains hard-coded extraction
-defaults. That defaulting behavior must be removed so each project owns its
-architecture exclusions through its own contract.
+Known Drift: Resolved. `architecture_code.py` now forwards only configured
+`architecture.exclusions` into extraction, and the stale generated Modwire cache
+file was removed. `pyproject.toml` now routes project tool caches outside
+`.enclosure/.cache`.

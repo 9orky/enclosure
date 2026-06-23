@@ -31,6 +31,7 @@ Status: In Progress - Partially Complete
 docs/
   modules/
     workspace-recipe.md
+pyproject.toml
 src/
   enclosure/
     shared/
@@ -45,6 +46,8 @@ src/
               docs.tmpl
               llm.tmpl
 tests/
+  shared/
+    test_architecture_code.py
   features/
     workspace/
       recipe/
@@ -58,20 +61,17 @@ environment state, and stop reusable rules, docs, helpers, and local dual-use
 recipes from leaking Enclosure's own runtime architecture as generic project
 guidance.
 
-The reusable-rule language cleanup is complete. The managed-cache cleanup is
-partially complete but needs correction: `.enclosure/.cache` is only for
-Enclosure-owned managed-project cache such as Modwire, and architecture
-exclusions must come only from the project contract. The remaining work is
-recipe alignment: local recipes should keep generating working, pluggable code
-for humans and agents, but reusable recipes should not render code that imports
-Enclosure product internals unless the recipe is explicitly classified as
-Enclosure-product-only.
+The reusable-rule language cleanup and managed-cache correction are complete.
+The remaining work is recipe alignment: local recipes should keep generating
+working, pluggable code for humans and agents, but reusable recipes should not
+render code that imports Enclosure product internals unless the recipe is
+explicitly classified as Enclosure-product-only.
 
 ## Phases
 
 ### 1. Managed Cache And Configured Exclusions
 
-Status: Needs Correction
+Status: Done
 
 Step Artifact: `PLAN_STEP_01.md`
 
@@ -84,8 +84,8 @@ Inputs: `ConfigMetadata`, architecture extraction, workspace sync source
 detection, package metadata, and generated Modwire caches.
 
 Outputs: `.enclosure/.cache/modwire` for Enclosure-owned code extraction cache;
-project environment/tool caches are outside this alignment; architecture
-exclusions come only from `.enclosure/enclosure.yaml`.
+project environment/tool cache configuration stays outside `.enclosure/.cache`;
+architecture exclusions come only from `.enclosure/enclosure.yaml`.
 
 Acceptance: Enclosure runtime/config code never treats `.dev` as managed
 workspace state, and architecture extraction has no hard-coded default
@@ -185,7 +185,7 @@ pressure, coherence, and cluster findings.
   Enclosure runtime/config, reusable rules, reusable docs, or recipes.
 - `.enclosure/.cache` is scoped to Enclosure-managed cache data such as Modwire.
 - Architecture extraction exclusions come only from the project contract; no
-  default exclusions are assumed.
+  implicit fallback exclusions are assumed.
 - `.enclosure/enclosure.yaml` remains the executable local contract and may name
   `src/enclosure/features`, `architecture/boundaries`,
   `architecture/clusters`, and `workspace/sync`.
