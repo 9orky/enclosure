@@ -1,6 +1,0 @@
-schema_version: 1
-role: archetype
-description: Broken recipe for functional failure coverage.
-files:
-  - source: missing.py.tmpl
-    target: "generated/missing.py"
