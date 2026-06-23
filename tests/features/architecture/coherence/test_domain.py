@@ -7,8 +7,8 @@ from modwire.definitions import SourceFile
 from modwire.extraction import ExtractionResult, ExtractionSummary
 from modwire.graph import DependencyGraph
 
-from enclosure.features.architecture.boundaries.domain import ConfigTagRule
 from enclosure.features.architecture.coherence import domain
+from enclosure.shared.config.architecture import ConfigTagRule
 
 LAYERS = ("ui", "application", "infrastructure", "domain")
 

@@ -14,9 +14,10 @@ from enclosure.__main__ import app
 from enclosure.features.architecture.boundaries.application import (
     _internal_dependency_graph,
 )
-from enclosure.features.architecture.boundaries.domain import BoundaryRule
-from enclosure.features.architecture.boundaries.domain import ConfigTagRule
-from enclosure.shared import layout as project_layout
+from enclosure.shared.config.architecture import BoundaryRule
+from enclosure.shared.config.architecture import ConfigTagRule
+from tests.features.architecture.support import use_architecture_settings
+from tests.features.architecture.support import write_architecture_config
 
 
 def test_boundaries_cli_renders_architectural_violations(
@@ -32,7 +33,7 @@ def test_boundaries_cli_renders_architectural_violations(
             "src/sales/orders/application.py": "VALUE = 1\n",
         },
     )
-    monkeypatch.setattr(project_layout, "current_project_root", lambda: project_root)
+    use_architecture_settings(monkeypatch, project_root)
 
     result = cli_runner.invoke(app, ["architecture", "boundaries"])
 
@@ -58,7 +59,7 @@ def test_boundaries_cli_reports_package_prefixed_deep_imports(
             "src/enclosure/features/sales/payments/domain.py": "VALUE = 2\n",
         },
     )
-    monkeypatch.setattr(project_layout, "current_project_root", lambda: project_root)
+    use_architecture_settings(monkeypatch, project_root)
 
     result = cli_runner.invoke(app, ["architecture", "boundaries"])
 
@@ -114,7 +115,7 @@ def test_boundaries_resolves_configured_public_seam_without_python_filename() ->
 )
 def test_boundaries_cli_runs_for_non_python_source_fixtures(
     fixture_project,
-    use_project,
+    monkeypatch,
     cli_runner,
     source_kind: str,
     runtime: str,
@@ -122,12 +123,10 @@ def test_boundaries_cli_runs_for_non_python_source_fixtures(
     if shutil.which(runtime) is None:
         pytest.skip(f"{runtime} runtime is not available")
     project = fixture_project(f"minimal-{source_kind}")
-    use_project(project)
-
-    sync = cli_runner.invoke(app, ["workspace", "sync", "init"])
+    write_architecture_config(project.root, source_kind)
+    use_architecture_settings(monkeypatch, project.root)
     result = cli_runner.invoke(app, ["architecture", "boundaries"])
 
-    assert sync.exit_code == 0, sync.output
     assert result.exit_code == 0, result.output
     assert "Architecture Boundaries Passed" in result.output
     assert "Error:" not in result.output

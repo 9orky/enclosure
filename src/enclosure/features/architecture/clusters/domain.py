@@ -7,20 +7,8 @@ from pathlib import PurePosixPath
 from pathlib import Path
 
 from modwire import CodeMap
-from pydantic import Field, field_validator
 
-from enclosure.shared import architecture, config, limits
-
-
-class ClustersConfig(config.StrictConfigModel):
-    group_depth: int = Field(ge=1, le=8)
-    top: int
-    files_top: int
-
-    @field_validator("top", "files_top")
-    @classmethod
-    def value_is_limit(cls, value: int) -> int:
-        return limits.validate_report_limit(value)
+from enclosure.shared import architecture
 
 
 @dataclass(frozen=True)
@@ -232,7 +220,6 @@ class _ClusterBuilder:
 __all__ = [
     "ArchitectureCluster",
     "ClusterFile",
-    "ClustersConfig",
     "ClustersReport",
     "describe_clusters",
 ]

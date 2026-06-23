@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from enclosure.__main__ import app
-from enclosure.shared import layout as project_layout
+from tests.features.architecture.support import use_architecture_settings
 
 
 def test_coherence_cli_reports_clean_abstract_tree(
@@ -21,7 +21,7 @@ def test_coherence_cli_reports_clean_abstract_tree(
             "src/sales/orders/ui/cli.py": "import sales.orders.application\n",
         },
     )
-    monkeypatch.setattr(project_layout, "current_project_root", lambda: project_root)
+    use_architecture_settings(monkeypatch, project_root)
 
     result = cli_runner.invoke(app, ["architecture", "coherence", "--top", "-1"])
 
@@ -49,7 +49,7 @@ def test_coherence_cli_reports_incoherent_abstract_tree(
             "src/sales/Other/domain.py": "VALUE = 1\n",
         },
     )
-    monkeypatch.setattr(project_layout, "current_project_root", lambda: project_root)
+    use_architecture_settings(monkeypatch, project_root)
 
     result = cli_runner.invoke(app, ["architecture", "coherence", "--top", "-1"])
 
@@ -70,7 +70,7 @@ def test_coherence_cli_reports_missing_module_tag(
         tags=[tag for tag in DEFAULT_TAGS if "name: module," not in tag],
         files={"src/sales/orders/api.py": "VALUE = 1\n"},
     )
-    monkeypatch.setattr(project_layout, "current_project_root", lambda: project_root)
+    use_architecture_settings(monkeypatch, project_root)
 
     result = cli_runner.invoke(app, ["architecture", "coherence"])
 

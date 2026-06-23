@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from modwire.definitions import SourceFile, SourceImport
 
 from enclosure.features.architecture.shape import domain
+from enclosure.shared.config.architecture import ShapeConfig
 
 
 class ShapeEvaluationTest(unittest.TestCase):
@@ -229,7 +230,7 @@ def _config(**overrides):
         "allowed_imports_crossing_types": ["module", "symbol"],
     }
     values.update(overrides)
-    return SimpleNamespace(shape=domain.ShapeConfig.model_validate(values))
+    return SimpleNamespace(shape=ShapeConfig.model_validate(values))
 
 
 if __name__ == "__main__":

@@ -6,19 +6,9 @@ from dataclasses import field
 from pathlib import Path
 
 from modwire.architecture import TagMatcher
-from pydantic import field_validator
 
 from enclosure.features.architecture import flow
-from enclosure.shared import architecture, config, limits
-
-
-class MapConfig(config.StrictConfigModel):
-    top: int
-
-    @field_validator("top")
-    @classmethod
-    def top_is_limit(cls, value: int) -> int:
-        return limits.validate_report_limit(value)
+from enclosure.shared import architecture, limits
 
 
 @dataclass(frozen=True)
@@ -360,7 +350,6 @@ __all__ = [
     "ArchitectureHotspot",
     "ArchitectureMapConfigError",
     "ArchitectureMapReport",
-    "MapConfig",
     "MappedArchitecture",
     "MappedDependency",
     "MappedLayer",

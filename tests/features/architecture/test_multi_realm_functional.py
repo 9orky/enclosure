@@ -5,9 +5,10 @@ from pathlib import Path
 import pytest
 
 from enclosure.__main__ import app
-from enclosure.features.architecture.config.domain import ArchitectureConfig
-from enclosure.shared import config as shared_config
-from enclosure.shared import layout as project_layout
+from enclosure.shared.config import ConfigError
+from enclosure.shared.config.facade import SettingsFacade
+from enclosure.shared.config.manifest import Manifest
+from tests.features.architecture.support import use_architecture_settings
 
 
 def test_architecture_reports_map_backend_and_gui_realms(
@@ -17,7 +18,7 @@ def test_architecture_reports_map_backend_and_gui_realms(
 ) -> None:
     project_root = tmp_path / "project"
     write_multi_realm_project(project_root)
-    monkeypatch.setattr(project_layout, "current_project_root", lambda: project_root)
+    use_architecture_settings(monkeypatch, project_root)
 
     boundaries = cli_runner.invoke(app, ["architecture", "boundaries"])
     architecture_map = cli_runner.invoke(app, ["architecture", "map", "--top", "-1"])
@@ -40,16 +41,21 @@ def test_architecture_reports_map_backend_and_gui_realms(
 
 
 def test_duplicate_architecture_tag_names_are_rejected(tmp_path: Path) -> None:
-    config_path = tmp_path / "enclosure.yaml"
-    raw_data = multi_realm_config(
+    project_root = tmp_path / "project"
+    enclosure_dir = project_root / ".enclosure"
+    enclosure_dir.mkdir(parents=True)
+    (enclosure_dir / "enclosure.yaml").write_text(
+        multi_realm_config_text(
         """
       - { name: module, match: "freeloader/*/*", except: [], exclude: [] }
       - { name: module, match: "app/pages/*", except: [], exclude: [] }
 """,
+        ),
+        encoding="utf-8",
     )
 
-    with pytest.raises(shared_config.ConfigError) as raised:
-        ArchitectureConfig.validate_mapping(raw_data, config_path)
+    with pytest.raises(ConfigError) as raised:
+        SettingsFacade(Manifest(project_root))
 
     assert "duplicate architecture boundary tag name(s): module" in str(raised.value)
 
@@ -88,12 +94,6 @@ def write_multi_realm_project(project_root: Path) -> None:
         ),
         encoding="utf-8",
     )
-
-
-def multi_realm_config(tag_text: str) -> dict[str, object]:
-    import yaml
-
-    return yaml.safe_load(multi_realm_config_text(tag_text))
 
 
 def multi_realm_config_text(tag_text: str) -> str:

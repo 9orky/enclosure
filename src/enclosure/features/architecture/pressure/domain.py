@@ -5,18 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from modwire import CodeMap
-from pydantic import field_validator
 
-from enclosure.shared import architecture, config, limits
-
-
-class PressureConfig(config.StrictConfigModel):
-    top: int
-
-    @field_validator("top")
-    @classmethod
-    def top_is_limit(cls, value: int) -> int:
-        return limits.validate_report_limit(value)
+from enclosure.shared import architecture, limits
 
 
 @dataclass(frozen=True)
@@ -399,7 +389,6 @@ __all__ = [
     "CallablePressure",
     "DescribedArchitecturePressure",
     "ExportPressure",
-    "PressureConfig",
     "UnresolvedCallBreakdown",
     "describe_architecture_pressure",
 ]

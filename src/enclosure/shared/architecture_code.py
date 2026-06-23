@@ -5,7 +5,7 @@ from pathlib import Path
 
 from modwire import CodeMap, ExtractionCache, SourceRoots, extract_code
 
-from enclosure.shared import config, layout
+from enclosure.shared.config import settings
 
 DEFAULT_ARCHITECTURE_EXCLUSIONS = (
     ".dev/**",
@@ -40,13 +40,9 @@ class ArchitectureCodeMap:
 
 
 def extract_architecture_code() -> ArchitectureCodeMap:
-    from enclosure.features.architecture.config import domain
-
-    project_root, config_path, raw_data = config.load_project_mapping()
-    architecture_config = domain.ArchitectureConfig.validate_mapping(
-        raw_data,
-        config_path,
-    )
+    project_root = settings.metadata.project_root
+    config_path = settings.metadata.canonical_config_path
+    architecture_config = settings.query("architecture")
     architecture_root = _architecture_root(project_root, architecture_config)
     code_map = extract_code(
         language=architecture_config.language,
@@ -54,7 +50,7 @@ def extract_architecture_code() -> ArchitectureCodeMap:
         exclusions=_extraction_exclusions(architecture_config),
         source_roots=SourceRoots(workspace_root=project_root),
         cache=ExtractionCache(
-            root=layout.current_layout().cache_dir(project_root) / "modwire",
+            root=settings.metadata.cache_dir / "modwire",
             max_entries=3,
         ),
     )

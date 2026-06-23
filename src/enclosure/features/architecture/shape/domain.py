@@ -2,91 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
 
 from modwire import CodeMap
-from modwire import ShapeConfig as ModwireShapeConfig
 from modwire import evaluate_shape as evaluate_modwire_shape
 from modwire.shape.rules import FileCountRule, SymbolShapeRule
-from pydantic import field_validator
 
-from enclosure.shared import architecture, config
-
-
-ImportCrossingType = Literal["module", "symbol"]
-ShapeConfigError = config.ConfigError
-
-
-class ShapeConfig(config.StrictConfigModel):
-    max_classes_per_file: int
-    max_interfaces_per_file: int
-    max_types_per_file: int
-    max_abstract_classes_per_file: int
-    max_functions_per_file: int
-    max_methods_per_class: int
-    max_declared_args_per_function: int
-    max_declared_args_per_method: int
-    max_lines_count_per_function: int
-    max_lines_count_per_method: int
-    max_lines_count_per_class: int
-    allow_optional_function_args: bool
-    allow_optional_method_args: bool
-    allow_optional_class_properties: bool
-    allow_imports_aliases: bool
-    enforce_joined_imports: bool
-    allowed_imports_crossing_types: list[ImportCrossingType]
-
-    def to_modwire_config(self) -> ModwireShapeConfig:
-        return ModwireShapeConfig(
-            max_classes_per_file=self.max_classes_per_file,
-            max_interfaces_per_file=self.max_interfaces_per_file,
-            max_types_per_file=self.max_types_per_file,
-            max_abstract_classes_per_file=self.max_abstract_classes_per_file,
-            max_functions_per_file=self.max_functions_per_file,
-            max_methods_per_class=self.max_methods_per_class,
-            max_declared_args=_combined_limit(
-                self.max_declared_args_per_function,
-                self.max_declared_args_per_method,
-            ),
-            max_function_lines=self.max_lines_count_per_function,
-            max_method_lines=self.max_lines_count_per_method,
-            max_class_lines=self.max_lines_count_per_class,
-            allow_optional_function_args=self.allow_optional_function_args,
-            allow_optional_method_args=self.allow_optional_method_args,
-            allow_optional_class_properties=self.allow_optional_class_properties,
-            allow_import_aliases=self.allow_imports_aliases,
-            allowed_import_crossing_types=tuple(self.allowed_imports_crossing_types),
-            require_joined_imports=False,
-        )
-
-    @field_validator(
-        "max_classes_per_file",
-        "max_interfaces_per_file",
-        "max_types_per_file",
-        "max_abstract_classes_per_file",
-        "max_functions_per_file",
-        "max_methods_per_class",
-        "max_declared_args_per_function",
-        "max_declared_args_per_method",
-        "max_lines_count_per_function",
-        "max_lines_count_per_method",
-        "max_lines_count_per_class",
-    )
-    @classmethod
-    def limit_is_disabled_or_non_negative(cls, value: int) -> int:
-        if value < -1:
-            raise ValueError("limit must be -1 or greater")
-        return value
-
-    @field_validator("allowed_imports_crossing_types")
-    @classmethod
-    def import_crossing_types_are_unique(
-        cls,
-        value: list[ImportCrossingType],
-    ) -> list[ImportCrossingType]:
-        if len(value) != len(set(value)):
-            raise ValueError("allowed import crossing types must be unique")
-        return value
+from enclosure.shared import architecture
 
 
 @dataclass(frozen=True)
@@ -153,7 +74,7 @@ def evaluate_shape(
 
 def _normalize_violation(
     violation: object,
-    shape: ShapeConfig,
+    shape: object,
     owners: dict[tuple[str, str, str], tuple[str, str]],
 ) -> ShapeViolation | None:
     rule_name = getattr(violation, "rule_name")
@@ -249,7 +170,7 @@ def _add_abstract_class_owners(
 
 def _import_violations(
     code_map: CodeMap,
-    shape: ShapeConfig,
+    shape: object,
 ) -> tuple[ShapeViolation, ...]:
     violations: list[ShapeViolation] = []
     allowed_import_crossing_types = set(shape.allowed_imports_crossing_types)
@@ -335,15 +256,8 @@ def _joined_import_violations(code_map: CodeMap) -> tuple[ShapeViolation, ...]:
     return tuple(violations)
 
 
-def _combined_limit(*limits: int) -> int:
-    enabled_limits = [limit for limit in limits if limit != -1]
-    return min(enabled_limits) if enabled_limits else -1
-
-
 __all__ = [
     "evaluate_shape",
-    "ShapeConfig",
-    "ShapeConfigError",
     "ShapeReport",
     "ShapeViolation",
 ]

@@ -7,7 +7,6 @@ from . import domain
 ArchitecturePressureReport = domain.ArchitecturePressureReport
 CallablePressure = domain.CallablePressure
 ExportPressure = domain.ExportPressure
-PressureConfig = domain.PressureConfig
 describe_architecture_pressure = domain.describe_architecture_pressure
 
 
@@ -24,7 +23,6 @@ __all__ = [
     "ArchitecturePressureReport",
     "CallablePressure",
     "ExportPressure",
-    "PressureConfig",
     "build_pressure_report",
     "build_pressure_report_for_top",
     "describe_architecture_pressure",

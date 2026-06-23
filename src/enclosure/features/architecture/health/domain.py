@@ -7,9 +7,7 @@ from dataclasses import is_dataclass
 from pathlib import Path
 from typing import Literal
 
-from pydantic import field_validator
-
-from enclosure.shared import architecture, config, limits
+from enclosure.shared import architecture
 
 FindingSeverity = Literal["error", "attention"]
 
@@ -36,15 +34,6 @@ def _next_step_for(severity: FindingSeverity, category: str) -> str:
     if severity == "error":
         return "Fix this before review."
     return "Investigate when this area is in scope."
-
-
-class HealthConfig(config.StrictConfigModel):
-    top: int
-
-    @field_validator("top")
-    @classmethod
-    def top_is_limit(cls, value: int) -> int:
-        return limits.validate_report_limit(value)
 
 
 @dataclass(frozen=True)
@@ -224,7 +213,6 @@ def _json_dict(value: object) -> dict[str, object]:
 
 __all__ = [
     "ArchitectureHealthReport",
-    "HealthConfig",
     "HealthClusterSummary",
     "HealthFinding",
     "HealthHotspotSummary",

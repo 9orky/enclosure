@@ -1,6 +1,6 @@
 # Shared Config UML
 
-Status: Aligned for Step 02 implementation
+Status: Aligned after Step 02; Step 03 migration units may proceed
 
 This diagram describes the intended `enclosure.shared.config` package outcome for the shared config plan. It uses Mermaid so it can live in Markdown preview.
 
@@ -18,9 +18,9 @@ Step 01 completes everything inside `enclosure.shared.config` without importing
 existing enclosure feature modules, bounded-context config modules, or other
 shared modules/packages. Step 02 then integrates the architecture bounded
 context and the current `src/enclosure/shared/architecture_code.py`
-architecture extraction helper with the finished package. Step 03 integrates
-the remaining bounded contexts and shared-helper cleanup units after
-architecture succeeds.
+architecture extraction helper with the finished package. That architecture
+migration is now complete. Step 03 integrates the remaining bounded contexts
+and shared-helper cleanup units.
 
 ## File Layout
 
@@ -382,6 +382,7 @@ note for ManifestQuery "Dot-path traversal behind SettingsFacade.query(...).\nNo
 note for EnclosureSettings "Whole manifest graph validates at once.\nGeneric defaults live on config fields wherever possible.\nValidated graph YAML dumping is initiated by SettingsFacade, not by passing settings into Manifest."
 note for ArchitectureCallers "Step 02 only: architecture callers import settings, use settings.metadata.project_root, and query config values through settings.query(...).\nStep 02 edits stay inside the architecture root, the architecture extraction helper, and matching architecture tests."
 note for WorkspaceCallers "Step 03 only, after successful architecture migration.\nEach migration unit edits only its own root and matching tests."
+note for PatternCallers "Step 03 pattern callers read recipe skip and role data from workspace.recipe.\nThere is no top-level pattern manifest section in EnclosureSettings."
 ```
 
 ## Runtime Flow
@@ -449,9 +450,10 @@ and it does not call a `Manifest` API that accepts an `EnclosureSettings` object
 - This UML is the implementation source of truth.
 - Step 01 completes `shared.config` independently.
 - Step 01 imports no existing enclosure feature modules, bounded-context config modules, or other shared modules/packages.
-- Step 02 integrates architecture bounded-context callers and
+- Step 02 has integrated architecture bounded-context callers and
   `src/enclosure/shared/architecture_code.py` with the completed package.
-- Step 03 integrates remaining bounded contexts after architecture migration succeeds.
+- Step 03 integrates remaining bounded contexts now that architecture migration
+  has succeeded.
 - The runtime public seam for callers is `settings`; support exports such as
   `ConfigError` and `StrictConfigModel` are not a caller-facing query or loading
   API.
@@ -467,6 +469,8 @@ and it does not call a `Manifest` API that accepts an `EnclosureSettings` object
 - `Manifest.dump_default()` is the default config generation API for later workspace sync integration.
 - `Manifest` does not expose generic YAML dumping or methods that accept `EnclosureSettings`; arbitrary graph dumping belongs to `SettingsFacade.dump_manifest()`.
 - Step 03 removes the packaged `resources/enclosure.yaml` template after workspace sync uses `Manifest.dump_default()`.
+- Step 03 pattern callers query `workspace.recipe` for current pattern-related
+  config data.
 - Integrated callers must not rediscover or infer project root independently.
 - `enclosure.shared.layout` is removed during a Step 03 shared-helper cleanup unit; specialized path helpers move to owning features.
 - Each integration step edits only the root boundary declared by that step or migration unit.

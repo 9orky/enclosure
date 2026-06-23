@@ -1,6 +1,6 @@
 # Shared Config
 
-Status: Step 01 implemented; Step 02 ready for implementation after Step 01 verification
+Status: Step 01 and Step 02 implemented; Step 03 ready to split into migration units
 
 ## File Tree
 
@@ -78,6 +78,18 @@ succeeds. No integration step may add missing `shared.config` capabilities. If
 integration discovers that the package is incomplete, return to Step 01,
 complete the package independently, then resume the blocked integration step.
 
+Current state after Step 02:
+
+- Architecture production callers and `src/enclosure/shared/architecture_code.py`
+  use `enclosure.shared.config.settings`.
+- `src/enclosure/features/architecture/config/` has been deleted.
+- Remaining imports of deleted architecture config modules are outside the
+  architecture root and belong to Step 03 migration units, especially workspace
+  sync and workspace rules.
+- The root settings graph currently contains `architecture` and `workspace`.
+  Pattern callers that read recipe skip or role data should query
+  `workspace.recipe`; no top-level `pattern` manifest section exists.
+
 ## Root Boundary Rule
 
 Every step may edit only the roots declared by that step.
@@ -107,7 +119,7 @@ Step 03 target callers are the remaining bounded contexts and later integration
 surfaces that need runtime configuration:
 
 - `workspace.*` features that consume workspace config.
-- pattern callers that read config data.
+- pattern callers that read config data from `workspace.recipe`.
 - health callers that read config data.
 - later shared helpers and CLI flows that are outside the architecture root.
 
@@ -206,6 +218,7 @@ Inputs:
 - Manually declared config pydantic classes inside `shared.config`.
 
 Outputs:
+
 
 - A validated root pydantic config object for the whole config graph.
 - `settings.query("...")`, a dot-path query surface over the validated graph.
