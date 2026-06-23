@@ -2,10 +2,11 @@
 doc_class: execution
 rule_kind: execution
 audience: agent
-purpose: Define the human-approved calibration protocol before architecture-sensitive agent work.
+purpose: Define the human-approved calibration protocol before architecture-sensitive agent work and protect project-contract signal.
 applies_when:
   - The agent must learn or adapt a project contract before implementation.
   - The work may change local rules, recipes, module ownership, public seams, or dependency direction.
+  - A failing check might tempt the agent to weaken the project contract instead of fixing the implementation.
 tags:
   - execution
   - calibration
@@ -44,7 +45,16 @@ escalation_paths:
 - Plan gate: approve `PLAN.md` phases before step artifacts exist.
 - Step gate: approve each `PLAN_STEP_0X.md` before implementation.
 - Drift gate: stop when ownership, seam, dependency direction, or recipe shape assumptions break.
+- Contract-change gate: approve contract edits before changing the workspace contract, recipes, or rule files.
 - Codification gate: approve turning one-time discovery into local rules.
+
+## Contract Integrity
+
+- Treat the workspace contract, recipes, and rule files as project contract, not error-suppression targets.
+- Do not change exclusions, thresholds, tags, boundary rules, recipes, or local rules merely to make checks pass.
+- Fix implementation first when the configured health check or focused checks fail.
+- If the contract is wrong, stop, name the failing signal, explain why implementation should not conform, and get explicit human approval before editing the contract.
+- After an approved contract change, run affected focused checks and the configured post-change health check.
 
 ## Drift Controls
 
@@ -68,6 +78,7 @@ escalation_paths:
 - Calibration decisions name owner, seam, direction, shape, and verification.
 - Human gates are explicit before implementation begins.
 - Drift stop conditions are recorded before work proceeds.
+- Contract edits are justified as contract changes, not as check suppression.
 
 ## Handoff Checks
 
