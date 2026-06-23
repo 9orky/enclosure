@@ -8,25 +8,25 @@ contract effects visible before code or generated files change.
 Use `--shell` when a recipe should act as the shape oracle:
 
 ```sh
-enclosure workspace recipe module-report-cli src/enclosure/features/architecture/example --shell
+enclosure workspace recipe module-report-cli src/orders/reporting/example --shell
 ```
 
 Use tree-only dry runs for file-shape review:
 
 ```sh
-enclosure workspace recipe module-report-cli src/enclosure/features/architecture/example --dry-run --tree
+enclosure workspace recipe module-report-cli src/orders/reporting/example --dry-run --tree
 ```
 
 Use content dry runs for template review:
 
 ```sh
-enclosure workspace recipe module-report-cli src/enclosure/features/architecture/example --dry-run --content
+enclosure workspace recipe module-report-cli src/orders/reporting/example --dry-run --content
 ```
 
 Generate only after the preview matches the intended owner and target:
 
 ```sh
-enclosure workspace recipe module-report-cli src/enclosure/features/architecture/example
+enclosure workspace recipe module-report-cli src/orders/reporting/example
 ```
 
 ## Focused Checks

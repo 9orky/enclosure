@@ -22,7 +22,7 @@ escalation_paths:
 
 # Local Refactoring
 
-Use `architecture/boundaries` as the preferred shape for new or refactored modules.
+Use the matching current recipe as the preferred shape for new or refactored modules.
 
 ## Rules
 

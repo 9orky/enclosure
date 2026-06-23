@@ -25,7 +25,7 @@ child_paths:
 
 ## Stop Or Descend
 
-- Read [OWNERSHIP.md](OWNERSHIP.md) for the owning enclosure.
+- Read [OWNERSHIP.md](OWNERSHIP.md) for the owning boundary.
 - Read [BOUNDARIES.md](BOUNDARIES.md) for public seam and private internals.
 - Read [DEPENDENCIES.md](DEPENDENCIES.md) for allowed direction.
 - Stop when owner, seam, and direction are clear.

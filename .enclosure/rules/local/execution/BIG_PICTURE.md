@@ -6,7 +6,7 @@ generated_by: agent
 validation_version: 1
 profile_kind: workflow
 discovered_from:
-  - ../../../src/enclosure/features/architecture/boundaries/
+  - architecture.root
 narrows_paths:
   - ../../shared/execution/BIG_PICTURE.md
 audience: agent

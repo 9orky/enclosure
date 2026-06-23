@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import tempfile
 import time
 from collections.abc import Callable
@@ -127,7 +128,7 @@ def _contract_text() -> str:
         .joinpath("enclosure.yaml")
         .read_text(encoding="utf-8")
     )
-    return contract.replace("root: src/enclosure/features", "root: src")
+    return re.sub(r"(?m)^  root: .*$", "  root: src", contract, count=1)
 
 
 if __name__ == "__main__":

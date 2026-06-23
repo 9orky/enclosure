@@ -69,17 +69,17 @@ dev = [
 ]
 
 [tool.uv]
-cache-dir = ".dev/uv_cache"
+cache-dir = ".enclosure/.cache/uv"
 
 [tool.uv.sources]
 modwire = { git = "https://github.com/9orky/modwire.git", tag = "v2.3.0" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-cache_dir = ".dev/pytest_cache"
+cache_dir = ".enclosure/.cache/pytest"
 
 [tool.ruff]
-cache-dir = ".dev/ruff_cache"
+cache-dir = ".enclosure/.cache/ruff"
 
 [project.scripts]
 enclosure = "enclosure.__main__:main"

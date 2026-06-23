@@ -28,11 +28,11 @@ escalation_paths:
 - Test modules directly only when they own the seam.
 - Do not add test-only production seams.
 - Assert behavior and contract, not private mechanics.
-- Treat tests as behavioral proof; they do not replace post-change `enclosure health`.
+- Treat tests as behavioral proof; they do not replace the configured post-change health check.
 - Do not weaken tests, exclusions, thresholds, or rule contracts to manufacture a pass.
 
 ## Review Checks
 
 - Seam, scope, and assertions prove behavior without test-only production API.
-- Verification names both focused behavioral checks and post-change `enclosure health` when files changed.
+- Verification names both focused behavioral checks and the configured post-change health check when files changed.
 - Failing checks lead to implementation fixes or approved contract-change escalation.

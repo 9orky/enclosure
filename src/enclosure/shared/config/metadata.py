@@ -29,10 +29,6 @@ class ConfigMetadata:
         return self.target_dir / ".cache"
 
     @property
-    def dev_dir(self) -> Path:
-        return self.project_root / ".dev"
-
-    @property
     def rules_dir(self) -> Path:
         return self.target_dir / "rules"
 

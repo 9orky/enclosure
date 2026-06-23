@@ -15,11 +15,9 @@ from enclosure.shared.config import settings
 from enclosure.shared.config.errors import ConfigError
 
 DEFAULT_ARCHITECTURE_EXCLUSIONS = (
-    ".dev/**",
     ".git/**",
     "build/**",
     "dist/**",
-    "__pycache__/**",
 )
 
 

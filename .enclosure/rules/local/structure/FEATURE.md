@@ -6,7 +6,7 @@ generated_by: agent
 validation_version: 1
 profile_kind: module_seams
 discovered_from:
-  - ../../../src/enclosure/features/
+  - architecture.root
 narrows_paths:
   - ../../shared/structure/FEATURE.md
 audience: agent
@@ -27,12 +27,12 @@ escalation_paths:
 
 # Local Feature
 
-Use `architecture/boundaries` and `architecture/clusters` as current reference modules.
+Use the configured module map and recipe map as the current reference.
 
 ## Rules
 
 - Feature roots stay small: configured public seams and owned modules only.
-- Behavior lives in modules such as `architecture/boundaries`, not in the feature root.
+- Behavior lives in owned modules, not in the feature root.
 - Cross-feature imports use configured public seams.
 
 ## Checks

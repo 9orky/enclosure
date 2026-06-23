@@ -8,7 +8,6 @@ recursive-include docs/modules *.md
 recursive-include src/enclosure/resources *
 prune .enclosure
 prune .github
-prune .dev
 prune libraries
 prune tests
 exclude AGENTS.md

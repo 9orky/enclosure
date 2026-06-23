@@ -2,7 +2,7 @@
 doc_class: policy
 rule_kind: policy
 audience: agent
-purpose: Decide the owning enclosure for a responsibility before implementation or refactoring.
+purpose: Decide the owning boundary for a responsibility before implementation or refactoring.
 applies_when:
   - The task touches code that could belong to more than one feature, module, or layer.
 tags:
@@ -18,7 +18,7 @@ escalation_paths:
 
 ## Required Decisions
 
-- Owning enclosure.
+- Owning boundary.
 - Owning module.
 - Owning layer, when layered.
 

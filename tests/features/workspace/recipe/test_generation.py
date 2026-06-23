@@ -11,7 +11,7 @@ RECIPE_ROOT = Path(".enclosure/recipes")
 def test_describe_recipe_generation_preserves_preview_file_shapes() -> None:
     report = recipe.describe_recipe_generation(
         "module-workspace-cli",
-        "src/enclosure/features/example/module",
+        "src/orders/reporting/example",
         recipe_root=RECIPE_ROOT,
         variables={},
     )
@@ -24,6 +24,6 @@ def test_describe_recipe_generation_preserves_preview_file_shapes() -> None:
         preview_file.relative_path.as_posix()
         for preview_file in report["preview_files"]
     } >= {
-        "src/enclosure/features/example/module/application/commands.py",
-        "src/enclosure/features/example/module/application/queries.py",
+        "src/orders/reporting/example/application/commands.py",
+        "src/orders/reporting/example/application/queries.py",
     }

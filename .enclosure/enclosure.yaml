@@ -1,6 +1,5 @@
 # Local architecture contract for this repository.
 #
-# Canonical module pattern: architecture/boundaries
 # New or refactored feature modules should use a small package seam plus
 # domain.py, infrastructure.py, application.py, and ui.py when those
 # responsibilities are needed. Legacy layer folders may remain until refactored.

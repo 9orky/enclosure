@@ -32,10 +32,9 @@ child_paths:
 
 ## Local Mapping
 
-- This project sets `architecture.root: src/enclosure/features`.
-- Write feature-module paths as `architecture/boundaries`, `architecture/clusters`,
-  or `workspace/sync`.
-- Use full paths only for code outside the architecture root, such as `src/enclosure/cli`.
+- Use the configured `architecture.root` as the source of truth for governed modules.
+- Write governed module paths relative to that root when possible.
+- Use full paths only for code outside the configured architecture root.
 
 ## Stop Or Descend
 

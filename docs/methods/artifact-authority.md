@@ -22,7 +22,7 @@ Generative artifacts instantiate or preview shape:
 
 - `.enclosure/recipes/*/templates/`
 - `workspace.recipe.roles_map`
-- `enclosure workspace recipe <name> <path> --shell`
+- the configured recipe preview command
 
 Templates are not policy. They are rendered evidence for a manifest. If a
 template and manifest disagree, the manifest is the structural source of truth.
@@ -31,7 +31,7 @@ template and manifest disagree, the manifest is the structural source of truth.
 
 Observed artifacts are current project reality:
 
-- `src/enclosure/features/`
+- the configured governed source tree
 - `tests/`
 - command reports
 

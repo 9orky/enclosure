@@ -6,7 +6,7 @@ generated_by: agent
 validation_version: 1
 profile_kind: layers
 discovered_from:
-  - ../../../src/enclosure/features/architecture/boundaries/
+  - architecture.root
 narrows_paths:
   - ../../shared/structure/FEATURE_LAYERS.md
 audience: agent
@@ -28,8 +28,6 @@ escalation_paths:
 
 # Local Layers
 
-`architecture/boundaries` and `architecture/clusters` are the model:
-
 - `domain`: config models, report types, local exceptions; no app or IO imports.
 - `infrastructure`: adapters and loading; may import domain types.
 - `application`: use-case orchestration; may import domain and infrastructure seams.
@@ -42,15 +40,9 @@ escalation_paths:
 - Split a layer into a folder only after stable internal responsibilities appear.
 - Direction is `ui -> application -> infrastructure -> domain`.
 - `application` may use domain types directly.
-- The UI layer must not accept or pass alternate project roots or architecture
-  config paths; use the shared SSOT for the current project root and enclosure
-  folder, then let lower layers auto-discover config from that workspace.
-- Do not inject nullable service objects into a constructor when those objects
-  are instantiated in the same place; construct the concrete collaborators
-  explicitly instead of hiding default wiring behind `None`.
-- Do not use the application layer as a dumping ground for sets of factory
-  functions just because a module needs bootstrap helpers; add a real service
-  or keep construction at the CLI/composition seam.
+- UI uses the shared current-workspace SSOT; do not forward alternate roots or config paths.
+- Construct concrete collaborators explicitly; do not hide same-scope defaults behind `None`.
+- Keep bootstrap helpers at composition seams unless they form a real service.
 - Do not introduce a new layer name without changing the rules first.
 
 ## Checks

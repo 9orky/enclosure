@@ -399,7 +399,7 @@ def _supported_extractor_source_counts(project_root: Path) -> dict[str, int]:
 
 
 def _iter_project_files(project_root: Path) -> Iterable[Path]:
-    excluded_roots = {".enclosure", ".git", ".dev", ".venv", "build", "dist"}
+    excluded_roots = {".enclosure", ".git", "build", "dist"}
     for path in project_root.rglob("*"):
         if not path.is_file():
             continue

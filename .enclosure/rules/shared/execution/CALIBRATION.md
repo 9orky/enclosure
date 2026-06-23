@@ -45,20 +45,20 @@ escalation_paths:
 - Plan gate: approve `PLAN.md` phases before step artifacts exist.
 - Step gate: approve each `PLAN_STEP_0X.md` before implementation.
 - Drift gate: stop when ownership, seam, dependency direction, or recipe shape assumptions break.
-- Contract-change gate: approve contract edits before changing `enclosure.yaml`, recipes, or rule files.
+- Contract-change gate: approve contract edits before changing the workspace contract, recipes, or rule files.
 - Codification gate: approve turning one-time discovery into local rules.
 
 ## Contract Integrity
 
-- Treat `enclosure.yaml`, recipes, and rule files as project contract, not error-suppression targets.
+- Treat the workspace contract, recipes, and rule files as project contract, not error-suppression targets.
 - Do not change exclusions, thresholds, tags, boundary rules, recipes, or local rules merely to make checks pass.
-- Fix implementation first when `enclosure health` or focused checks fail.
+- Fix implementation first when the configured health check or focused checks fail.
 - If the contract is wrong, stop, name the failing signal, explain why implementation should not conform, and get explicit human approval before editing the contract.
-- After an approved contract change, run affected focused checks and post-change `enclosure health`.
+- After an approved contract change, run affected focused checks and the configured post-change health check.
 
 ## Drift Controls
 
-- Emit a route receipt before edits: files read, reason, stop point, focused checks to run, and post-change `enclosure health`.
+- Emit a route receipt before edits: files read, reason, stop point, focused checks to run, and the configured post-change health check.
 - Treat local rules as narrowing shared rules, not restating shared policy.
 - Keep recipe drift mechanical: missing required seams, forbidden file/package combinations, and extra root files outside declared slots.
 - Depend on public seams instead of private internals.
@@ -84,4 +84,4 @@ escalation_paths:
 
 - `PLAN.md` receives only approved calibration decisions.
 - Local rule proposals narrow a shared rule and name their shared anchor.
-- Checks include post-change `enclosure health`, workspace rules when rule or workspace contract files change, and the architecture checks affected by the decision.
+- Checks include the configured post-change health check, workspace rules when rule or workspace contract files change, and the architecture checks affected by the decision.

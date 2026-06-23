@@ -1,9 +1,8 @@
-DEV_DIR ?= .dev
-DEV_WHEELHOUSE ?= $(DEV_DIR)/wheels
 DEV_REFRESH_VERSION ?= 0.0.0.dev0
+LOCAL_CACHE_DIR ?= .enclosure/.cache
 WARP_MODULE ?= workspace/recipe
-WARP_REPORT ?= $(DEV_DIR)/warp/$(subst /,-,$(WARP_MODULE)).html
-WARP_ALL_REPORT ?= $(DEV_DIR)/warp/index.html
+WARP_REPORT ?= $(LOCAL_CACHE_DIR)/warp/$(subst /,-,$(WARP_MODULE)).html
+WARP_ALL_REPORT ?= $(LOCAL_CACHE_DIR)/warp/index.html
 OPEN ?= open
 
 .PHONY: install generate-module-docs test warp warp-all

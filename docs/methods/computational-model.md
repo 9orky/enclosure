@@ -6,8 +6,8 @@ against an explicit contract.
 
 The local contract is `.enclosure/enclosure.yaml`. It defines the governed root,
 excluded paths, structural tags, boundary rules, layer flow, analyzers, report
-limits, and recipe role mappings. Runtime modules under `src/enclosure/features/`
-interpret that contract.
+limits, and recipe role mappings. Runtime feature modules interpret that
+contract.
 
 ## Objects
 
@@ -46,7 +46,7 @@ Four artifact families drive the system:
 - `.enclosure/enclosure.yaml` supplies executable local facts.
 - `.enclosure/rules/` supplies decision policy and route structure.
 - `.enclosure/recipes/` supplies module shape contracts and templates.
-- `src/enclosure/features/` supplies interpreters and analyzers.
+- runtime feature modules supply interpreters and analyzers.
 
 The method is not "read all docs, then code." The method is:
 

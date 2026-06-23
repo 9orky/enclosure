@@ -41,7 +41,7 @@ Consequences:
 For every new dependency:
 
 1. Identify the responsibility being reached.
-2. Identify the owning enclosure.
+2. Identify the owning boundary.
 3. Identify the public seam.
 4. Confirm the edge targets that seam.
 5. Confirm the edge points in the allowed direction.

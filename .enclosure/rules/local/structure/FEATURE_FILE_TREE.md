@@ -6,7 +6,7 @@ generated_by: agent
 validation_version: 1
 profile_kind: starter_files
 discovered_from:
-  - ../../../src/enclosure/features/architecture/boundaries/
+  - architecture.root
 narrows_paths:
   - ../../shared/structure/FEATURE_FILE_TREE.md
 audience: agent
@@ -28,7 +28,7 @@ escalation_paths:
 
 # Local File Tree
 
-Reference shape: `architecture/boundaries`.
+Reference the matching recipe before adding or reshaping files.
 
 ## Rules
 

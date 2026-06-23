@@ -27,23 +27,10 @@ tightens_paths:
 
 ## Rules
 
-Use these repository recipe slots and rungs when shared module-ladder rules are
-already in scope.
-
-## Local Slots
-
-This repository commonly uses these recipe slots:
-
 - `application`: orchestration or command/query entrypoints.
 - `domain`: local data, rules, policy, report, or exception types.
 - `infrastructure`: adapters, loading, filesystem, config, or external access.
 - `ui`: CLI and presentation templates.
-
-These names are local recipe slots. They do not make layered architecture a
-global recipe requirement.
-
-## Rungs
-
 - Prefer fixed slot fragments plus `includes` over new archetypes for every
   slot combination.
 - `file`: require the rendered slot file; forbid the rendered slot container.
@@ -58,6 +45,5 @@ global recipe requirement.
 - Extra files under declared package slots are not drift.
 - Extra root files outside declared slots remain drift.
 - Recipe bench HTML is an observed artifact, not a source file. If generated,
-  it must use a real report path such as `.enclosure/.cache/reports/<name>.html`
-  or `/tmp/<name>.html`; command flags like `--help` are never valid output
-  filenames.
+  it must use a real report path under `.enclosure/.cache/` or `/tmp`; command
+  flags are never valid output filenames.
