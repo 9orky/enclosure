@@ -1,0 +1,13 @@
+schema_version: 1
+role: archetype
+description: Compact fixture module.
+ladder:
+  family: module
+  rung: compact
+  slots:
+    application: file
+files:
+  - source: templates/__init__.py.tmpl
+    target: "{{ target.path }}/__init__.py"
+  - source: templates/application.py.tmpl
+    target: "{{ target.path }}/application.py"

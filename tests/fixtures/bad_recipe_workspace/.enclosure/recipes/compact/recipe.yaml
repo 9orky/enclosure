@@ -1,0 +1,8 @@
+schema_version: 1
+role: archetype
+description: Compact fixture module.
+includes:
+  - missing-fragment
+files:
+  - source: templates/application.py.tmpl
+    target: "{{ target.path }}/application.py"

@@ -1,0 +1,5 @@
+schema_version: 1
+role: container
+description: Fixture recipe container.
+archetypes:
+  - compact

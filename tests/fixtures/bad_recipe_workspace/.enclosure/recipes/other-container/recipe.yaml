@@ -1,0 +1,5 @@
+schema_version: 1
+role: container
+description: Second container.
+archetypes:
+  - compact

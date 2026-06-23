@@ -1,0 +1,16 @@
+architecture:
+  language: python
+  root: src/enclosure/features
+  exclusions: [__init__.py]
+  boundaries:
+    tags:
+      - { name: module, match: "*/*", except: ["*/__init__"], exclude: [] }
+    rules: []
+    flow:
+      realms:
+        - { name: module, module_tag: module }
+workspace:
+  recipe:
+    roles_map:
+      orders/report: missing-role
+      billing/report: module

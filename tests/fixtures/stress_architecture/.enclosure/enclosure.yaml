@@ -1,0 +1,46 @@
+architecture:
+  language: python
+  root: src/enclosure/features
+  exclusions: [__init__.py]
+  shape:
+    max_classes_per_file: 1
+    max_functions_per_file: 1
+    max_methods_per_class: 1
+    max_declared_args_per_function: 1
+    max_declared_args_per_method: 1
+    max_lines_count_per_function: 3
+    allow_optional_function_args: false
+    allow_optional_method_args: false
+    allow_optional_class_properties: false
+    allow_imports_aliases: false
+    enforce_joined_imports: true
+    allowed_imports_crossing_types: [module]
+  boundaries:
+    tags:
+      - { name: module, match: "*/*", except: ["*/__init__"], exclude: [] }
+      - { name: module_api, match: "*/*/__init__", except: [], exclude: [] }
+      - { name: domain, match: "*/*/domain", except: [], exclude: [] }
+      - { name: application, match: "*/*/application", except: [], exclude: [] }
+      - { name: infrastructure, match: "*/*/infrastructure", except: [], exclude: [] }
+      - { name: ui, match: "*/*/ui", except: [], exclude: [] }
+    rules:
+      - { source: "*/*", disallow: ["*/*"], allow: ["*/*/__init__"], allow_same_match: true }
+      - { source: "*/*/domain", disallow: ["*/*/application", "*/*/infrastructure", "*/*/ui"], allow: [], allow_same_match: false }
+      - { source: "*/*/application", disallow: ["*/*/ui"], allow: [], allow_same_match: false }
+      - { source: "*/*/ui", disallow: ["*/*/infrastructure"], allow: [], allow_same_match: false }
+    flow:
+      layers: [ui, application, infrastructure, domain]
+      realms:
+        - { name: module, module_tag: module }
+      analyzers: [backward-flow, no-cycles]
+  map:
+    top: -1
+  clusters:
+    top: -1
+    files_top: -1
+  pressure:
+    top: -1
+workspace:
+  recipe:
+    roles_map:
+      sales/report: compact
