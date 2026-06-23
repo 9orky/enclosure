@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from enum import StrEnum
+from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any, TypedDict
 
@@ -14,6 +16,38 @@ RecipeGenerationConfig = RecipeConfig
 class RecipeCommandContext:
     project_root: Path
     recipe_root: Path
+
+
+@dataclass(frozen=True)
+class WorkspaceRelations:
+    project_root: Path
+    recipe_root: Path
+    subject_root: Path
+    role_map: Mapping[str, str]
+    skip_patterns: tuple[str, ...] = ()
+    subject_selectors: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class RecipePolicy:
+    relations: WorkspaceRelations
+
+    def should_skip(self, location: Path | str) -> bool:
+        location_text = (
+            location.as_posix()
+            if hasattr(location, "as_posix")
+            else str(location).replace("\\", "/")
+        )
+        return any(
+            fnmatch(location_text, pattern)
+            for pattern in self.relations.skip_patterns
+        )
+
+    def role_for(self, subject_name: str) -> str:
+        return self.relations.role_map.get(subject_name, "")
+
+    def subject_names(self) -> tuple[str, ...]:
+        return tuple(sorted(self.relations.role_map))
 
 
 @dataclass(frozen=True)
@@ -110,6 +144,10 @@ class RecipeDriftReport:
     def has_drifts(self) -> bool:
         return any(drift.has_drift() for drift in self.drifts)
 
+    @property
+    def subject_root(self) -> Path:
+        return self.architecture_root
+
 
 @dataclass(frozen=True)
 class RecipeBenchFileContent:
@@ -169,11 +207,17 @@ class RecipeBenchReport:
     recurrence: tuple[RecipeBenchRecurrence, ...] = ()
     slot_growth_recurrence: tuple[RecipeBenchRecurrence, ...] = ()
     content_weight_recurrence: tuple[RecipeBenchRecurrence, ...] = ()
-    selected: RecipeBenchModule | None = None
+    selected: RecipeBenchModule = field(
+        default_factory=lambda: RecipeBenchModule(module_name=""),
+    )
     violations: tuple[RecipeCheckViolation, ...] = ()
 
     def passed(self) -> bool:
         return not self.violations
+
+    @property
+    def subject_root(self) -> Path:
+        return self.architecture_root
 
     @property
     def same_role_module_count(self) -> int:
@@ -181,25 +225,25 @@ class RecipeBenchReport:
 
     @property
     def local_residue_count(self) -> int:
-        if self.selected is None:
+        if not self.selected.module_name:
             return 0
         return len(self.selected.residue_files)
 
     @property
     def local_slot_growth_count(self) -> int:
-        if self.selected is None:
+        if not self.selected.module_name:
             return 0
         return len(self.selected.slot_growth_files)
 
     @property
     def local_content_weight_count(self) -> int:
-        if self.selected is None:
+        if not self.selected.module_name:
             return 0
         return len(self.selected.content_weights)
 
     @property
     def local_warp_count(self) -> int:
-        if self.selected is None:
+        if not self.selected.module_name:
             return 0
         return (
             len(self.selected.missing_files)
@@ -210,7 +254,7 @@ class RecipeBenchReport:
 
     @property
     def repeated_residue_count(self) -> int:
-        if self.selected is None:
+        if not self.selected.module_name:
             return 0
         repeated_paths = {
             item.path
@@ -221,7 +265,7 @@ class RecipeBenchReport:
 
     @property
     def repeated_slot_growth_count(self) -> int:
-        if self.selected is None:
+        if not self.selected.module_name:
             return 0
         repeated_paths = {
             item.path
@@ -236,7 +280,7 @@ class RecipeBenchReport:
 
     @property
     def repeated_content_weight_count(self) -> int:
-        if self.selected is None:
+        if not self.selected.module_name:
             return 0
         repeated_paths = {
             item.path
@@ -269,6 +313,10 @@ class RecipeBenchAllReport:
 
     def passed(self) -> bool:
         return not self.violations and all(report.passed() for report in self.reports)
+
+    @property
+    def subject_root(self) -> Path:
+        return self.architecture_root
 
     @property
     def module_count(self) -> int:

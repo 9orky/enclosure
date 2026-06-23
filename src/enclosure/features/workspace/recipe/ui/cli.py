@@ -7,8 +7,8 @@ import typer
 
 from enclosure.shared import ui
 from enclosure.shared.scaffolding import scaffolding
-
 from .. import application
+from . import bench_html
 
 app = typer.Typer(
     help="Render a manifest recipe into the current project contract.",
@@ -134,7 +134,7 @@ def recipe_command(
         report = application.bench_all_preview(recipe_root=recipe_root)
         html_report_path.parent.mkdir(parents=True, exist_ok=True)
         html_report_path.write_text(
-            application.render_recipe_bench_all_html(report),
+            bench_html.render_bench_all_html(report),
             encoding="utf-8",
         )
         ui.render(
@@ -160,7 +160,7 @@ def recipe_command(
         )
         html_report_path.parent.mkdir(parents=True, exist_ok=True)
         html_report_path.write_text(
-            application.render_recipe_bench_html(report),
+            bench_html.render_bench_html(report),
             encoding="utf-8",
         )
         ui.render(

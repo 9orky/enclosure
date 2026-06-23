@@ -22,13 +22,15 @@ RecipeGenerationReport = domain.RecipeGenerationReport
 RecipePreviewFile = domain.RecipePreviewFile
 RecipePreviewStatus = domain.RecipePreviewStatus
 RecipeSummary = domain.RecipeSummary
+RecipePolicy = domain.RecipePolicy
+WorkspaceRelations = domain.WorkspaceRelations
 
 
 def bench_all_preview(
     *,
     recipe_root: Path,
 ) -> domain.RecipeBenchAllReport:
-    application = import_module("enclosure.features.workspace.recipe.application")
+    application = import_module(".application", __package__)
     return application.bench_all_preview(recipe_root=recipe_root)
 
 
@@ -37,7 +39,7 @@ def bench_preview(
     *,
     recipe_root: Path,
 ) -> domain.RecipeBenchReport:
-    application = import_module("enclosure.features.workspace.recipe.application")
+    application = import_module(".application", __package__)
     return application.bench_preview(module_name, recipe_root=recipe_root)
 
 
@@ -45,7 +47,7 @@ def check_recipe_drifts(
     *,
     recipe_root: Path,
 ) -> domain.RecipeDriftReport:
-    application = import_module("enclosure.features.workspace.recipe.application")
+    application = import_module(".application", __package__)
     return application.check_recipe_drifts(recipe_root=recipe_root)
 
 
@@ -56,7 +58,7 @@ def check_recipes(
     target_path: Path | str | None,
     variables: Mapping[str, str],
 ) -> domain.RecipeCheckReport:
-    application = import_module("enclosure.features.workspace.recipe.application")
+    application = import_module(".application", __package__)
     return application.check_recipes(
         recipe_root=recipe_root,
         recipe_name=recipe_name,
@@ -72,7 +74,7 @@ def describe_recipe_generation(
     recipe_root: Path,
     variables: Mapping[str, str],
 ) -> domain.RecipeGenerationReport:
-    application = import_module("enclosure.features.workspace.recipe.application")
+    application = import_module(".application", __package__)
     return application.describe_recipe_generation(
         recipe_name,
         target_path,
@@ -88,7 +90,7 @@ def generate_recipe(
     recipe_root: Path,
     variables: Mapping[str, str],
 ) -> domain.GenerateRecipeResult:
-    application = import_module("enclosure.features.workspace.recipe.application")
+    application = import_module(".application", __package__)
     return application.generate_recipe(
         recipe_name,
         target_path,
@@ -101,7 +103,7 @@ def list_recipes(
     *,
     recipe_root: Path,
 ) -> tuple[domain.RecipeSummary, ...]:
-    application = import_module("enclosure.features.workspace.recipe.application")
+    application = import_module(".application", __package__)
     return application.list_recipes(recipe_root=recipe_root)
 
 
@@ -110,7 +112,7 @@ def show_recipe(
     *,
     recipe_root: Path,
 ) -> domain.RecipeSummary | None:
-    application = import_module("enclosure.features.workspace.recipe.application")
+    application = import_module(".application", __package__)
     return application.show_recipe(recipe_name, recipe_root=recipe_root)
 
 __all__ = [
@@ -130,6 +132,8 @@ __all__ = [
     "RecipePreviewFile",
     "RecipePreviewStatus",
     "RecipeSummary",
+    "RecipePolicy",
+    "WorkspaceRelations",
     "bench_all_preview",
     "bench_preview",
     "check_recipe_drifts",
