@@ -1,6 +1,6 @@
 # Step 06 - Verify And Reassess
 
-Status: Draft
+Status: Complete
 
 ## Implementation Tree
 
@@ -66,13 +66,13 @@ Dependency direction:
 5. Run focused functional tests.
 6. Record remaining pressure as accepted, follow-up, or blocker.
 
-Current bench model:
+Final bench model:
 
 ```mermaid
 flowchart TD
     BenchAll["workspace recipe --bench-all"] --> Reports["15 mapped module reports"]
-    Reports --> Clean["3 clean modules"]
-    Reports --> Warp["12 modules with warp"]
+    Reports --> Clean["5 clean modules"]
+    Reports --> Warp["10 modules with warp"]
     Warp --> Drift["Recipe drift"]
     Warp --> Shape["Architecture shape violations"]
     Warp --> Weight["Content-weight pressure"]
@@ -114,7 +114,31 @@ Expected:
 - Boundary violations remain 0.
 - Focused tests pass.
 
+Observed:
+
+- `workspace recipe --check`: passed; 7 recipes checked and 46 rendered paths
+  verified.
+- `workspace recipe --drifts`: passed; 15 mapped modules checked and no recipe
+  drifts found.
+- `workspace recipe --bench-all --html .enclosure/.cache/warp-all.html`:
+  passed; 15 mapped modules, 5 recipe roles, 10 modules with warp, 0 forbidden
+  residue files, 41 slot-growth files, 11 content-weight findings, 5 repeated
+  warp findings, classification `unstable`.
+- `architecture shape`: passed; 129 files checked and 0 violations found.
+- `architecture health`: passed; boundaries 0, shape 0, map 16 modules with 0
+  cross-module dependency paths and 0 unknown files.
+- Focused pytest command: passed; 12 tests passed.
+
+Remaining pressure decision:
+
+- Accepted as follow-up pressure, not a blocker for this plan. The remaining
+  bench instability is content and repeated-warp pressure after drift, shape,
+  boundary, and focused behavior checks are clean.
+- Follow-up candidates remain `workspace/recipe/application` pressure,
+  `workspace/rules/domain` pressure, and broader architecture coherence
+  findings. These need a later plan if they become productively actionable.
+
 ## Completion
 
-Complete when the final report clearly states whether the recipe set is stable
-and whether any remaining pressure needs a later plan.
+Completed with recipe contracts and mapped module drift stable. Remaining
+pressure is recorded as a later-plan follow-up rather than a blocker.

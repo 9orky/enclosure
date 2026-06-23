@@ -1,6 +1,6 @@
 # Module Recipe Consistency
 
-Status: In Progress
+Status: Complete
 
 ## File Tree
 
@@ -31,13 +31,13 @@ Make mapped feature modules consistently match a small set of reusable local
 recipes. The work should reduce recipe drift, remove shape violations, and avoid
 creating one-off archetypes or premature shared packages.
 
-Current bench command:
+Bench command:
 
 ```bash
 uv run enclosure workspace recipe --bench-all --html .enclosure/.cache/warp-all.html
 ```
 
-Current result after step 05:
+Final result after step 06:
 
 - 15 mapped modules.
 - 5 recipe roles.
@@ -45,11 +45,13 @@ Current result after step 05:
 - 0 forbidden residue files.
 - 41 slot-growth files.
 - 11 content-weight findings.
+- 5 repeated warp findings.
 - Overall classification: `unstable`.
 
 Decision: do not add a new shared package or a new full module archetype now.
-The strongest signals are stale mappings, legacy compact modules, optional
-argument violations, symbol imports, and a few oversized owned files.
+Drift, shape, boundaries, and focused CLI behavior are clean. Remaining bench
+instability is accepted as follow-up content and repeated-warp pressure rather
+than a blocker for this plan.
 
 ## Phases
 
@@ -82,6 +84,7 @@ argument violations, symbol imports, and a few oversized owned files.
 
 6. Verify and reassess.
    Step doc: `PLAN_STEP_06.md`.
+   Status: Complete.
    Outcome: drift, shape, health, and focused tests confirm the new baseline.
 
 ## Acceptance
@@ -99,11 +102,13 @@ uv run pytest tests/functional/test_workspace_recipe_cli.py tests/functional/tes
 
 Expected final state:
 
-- Recipe drift is clean for `pattern/fit`, `workspace/plan`, and
-  `workspace/sync`.
+- Recipe drift is clean for all mapped modules, including `pattern/fit`,
+  `workspace/plan`, and `workspace/sync`.
 - Shape violations are 0.
 - Boundary violations remain 0.
 - The recipe set remains small: existing archetypes plus reusable fragments.
+- Remaining content and repeated-warp pressure is recorded as later-plan
+  follow-up.
 
 ## Open Questions
 
