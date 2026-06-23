@@ -14,13 +14,23 @@ def build_boundaries_report() -> domain.BoundariesReport:
     code_analysis = architecture_code.extract_architecture_code()
     return domain.BoundariesReport(
         **code_analysis.report_fields(),
-        violations=flow.evaluate_policy(
-            _internal_dependency_graph(
-                code_analysis.code_map,
-                code_analysis.matching_config,
-            ),
+        violations=evaluate_boundaries(
+            code_analysis.code_map,
             code_analysis.matching_config,
         ),
+    )
+
+
+def evaluate_boundaries(
+    code_map: CodeMap,
+    config: object,
+) -> tuple[object, ...]:
+    return flow.evaluate_policy(
+        _internal_dependency_graph(
+            code_map,
+            config,
+        ),
+        config,
     )
 
 
@@ -37,6 +47,8 @@ def _internal_dependency_graph(
     for edge in code_map.graph.edges:
         if edge.from_id not in tracked_ids:
             continue
+        if _is_same_module_api_reexport(edge.from_id, edge.to_id, matcher):
+            continue
         target_id = _tracked_target_id(
             edge.to_id,
             tracked_ids,
@@ -47,6 +59,21 @@ def _internal_dependency_graph(
             continue
         graph.add_edge(edge.from_id, target_id, kind=edge.kind)
     return graph
+
+
+def _is_same_module_api_reexport(
+    source_id: str,
+    target_id: str,
+    matcher: TagMatcher,
+) -> bool:
+    match = matcher.match(source_id, "module_api")
+    if match is None:
+        return False
+    module_path = "/".join(str(value) for value in match.wildcard_values)
+    if not module_path:
+        return False
+    target_path = matcher.display_path(target_id)
+    return target_path == module_path or target_path.startswith(f"{module_path}/")
 
 
 def _tracked_target_id(
@@ -113,3 +140,9 @@ def _ends_with_path(value: str, suffix: str) -> bool:
 
 def _path_parts(value: str) -> tuple[str, ...]:
     return tuple(part for part in value.split("/") if part)
+
+
+__all__ = [
+    "build_boundaries_report",
+    "evaluate_boundaries",
+]
