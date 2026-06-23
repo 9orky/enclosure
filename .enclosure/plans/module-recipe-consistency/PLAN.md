@@ -37,14 +37,14 @@ Current bench command:
 uv run enclosure workspace recipe --bench-all --html .enclosure/.cache/warp-all.html
 ```
 
-Current result:
+Current result after step 05:
 
 - 15 mapped modules.
 - 5 recipe roles.
-- 12 modules with warp.
-- 5 forbidden residue files.
-- 33 slot-growth files.
-- 15 content-weight findings.
+- 10 modules with warp.
+- 0 forbidden residue files.
+- 41 slot-growth files.
+- 11 content-weight findings.
 - Overall classification: `unstable`.
 
 Decision: do not add a new shared package or a new full module archetype now.
@@ -76,6 +76,7 @@ argument violations, symbol imports, and a few oversized owned files.
 
 5. Split oversized owned internals.
    Step doc: `PLAN_STEP_05.md`.
+   Status: Complete.
    Outcome: `workspace/recipe` remains on its current recipe while heavy owned
    internals become smaller.
 

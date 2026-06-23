@@ -3,11 +3,14 @@ from __future__ import annotations
 from collections.abc import Mapping
 from pathlib import Path
 
-from enclosure.features.architecture import flow
 from enclosure.shared.config import settings
 from enclosure.shared.scaffolding import RenderedScaffoldFile, Scaffold, ScaffoldError
 from .. import domain, infrastructure
-from . import catalog
+from . import catalog, drift_ladder, drift_scan
+
+actual_files_for = drift_scan.actual_files_for
+actual_module_names = drift_scan.actual_module_names
+drift_files_for = drift_ladder.drift_files_for
 
 
 class RecipeDriftService:
@@ -160,194 +163,6 @@ def module_relative_rendered_paths(
             for rendered_file in rendered_files
         )
     )
-
-
-
-
-def drift_files_for(
-    recipe: Scaffold,
-    *,
-    recipes_by_name: Mapping[str, Scaffold],
-    expected_files: set[str],
-    actual_files: set[str],
-) -> tuple[tuple[str, ...], tuple[str, ...]]:
-    ladder = catalog.composed_ladder_for(recipe, recipes_by_name)
-    if not ladder.is_declared():
-        return (
-            tuple(sorted(expected_files - actual_files)),
-            tuple(sorted(actual_files - expected_files)),
-        )
-
-    required_files = set(expected_files)
-    allowed_files = set(expected_files)
-    allowed_prefixes: set[str] = set()
-    forbidden_file_stems: set[str] = set()
-    forbidden_prefixes: set[str] = set()
-
-    for slot in ladder.slots:
-        slot_path = catalog.slot_name(slot)
-        slot_state_value = catalog.slot_state(slot)
-        if slot_state_value == "absent":
-            forbidden_file_stems.add(slot_path)
-            forbidden_prefixes.add(f"{slot_path}/")
-            continue
-
-        if slot_state_value == "file":
-            forbidden_prefixes.add(f"{slot_path}/")
-            continue
-
-        if slot_state_value == "package":
-            allowed_prefixes.add(f"{slot_path}/")
-            forbidden_file_stems.add(slot_path)
-            continue
-
-        if slot_state_value == "split-files":
-            allowed_prefixes.add(f"{slot_path}/")
-            forbidden_file_stems.add(slot_path)
-            for slot_file in slot.files:
-                slot_file_path = f"{slot_path}/{slot_file}"
-                required_files.add(slot_file_path)
-                allowed_files.add(slot_file_path)
-                if Path(slot_file).suffix:
-                    forbidden_prefixes.add(
-                        f"{slot_path}/{Path(slot_file).with_suffix('').as_posix()}/"
-            )
-            continue
-
-        if slot_state_value == "split-packages":
-            allowed_prefixes.add(f"{slot_path}/")
-            forbidden_file_stems.add(slot_path)
-            for slot_package in slot.packages:
-                slot_package_path = f"{slot_path}/{slot_package}"
-                allowed_prefixes.add(f"{slot_package_path}/")
-                forbidden_file_stems.add(slot_package_path)
-
-    missing_files = tuple(sorted(required_files - actual_files))
-    extra_files = tuple(
-        sorted(
-            actual_file
-            for actual_file in actual_files
-            if _is_extra_ladder_file(
-                actual_file,
-                allowed_files=allowed_files,
-                allowed_prefixes=allowed_prefixes,
-                forbidden_file_stems=forbidden_file_stems,
-                forbidden_prefixes=forbidden_prefixes,
-            )
-        )
-    )
-    return missing_files, extra_files
-
-
-def _is_extra_ladder_file(
-    actual_file: str,
-    *,
-    allowed_files: set[str],
-    allowed_prefixes: set[str],
-    forbidden_file_stems: set[str],
-    forbidden_prefixes: set[str],
-) -> bool:
-    if _matches_file_stem(actual_file, forbidden_file_stems):
-        return True
-    if any(actual_file.startswith(prefix) for prefix in forbidden_prefixes):
-        return True
-    if actual_file in allowed_files:
-        return False
-    return not any(actual_file.startswith(prefix) for prefix in allowed_prefixes)
-
-
-def _matches_file_stem(actual_file: str, forbidden_file_stems: set[str]) -> bool:
-    if not forbidden_file_stems:
-        return False
-    actual_path = Path(actual_file)
-    if not actual_path.suffix:
-        return False
-    return actual_path.with_suffix("").as_posix() in forbidden_file_stems
-
-
-def actual_files_for(
-    module_path: Path,
-    *,
-    project_root: Path,
-    config: domain.RecipeGenerationConfig,
-) -> set[str]:
-    return {
-        path.relative_to(module_path).as_posix()
-        for path in module_path.rglob("*")
-        if path.is_file()
-        and not _should_skip_actual_file(
-            path,
-            module_path=module_path,
-            project_root=project_root,
-            config=config,
-        )
-    }
-
-
-def _should_skip_actual_file(
-    path: Path,
-    *,
-    module_path: Path,
-    project_root: Path,
-    config: domain.RecipeGenerationConfig,
-) -> bool:
-    relative_candidates = [
-        path.relative_to(module_path),
-        path.relative_to(project_root),
-    ]
-    return any(
-        config.should_skip(relative_path)
-        for relative_path in relative_candidates
-    )
-
-
-def actual_module_names(
-    architecture_root: Path,
-    *,
-    project_root: Path,
-    config: domain.RecipeGenerationConfig,
-    architecture_settings: object,
-) -> tuple[str, ...]:
-    return tuple(
-        module_path.relative_to(architecture_root).as_posix()
-        for module_path in _actual_module_paths(
-            architecture_root,
-            architecture_settings,
-        )
-        if module_path.is_dir()
-        and actual_files_for(
-            module_path,
-            project_root=project_root,
-            config=config,
-        )
-    )
-
-
-def _actual_module_paths(
-    architecture_root: Path,
-    architecture_settings: object,
-) -> tuple[Path, ...]:
-    tag_rules = {
-        getattr(rule, "name", ""): rule
-        for rule in getattr(getattr(architecture_settings, "rules", object()), "tags", ())
-    }
-    paths: list[Path] = []
-    for tag_name in _recipe_subject_tag_names(architecture_settings):
-        tag_rule = tag_rules.get(tag_name)
-        if tag_rule is None:
-            continue
-        paths.extend(architecture_root.glob(getattr(tag_rule, "match", "")))
-    return tuple(dict.fromkeys(sorted(paths)))
-
-
-def _recipe_subject_tag_names(architecture_settings: object) -> tuple[str, ...]:
-    return tuple(
-        realm.module_tag
-        for realm in flow.configured_realms(architecture_settings)
-        if realm.layers
-    )
-
-
 
 
 __all__ = [

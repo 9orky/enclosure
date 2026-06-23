@@ -1,6 +1,6 @@
 # Step 05 - Split Oversized Owned Internals
 
-Status: Draft
+Status: Complete
 
 ## Implementation Tree
 
@@ -12,8 +12,14 @@ src/enclosure/features/workspace/recipe/
     commands.py
     queries.py
     bench.py
+    bench_content.py
+    bench_signals.py
     catalog.py
+    catalog_roles.py
+    catalog_validation.py
     drift.py
+    drift_ladder.py
+    drift_scan.py
     generation.py
     ...
   domain.py
@@ -22,6 +28,8 @@ src/enclosure/features/workspace/recipe/
     __init__.py
     cli.py
     bench_html.py
+    bench_html_all.py
+    bench_html_common.py
     templates/
       bench_all_result.tmpl
       bench_result.tmpl
@@ -56,6 +64,8 @@ Outputs:
 - Smaller owned implementation files.
 - Stable public exports.
 - No new full recipe archetype.
+- `domain.py` remains a file-slot implementation until a later recipe decision
+  changes `module-workspace-cli`.
 
 Scope:
 
@@ -85,6 +95,8 @@ Dependency direction:
 3. Split `ui/bench_html.py` only inside UI ownership.
 4. Preserve public exports from current seams.
 5. Do not add a new recipe for this module.
+6. Leave `domain.py` intact because the current mapped recipe owns domain as a
+   file slot.
 
 Responsibility schema:
 
@@ -144,8 +156,10 @@ Expected:
 - Recipe CLI tests pass.
 - Bench output still renders.
 - `workspace/recipe` remains mapped to `module-workspace-cli`.
+- Content-weight findings decrease, while allowed package slot-growth may
+  increase from the helper files created inside owned package slots.
 
 ## Completion
 
-Complete when heavy files are split only where ownership is clear and public
-recipe seams remain stable.
+Completed with heavy files split only where ownership is clear, public recipe
+seams stable, and `domain.py` left as the current recipe's file-slot tradeoff.
