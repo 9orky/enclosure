@@ -43,3 +43,26 @@ def test_shape_reports_multiple_file_symbol_and_import_violations(
     assert "- sales/report/domain:Alpha.first allow_optional_method_args actual True, limit False" in result.stdout
     assert "- sales/report/application:sales/ledger/application allow_imports_aliases actual 1, limit 0" in result.stdout
     assert "- sales/report/domain:sales/report/application (symbol) allowed_imports_crossing_types actual 1, limit 0" in result.stdout
+
+
+def test_shape_import_flags_can_be_relaxed_without_hiding_other_violations(
+    tmp_path: Path,
+) -> None:
+    project_root = copy_fixture(tmp_path, "stress_architecture")
+    config_path = project_root / ".enclosure" / "enclosure.yaml"
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8")
+        .replace("allow_imports_aliases: false", "allow_imports_aliases: true")
+        .replace(
+            "allowed_imports_crossing_types: [module]",
+            "allowed_imports_crossing_types: [module, symbol]",
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_cli(project_root, "architecture", "shape")
+
+    assert result.returncode == 1
+    assert "max_classes_per_file actual 2, limit 1" in result.stdout
+    assert "allow_imports_aliases" not in result.stdout
+    assert "allowed_imports_crossing_types" not in result.stdout

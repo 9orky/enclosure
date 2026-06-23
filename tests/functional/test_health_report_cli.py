@@ -51,3 +51,36 @@ def test_root_health_reports_stress_architecture_and_workspace_findings(
     assert "- Shape: 11 violation(s)" in result.stdout
     assert "- Map: 2 module(s), 1 cross-module dependency path(s), 1 unknown file(s)" in result.stdout
     assert "architecture/map: unmapped files" in result.stdout
+
+
+def test_root_health_passes_for_synced_recipe_workspace(
+    tmp_path: Path,
+) -> None:
+    project_root = copy_fixture(tmp_path, "recipe_workspace")
+    init_result = run_cli(project_root, "workspace", "sync", "init", "--language", "python")
+
+    result = run_cli(project_root, "health", "--top", "-1")
+
+    assert init_result.returncode == 0, init_result.stderr
+    assert result.returncode == 0, result.stderr
+    assert "Enclosure Health:" in result.stdout
+    assert "- Paths: target present, rules present, recipes present" in result.stdout
+    assert "- Boundaries: 0 violation(s)" in result.stdout
+    assert "- Shape: 0 violation(s)" in result.stdout
+    assert "attention investigate architecture/clusters" in result.stdout
+    assert "error blocker" not in result.stdout
+
+
+def test_root_health_top_zero_keeps_blocking_counts_without_detail_sections(
+    tmp_path: Path,
+) -> None:
+    project_root = copy_fixture(tmp_path, "stress_architecture")
+
+    result = run_cli(project_root, "health", "--top", "0")
+
+    assert result.returncode == 1
+    assert "- Boundaries: 4 violation(s)" in result.stdout
+    assert "- Shape: 11 violation(s)" in result.stdout
+    assert "- Map: 2 module(s), 1 cross-module dependency path(s), 1 unknown file(s)" in result.stdout
+    assert "Architecture Details:" not in result.stdout
+    assert "Workspace Rule Documents:" not in result.stdout

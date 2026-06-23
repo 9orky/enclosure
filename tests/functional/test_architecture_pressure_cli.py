@@ -48,3 +48,13 @@ def test_pressure_reports_larger_callable_surface_and_wide_signatures(
     assert "Alpha.first (sales/report/domain:6)" in result.stdout
     assert "Public API Hubs:" in result.stdout
     assert "sales/report/domain" in result.stdout
+
+
+def test_pressure_rejects_invalid_top_limit(tmp_path: Path) -> None:
+    project_root = copy_fixture(tmp_path, "clean_architecture")
+
+    result = run_cli(project_root, "architecture", "pressure", "--top", "-2")
+
+    assert result.returncode == 1
+    assert result.stdout == ""
+    assert "limit must be -1 or greater" in result.stderr
