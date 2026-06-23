@@ -6,10 +6,7 @@ from pathlib import Path
 
 from modwire.architecture import TagMatcher
 
-from enclosure.shared import limits
-from enclosure.shared.architecture import metadata_json
-
-from ... import architecture
+from enclosure.shared import architecture, limits
 
 
 @dataclass(frozen=True)
@@ -92,7 +89,7 @@ class ArchitectureMapReport:
 
     def to_json_dict(self) -> dict[str, object]:
         return {
-            **metadata_json(self),
+            **architecture.metadata_json(self),
             "top": self.top,
             "modules": [module.to_json_dict() for module in self.modules],
             "dependencies": [
@@ -117,7 +114,7 @@ def describe_architecture_map(
     tag_names = {rule.name for rule in config.rules.tags}
     realms = tuple(
         realm
-        for realm in architecture.flow.configured_realms(config)
+        for realm in architecture.configured_realms(config)
         if realm.module_tag in tag_names
     )
 
@@ -244,10 +241,10 @@ class _ModuleBuilder:
 def _map_file(
     node_id: str,
     matcher: TagMatcher,
-    realms: tuple[architecture.flow.ArchitectureRealm, ...],
+    realms: tuple[architecture.ArchitectureRealm, ...],
     tag_names: set[str],
 ) -> _FileMap:
-    selected_realm: architecture.flow.ArchitectureRealm | None = None
+    selected_realm: architecture.ArchitectureRealm | None = None
     module_name = ""
     for realm in realms:
         match = matcher.match(node_id, realm.module_tag)

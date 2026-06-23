@@ -3,8 +3,8 @@ from __future__ import annotations
 from modwire import CodeMap, architecture, graph
 
 from enclosure.shared import architecture_code
+from enclosure.shared.architecture import evaluate_policy, public_seam_patterns
 
-from ...architecture import flow
 from . import domain
 
 
@@ -23,7 +23,7 @@ def evaluate_boundaries(
     code_map: CodeMap,
     config: object,
 ) -> tuple[object, ...]:
-    return flow.evaluate_policy(
+    return evaluate_policy(
         _internal_dependency_graph(
             code_map,
             config,
@@ -38,7 +38,7 @@ def _internal_dependency_graph(
 ) -> graph.DependencyGraph:
     tracked_ids = set(code_map.source_ids())
     public_target_patterns = _public_target_patterns(config)
-    public_seam_patterns = flow.public_seam_patterns(config, "")
+    public_seam_patterns_for_config = public_seam_patterns(config, "")
     matcher = architecture.TagMatcher(config)
     graph_builder = graph.DependencyGraph()
     for source_id in sorted(tracked_ids):
@@ -50,7 +50,7 @@ def _internal_dependency_graph(
             edge.from_id,
             edge.to_id,
             matcher,
-            public_seam_patterns,
+            public_seam_patterns_for_config,
         ):
             continue
         target_id = _tracked_target_id(

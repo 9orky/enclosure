@@ -73,8 +73,9 @@ enclosure health
    enclosure workspace sync migrate
    ```
 
-   The migrator refreshes packaged shared rules and assistant instruction files,
-   creates required workspace folders, and merges missing config keys into
+   The migrator behaves like a packaged-asset refresh plus a conservative
+   config merge: it refreshes packaged shared rules and assistant instruction
+   files, creates required workspace folders, and adds missing config keys to
    `.enclosure/enclosure.yaml`.
 
 3. Review the write summary.
@@ -85,9 +86,10 @@ enclosure health
 
 4. Review config warnings before continuing.
 
-   If `migrate` prints config warnings, pause before broad architecture work.
-   Warnings mean part of the existing config could not be merged automatically
-   or needs human review under the 3.x config model.
+   If `migrate` prints `CONFIG FORMAT WARNING`, pause before broad architecture
+   work even when the command exits successfully. Warnings mean an unknown key
+   was preserved or part of the existing config could not be merged
+   automatically under the 3.x config model.
 
 5. Validate the migrated contract.
 
@@ -131,7 +133,8 @@ enclosure health
   A 2.x contract using `module_tag: feature` can keep working, but a reviewed
   3.x contract should move the module tag into `realms` when the architecture is
   already understood. The migrator does not add empty legacy `module_tag` or
-  `module_tags` keys to contracts that already use `realms`.
+  `module_tags` keys to contracts that already use `realms`, and those skipped
+  compatibility defaults do not force a config rewrite.
 
 ## Agent Handoff Prompt
 
