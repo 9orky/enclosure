@@ -3,14 +3,26 @@ Mapped modules: {{ report.module_count }}
 Recipe roles: {{ report.role_count }}
 Modules with warp: {{ report.reports_with_warp_count }}
 Forbidden residue: {{ report.local_residue_count }}
+Missing expected: {{ report.local_missing_count }}
 Slot growth: {{ report.local_slot_growth_count }}
 Content weight: {{ report.local_content_weight_count }}
 Repeated warp: {{ report.repeated_warp_count }}
 Classification: {{ report.classification }}
 HTML report: {{ html_report_path|present_path(project_root) }}
-{% if report.violations %}
-Findings:
+{% if not report.passed() %}
+Report findings:
+{% if report.local_warp_count %}
+- warning: local_warp: {{ report.local_warp_count }} local warp item(s) across {{ report.reports_with_warp_count }} mapped module(s)
+{% endif %}
 {% for violation in report.violations %}
-- {{ violation.code }}: {{ violation.message }}
+- error: {{ violation.code }}: {{ violation.message }}
 {% endfor %}
+{% if report.local_warp_count %}
+Warped modules:
+{% for module_report in report.reports %}
+{% if module_report.local_warp_count %}
+- {{ module_report.selected_module }}: {{ module_report.local_warp_count }} local warp item(s) (missing expected {{ module_report.local_missing_count }}, residue {{ module_report.local_residue_count }}, slot growth {{ module_report.local_slot_growth_count }}, content weight {{ module_report.local_content_weight_count }})
+{% endif %}
+{% endfor %}
+{% endif %}
 {% endif %}

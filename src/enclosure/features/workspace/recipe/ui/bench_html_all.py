@@ -9,11 +9,13 @@ _bench_css = bench_html_common.bench_css
 _classification_severity = bench_html_common.classification_severity
 _count_cell = bench_html_common.count_cell
 _count_severity = bench_html_common.count_severity
+_content_weight_list = bench_html_common.content_weight_list
 _escape = bench_html_common.escape
 _interpretation_section = bench_html_common.interpretation_section
 _role_recurrence_bars = bench_html_common.role_recurrence_bars
 _row_class = bench_html_common.row_class
 _summary_class = bench_html_common.summary_class
+_tree = bench_html_common.tree
 
 
 def render_bench_all_html(report: domain.RecipeBenchAllReport) -> str:
@@ -36,6 +38,7 @@ def render_bench_all_html(report: domain.RecipeBenchAllReport) -> str:
             "</header>",
             _bench_all_violations_section(report),
             _bench_all_worst_modules_section(report),
+            _bench_all_warp_details_section(report),
             _bench_all_roles_section(report),
             _interpretation_section(),
             "</main>",
@@ -50,6 +53,7 @@ def _bench_all_summary_grid(report: domain.RecipeBenchAllReport) -> str:
         ("Modules", str(report.module_count), ""),
         ("Roles", str(report.role_count), ""),
         ("Modules with warp", str(report.reports_with_warp_count), _count_severity(report.reports_with_warp_count)),
+        ("Missing expected", str(report.local_missing_count), _count_severity(report.local_missing_count)),
         ("Forbidden residue", str(report.local_residue_count), _count_severity(report.local_residue_count)),
         ("Slot growth", str(report.local_slot_growth_count), _count_severity(report.local_slot_growth_count)),
         ("Content weight", str(report.local_content_weight_count), _count_severity(report.local_content_weight_count)),
@@ -96,8 +100,8 @@ def _bench_all_worst_modules_section(report: domain.RecipeBenchAllReport) -> str
         "<div class=\"table-wrap\"><table>"
         "<thead><tr>"
         "<th>Module</th><th>Role</th><th>Expected</th><th>Actual</th>"
-        "<th>Warp</th><th>Residue</th><th>Slot Growth</th><th>Content</th>"
-        "<th>Repeated</th><th>Classification</th>"
+        "<th>Warp</th><th>Missing</th><th>Residue</th><th>Slot Growth</th><th>Content</th>"
+        "<th>Repeated</th><th>Classification</th><th>Findings</th>"
         "</tr></thead>"
         f"<tbody>{rows}</tbody>"
         "</table></div>"
@@ -117,13 +121,94 @@ def _bench_all_module_row(report: domain.RecipeBenchReport) -> str:
         f"<td>{expected_count}</td>"
         f"<td>{actual_count}</td>"
         f"{_count_cell(report.local_warp_count)}"
+        f"{_count_cell(report.local_missing_count)}"
         f"{_count_cell(report.local_residue_count)}"
         f"{_count_cell(report.local_slot_growth_count)}"
         f"{_count_cell(report.local_content_weight_count)}"
         f"{_count_cell(report.repeated_warp_count)}"
         f"<td>{_badge(report.classification, severity)}</td>"
+        f"<td>{_bench_all_findings_list(report)}</td>"
         "</tr>"
     )
+
+
+def _bench_all_warp_details_section(report: domain.RecipeBenchAllReport) -> str:
+    warped_reports = tuple(
+        sorted(
+            (
+                item
+                for item in report.reports
+                if item.local_warp_count or item.violations
+            ),
+            key=lambda item: (-item.local_warp_count, item.selected_module),
+        )
+    )
+    if not warped_reports:
+        return ""
+    return (
+        "<section><h2>Warp Details</h2>"
+        + "".join(_bench_all_warp_detail(item) for item in warped_reports)
+        + "</section>"
+    )
+
+
+def _bench_all_warp_detail(report: domain.RecipeBenchReport) -> str:
+    selected = report.selected
+    return (
+        "<article class=\"role-block\">"
+        f"<h3>{_escape(report.selected_module)}</h3>"
+        "<p>"
+        f"{report.local_warp_count} local warp item(s), "
+        f"{report.local_missing_count} missing expected, "
+        f"{report.local_residue_count} forbidden residue, "
+        f"{report.local_slot_growth_count} slot growth, "
+        f"{report.local_content_weight_count} content weight."
+        "</p>"
+        f"{_bench_all_findings_section(report)}"
+        "<div class=\"columns\">"
+        f"<article><h3>Missing Expected</h3>{_tree(selected.missing_files)}</article>"
+        f"<article><h3>Forbidden Residue</h3>{_tree(selected.residue_files)}</article>"
+        f"<article><h3>Slot Growth</h3>{_tree(selected.slot_growth_files)}</article>"
+        f"<article><h3>Content Weight</h3>{_content_weight_list(selected.content_weights)}</article>"
+        "</div>"
+        "</article>"
+    )
+
+
+def _bench_all_findings_list(report: domain.RecipeBenchReport) -> str:
+    items = tuple(_bench_all_findings(report))
+    if not items:
+        return "<span class=\"empty\">No findings.</span>"
+    return "<ul class=\"tree\">" + "".join(
+        f"<li>{item}</li>"
+        for item in items
+    ) + "</ul>"
+
+
+def _bench_all_findings_section(report: domain.RecipeBenchReport) -> str:
+    items = tuple(_bench_all_findings(report))
+    if not items:
+        return ""
+    return "<h4>Report Findings</h4><ul class=\"tree\">" + "".join(
+        f"<li>{item}</li>"
+        for item in items
+    ) + "</ul>"
+
+
+def _bench_all_findings(report: domain.RecipeBenchReport) -> tuple[str, ...]:
+    findings: list[str] = []
+    if report.local_warp_count:
+        findings.append(
+            "<strong>warning:</strong> "
+            f"<code>local_warp</code> {report.local_warp_count} local warp item(s)"
+        )
+    for violation in report.violations:
+        findings.append(
+            "<strong>error:</strong> "
+            f"<code>{_escape(violation.code)}</code> "
+            f"{_escape(violation.message)}"
+        )
+    return tuple(findings)
 
 
 def _bench_all_roles_section(report: domain.RecipeBenchAllReport) -> str:
@@ -140,6 +225,7 @@ def _bench_all_role_section(
     role_name: str,
     reports: tuple[domain.RecipeBenchReport, ...],
 ) -> str:
+    missing_total = sum(item.local_missing_count for item in reports)
     residue_total = sum(item.local_residue_count for item in reports)
     slot_growth_total = sum(item.local_slot_growth_count for item in reports)
     content_weight_total = sum(item.local_content_weight_count for item in reports)
@@ -151,7 +237,8 @@ def _bench_all_role_section(
         "<article class=\"role-block\">"
         f"<h3>{_escape(role_name)}</h3>"
         "<p>"
-        f"{len(reports)} module(s), {residue_total} residue, "
+        f"{len(reports)} module(s), {missing_total} missing expected, "
+        f"{residue_total} residue, "
         f"{slot_growth_total} slot growth, {content_weight_total} content weight, "
         f"{repeated_total} repeated signal(s)."
         "</p>"
@@ -168,6 +255,7 @@ def _role_module_table(reports: tuple[domain.RecipeBenchReport, ...]) -> str:
         f"<tr class=\"{_escape(_row_class(_classification_severity(report.classification)))}\">"
         f"<th><code>{_escape(report.selected_module)}</code></th>"
         f"{_count_cell(report.local_warp_count)}"
+        f"{_count_cell(report.local_missing_count)}"
         f"{_count_cell(report.local_residue_count)}"
         f"{_count_cell(report.local_slot_growth_count)}"
         f"{_count_cell(report.local_content_weight_count)}"
@@ -178,7 +266,7 @@ def _role_module_table(reports: tuple[domain.RecipeBenchReport, ...]) -> str:
     )
     return (
         "<div class=\"table-wrap\"><table>"
-        "<thead><tr><th>Module</th><th>Warp</th><th>Residue</th>"
+        "<thead><tr><th>Module</th><th>Warp</th><th>Missing</th><th>Residue</th>"
         "<th>Slot Growth</th><th>Content</th><th>Repeated</th>"
         "<th>Classification</th></tr></thead>"
         f"<tbody>{rows}</tbody>"

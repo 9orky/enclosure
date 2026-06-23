@@ -144,8 +144,6 @@ def recipe_command(
                 "project_root": report.project_root,
             },
         )
-        if not report.passed():
-            ui.exit_with_error()
         return
 
     if bench_module:
@@ -168,8 +166,6 @@ def recipe_command(
                 "project_root": report.project_root,
             },
         )
-        if not report.passed():
-            ui.exit_with_error()
         return
 
     if list_requested:

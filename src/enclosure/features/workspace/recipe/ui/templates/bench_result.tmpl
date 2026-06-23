@@ -8,9 +8,12 @@ Content weight: {{ report.local_content_weight_count }}
 Repeated warp: {{ report.repeated_warp_count }}
 Classification: {{ report.classification }}
 HTML report: {{ html_report_path|present_path(project_root) }}
-{% if report.violations %}
-Findings:
+{% if not report.passed() %}
+Report findings:
+{% if report.local_warp_count %}
+- warning: local_warp: {{ report.local_warp_count }} local warp item(s)
+{% endif %}
 {% for violation in report.violations %}
-- {{ violation.code }}: {{ violation.message }}
+- error: {{ violation.code }}: {{ violation.message }}
 {% endfor %}
 {% endif %}

@@ -58,6 +58,7 @@ def _summary_grid(report: domain.RecipeBenchReport) -> str:
         ("Recipe role", report.role_name or "unknown", ""),
         ("Same-role modules", str(report.same_role_module_count), ""),
         ("Local warp", str(report.local_warp_count), _count_severity(report.local_warp_count)),
+        ("Missing expected", str(report.local_missing_count), _count_severity(report.local_missing_count)),
         ("Forbidden residue", str(report.local_residue_count), _count_severity(report.local_residue_count)),
         ("Slot growth", str(report.local_slot_growth_count), _count_severity(report.local_slot_growth_count)),
         ("Content weight", str(report.local_content_weight_count), _count_severity(report.local_content_weight_count)),

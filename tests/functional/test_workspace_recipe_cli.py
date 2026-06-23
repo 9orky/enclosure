@@ -372,7 +372,7 @@ def test_recipe_drifts_ignore_package_slot_growth_but_bench_reports_it(
     assert drifts.returncode == 0, drifts.stderr
     assert "No recipe drifts found." in drifts.stdout
     assert "domain/service.py" not in drifts.stdout
-    assert bench.returncode == 1
+    assert bench.returncode == 0
     assert "Forbidden residue: 0" in bench.stdout
     assert "Slot growth: 1" in bench.stdout
     assert "Classification: local" in bench.stdout
@@ -401,7 +401,7 @@ def test_recipe_bench_reports_unmapped_modules_and_writes_html(tmp_path: Path) -
         ".enclosure/unmapped.html",
     )
 
-    assert result.returncode == 1
+    assert result.returncode == 0
     assert "Bench preview for module 'billing/report'." in result.stdout
     assert "Role: unknown" in result.stdout
     assert "Classification: unstable" in result.stdout
@@ -442,7 +442,7 @@ def test_recipe_bench_reports_repeated_slot_growth_as_established(
         ".enclosure/bench.html",
     )
 
-    assert result.returncode == 1
+    assert result.returncode == 0
     assert "Same-role modules: 3" in result.stdout
     assert "Local warp: 1" in result.stdout
     assert "Slot growth: 1" in result.stdout
@@ -480,7 +480,7 @@ def test_recipe_bench_reports_disjoint_same_role_warp_as_unstable(
         ".enclosure/unstable.html",
     )
 
-    assert result.returncode == 1
+    assert result.returncode == 0
     assert "Same-role modules: 2" in result.stdout
     assert "Local warp: 1" in result.stdout
     assert "Classification: unstable" in result.stdout
@@ -508,7 +508,7 @@ def test_recipe_bench_reports_content_weight_and_binary_file_content(
     )
     html = (project_root / ".enclosure/content.html").read_text(encoding="utf-8")
 
-    assert result.returncode == 1
+    assert result.returncode == 0
     assert "Content weight: 1" in result.stdout
     assert "Forbidden residue: 1" in result.stdout
     assert "Classification: local" in result.stdout
@@ -535,13 +535,73 @@ def test_recipe_bench_all_aggregates_violations_without_hiding_clean_modules(
         ".enclosure/index.html",
     )
 
-    assert result.returncode == 1
+    assert result.returncode == 0
     assert "Workspace warp index." in result.stdout
     assert "Mapped modules: 2" in result.stdout
     assert "Recipe roles: 1" in result.stdout
     assert "mapped_module_missing" in result.stdout
     assert "missing/report" in result.stdout
     assert (project_root / ".enclosure/index.html").is_file()
+
+
+def test_recipe_bench_all_reports_local_warp_failure_reason(
+    tmp_path: Path,
+) -> None:
+    project_root = copy_fixture(tmp_path, "recipe_workspace")
+    _write_file(
+        project_root / "src/enclosure/features/orders/report/helpers.py",
+        "VALUE = 1\n",
+    )
+
+    result = run_cli(
+        project_root,
+        "workspace",
+        "recipe",
+        "--bench-all",
+        "--html",
+        ".enclosure/index.html",
+    )
+
+    assert result.returncode == 0
+    assert "Workspace warp index." in result.stdout
+    assert "Report findings:" in result.stdout
+    assert "- warning: local_warp: 1 local warp item(s) across 1 mapped module(s)" in result.stdout
+    assert "Warped modules:" in result.stdout
+    assert (
+        "- orders/report: 1 local warp item(s) "
+        "(missing expected 0, residue 1, slot growth 0, content weight 0)"
+        in result.stdout
+    )
+    assert (project_root / ".enclosure/index.html").is_file()
+
+
+def test_recipe_bench_all_reports_missing_expected_files_in_html(
+    tmp_path: Path,
+) -> None:
+    project_root = copy_fixture(tmp_path, "recipe_workspace")
+    (project_root / "src/enclosure/features/orders/report/application.py").unlink()
+
+    result = run_cli(
+        project_root,
+        "workspace",
+        "recipe",
+        "--bench-all",
+        "--html",
+        ".enclosure/index.html",
+    )
+    html = (project_root / ".enclosure/index.html").read_text(encoding="utf-8")
+
+    assert result.returncode == 0
+    assert "Missing expected: 1" in result.stdout
+    assert "- warning: local_warp: 1 local warp item(s) across 1 mapped module(s)" in result.stdout
+    assert (
+        "- orders/report: 1 local warp item(s) "
+        "(missing expected 1, residue 0, slot growth 0, content weight 0)"
+        in result.stdout
+    )
+    assert "<h2>Warp Details</h2>" in html
+    assert "<h3>Missing Expected</h3>" in html
+    assert "<code>application.py</code>" in html
 
 
 def test_recipe_bench_all_marks_missing_role_recipes_as_blocking(
@@ -563,11 +623,16 @@ def test_recipe_bench_all_marks_missing_role_recipes_as_blocking(
     )
     html = (project_root / ".enclosure/index.html").read_text(encoding="utf-8")
 
-    assert result.returncode == 1
+    assert result.returncode == 0
     assert "Workspace warp index." in result.stdout
     assert "Recipe roles: 1" in result.stdout
     assert "Classification: unstable" in result.stdout
     assert "missing_role_recipe" in result.stdout
+    assert "<th><code>billing/report</code></th>" in html
+    assert "<h3>billing/report</h3>" in html
+    assert "<h4>Report Findings</h4>" in html
+    assert "<strong>error:</strong> <code>missing_role_recipe</code>" in html
+    assert "roles_map references missing recipe no-such-recipe for billing/report" in html
     assert "<h3>no-such-recipe</h3>" not in html
 
 
@@ -590,7 +655,7 @@ def test_recipe_bench_marks_global_role_map_failures_as_unstable(
         ".enclosure/orders.html",
     )
 
-    assert result.returncode == 1
+    assert result.returncode == 0
     assert "Bench preview for module 'orders/report'." in result.stdout
     assert "Local warp: 0" in result.stdout
     assert "Classification: unstable" in result.stdout
@@ -610,7 +675,7 @@ def test_recipe_bench_all_validates_empty_roles_map(tmp_path: Path) -> None:
         ".enclosure/index.html",
     )
 
-    assert result.returncode == 1
+    assert result.returncode == 0
     assert "Mapped modules: 0" in result.stdout
     assert "Recipe roles: 0" in result.stdout
     assert "Classification: unstable" in result.stdout

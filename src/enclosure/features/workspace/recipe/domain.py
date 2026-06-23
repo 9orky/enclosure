@@ -230,6 +230,12 @@ class RecipeBenchReport:
         return len(self.selected.residue_files)
 
     @property
+    def local_missing_count(self) -> int:
+        if not self.selected.module_name:
+            return 0
+        return len(self.selected.missing_files)
+
+    @property
     def local_slot_growth_count(self) -> int:
         if not self.selected.module_name:
             return 0
@@ -345,6 +351,10 @@ class RecipeBenchAllReport:
     @property
     def local_residue_count(self) -> int:
         return sum(report.local_residue_count for report in self.reports)
+
+    @property
+    def local_missing_count(self) -> int:
+        return sum(report.local_missing_count for report in self.reports)
 
     @property
     def local_slot_growth_count(self) -> int:
