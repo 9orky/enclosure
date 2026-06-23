@@ -1,6 +1,6 @@
 # Step 03 - Refactor Workspace CLI Application Slots
 
-Status: Draft
+Status: Complete
 
 ## Implementation Tree
 
@@ -158,8 +158,9 @@ Expected:
 
 - `workspace/plan` and `workspace/sync` are absent from drift findings.
 - Sync and plan CLI tests pass.
+- Later-step shape violations may remain until step 04.
 
 ## Completion
 
-Complete when both modules match `module-workspace-cli` and expose stable
-application package seams.
+Completed with both modules matching `module-workspace-cli` and exposing
+stable application package seams.

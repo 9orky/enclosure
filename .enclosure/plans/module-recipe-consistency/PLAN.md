@@ -65,6 +65,7 @@ argument violations, symbol imports, and a few oversized owned files.
 
 3. Refactor workspace CLI application slots.
    Step doc: `PLAN_STEP_03.md`.
+   Status: Complete.
    Outcome: `workspace/plan` and `workspace/sync` match
    `module-workspace-cli`.
 

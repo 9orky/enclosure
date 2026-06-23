@@ -2,21 +2,10 @@ from __future__ import annotations
 
 from enclosure.shared.config import settings
 
-from . import domain, infrastructure
+from .. import domain
 
 
 def describe_plan_document(name: str) -> domain.PlanDocument:
-    return _build_document(name)
-
-
-def create_plan_document(name: str, *, force: bool) -> domain.PlanWriteResult:
-    return infrastructure.file_plan_materializer.materialize(
-        _build_document(name),
-        force=force,
-    )
-
-
-def _build_document(name: str) -> domain.PlanDocument:
     project_root = settings.metadata.project_root
     target_dir = settings.metadata.target_dir
     if not target_dir.is_dir():
@@ -34,7 +23,4 @@ def _build_document(name: str) -> domain.PlanDocument:
     )
 
 
-__all__ = [
-    "create_plan_document",
-    "describe_plan_document",
-]
+__all__ = ["describe_plan_document"]
