@@ -1,6 +1,6 @@
 schema_version: 1
 role: container
-description: Container module recipe with the combined compact command/support tree.
+description: Reusable local container recipe with the combined compact command/support tree.
 archetypes:
   - module-config-support
   - module-domain-package-cli

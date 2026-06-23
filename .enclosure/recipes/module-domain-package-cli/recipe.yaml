@@ -1,6 +1,6 @@
 schema_version: 1
 role: archetype
-description: Command module with application file, packaged domain, UI package, and docs/llm/report templates.
+description: Reusable local command module with application file, packaged domain, UI package, and docs/llm/report templates.
 ladder:
   family: module
   rung: domain-package-cli

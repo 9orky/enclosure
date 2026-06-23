@@ -1,6 +1,6 @@
 schema_version: 1
 role: archetype
-description: Report command module with compact domain/application files, UI package, and docs/llm/report templates.
+description: Reusable local report command module with compact domain/application files, UI package, and docs/llm/report templates.
 ladder:
   family: module
   rung: compact-cli

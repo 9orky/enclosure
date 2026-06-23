@@ -196,6 +196,20 @@ flowchart LR
 6. Remove Enclosure-internal guidance from recipe template docs, especially
    references to `enclosure.shared.scaffolding`.
 
+## Rewrite Queue From Step 03
+
+- `module-report-cli/templates/ui/cli.py.tmpl`
+- `module/templates/infrastructure.py.tmpl`
+- `module/templates/ui/cli.py.tmpl`
+- `module-domain-package-cli/templates/ui/cli.py.tmpl`
+- `module-workspace-cli/templates/infrastructure.py.tmpl`
+- `module-workspace-cli/templates/ui/cli.py.tmpl`
+- `slot-infrastructure-file/templates/infrastructure.py.tmpl`
+- `pattern-module/templates/infrastructure/config.py.tmpl`
+- `pattern-module/templates/infrastructure/workspace.py.tmpl`
+- `pattern-module/templates/ui/cli.py.tmpl`
+- `pattern-module/templates/ui/templates/llm.tmpl`
+
 ## Verification
 
 - Run `rg -n "enclosure\\.shared" .enclosure/recipes`.

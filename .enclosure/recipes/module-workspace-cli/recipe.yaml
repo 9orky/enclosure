@@ -1,6 +1,6 @@
 schema_version: 1
 role: archetype
-description: Workspace command module with command/query application package, compact domain/infrastructure files, UI package, and docs/llm templates.
+description: Reusable local workspace command module with command/query application package, compact domain/infrastructure files, UI package, and docs/llm templates.
 ladder:
   family: module
   rung: compact-workspace-cli

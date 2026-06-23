@@ -140,11 +140,38 @@ classDiagram
 - Confirm each hit maps to either a product-only classification or a Step 04
   rewrite item.
 
+## Classification
+
+All checked-in recipes are classified as reusable local scaffolds:
+
+- `module`
+- `module-config-support`
+- `module-domain-package-cli`
+- `module-report-cli`
+- `module-workspace-cli`
+- `pattern-module`
+- `slot-infrastructure-file`
+
+No recipe is classified as Enclosure-product-only.
+
+## Step 04 Rewrite Queue
+
+- `module-report-cli/templates/ui/cli.py.tmpl`
+- `module/templates/infrastructure.py.tmpl`
+- `module/templates/ui/cli.py.tmpl`
+- `module-domain-package-cli/templates/ui/cli.py.tmpl`
+- `module-workspace-cli/templates/infrastructure.py.tmpl`
+- `module-workspace-cli/templates/ui/cli.py.tmpl`
+- `slot-infrastructure-file/templates/infrastructure.py.tmpl`
+- `pattern-module/templates/infrastructure/config.py.tmpl`
+- `pattern-module/templates/infrastructure/workspace.py.tmpl`
+- `pattern-module/templates/ui/cli.py.tmpl`
+- `pattern-module/templates/ui/templates/llm.tmpl`
+
 ## Completion
 
-Status: Ready.
+Status: Done.
 
-Known Drift: current checked-in templates still contain Enclosure imports, so
-the default implementation path is to classify all current recipes as reusable
-and rewrite those imports in Step 04. Do not use recipe classification to move
-implementation-environment output into `.enclosure/`.
+Known Drift: current checked-in templates still contain Enclosure imports. Each
+hit is queued for reusable-template rewriting in Step 04. Do not use recipe
+classification to move implementation-environment output into `.enclosure/`.

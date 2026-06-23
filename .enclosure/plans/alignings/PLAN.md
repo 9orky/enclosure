@@ -117,7 +117,7 @@ contract or in alignment planning material.
 
 ### 3. Recipe Classification And Guidance
 
-Status: Ready
+Status: Done
 
 Step Artifact: `PLAN_STEP_03.md`
 
@@ -129,8 +129,9 @@ Owner: `.enclosure/recipes/*/recipe.yaml` and recipe guidance.
 Inputs: existing manifests, template imports, accepted clarification that a new
 workspace starts with an empty recipe folder, and the dual-use recipe contract.
 
-Outputs: each recipe either avoids Enclosure product internals or clearly states
-that it intentionally generates Enclosure product code.
+Outputs: each recipe is classified as reusable local scaffolding in its manifest
+description, and remaining Enclosure product imports are queued for Step 04
+template rewriting.
 
 Acceptance: every recipe that renders `enclosure.shared`, `enclosure.shared.config`,
 or `enclosure.shared.scaffolding` has an explicit product-only reason, or the

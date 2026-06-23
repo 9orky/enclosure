@@ -1,6 +1,6 @@
 schema_version: 1
 role: fragment
-description: Reusable infrastructure file slot.
+description: Reusable local infrastructure file slot.
 ladder:
   family: module-slot
   rung: infrastructure-file

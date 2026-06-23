@@ -1,6 +1,6 @@
 schema_version: 1
 role: archetype
-description: Pattern feature module with one application use case per file, one domain concept per file, split infrastructure adapters, empty package seams, and no export hubs.
+description: Reusable local pattern feature module with one application use case per file, one domain concept per file, split infrastructure adapters, empty package seams, and no export hubs.
 ladder:
   family: module
   rung: pattern-module
