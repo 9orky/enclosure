@@ -16,12 +16,12 @@ active: true
 ```mermaid
 stateDiagram-v2
     [*] --> DraftSeed
-    DraftSeed --> PlanContract: scaffold PLAN.md and UML.md
-    PlanContract --> Epics: scaffold epic packages
+    DraftSeed --> PlanContract: derive plan slots
+    PlanContract --> Epics: derive epic slots
 
-    DraftSeed --> DraftSeed: roll updated DRAFT.md
-    PlanContract --> PlanContract: roll updated plan contract
-    Epics --> Epics: roll updated epic projections
+    DraftSeed --> DraftSeed: roll starts from seed
+    PlanContract --> PlanContract: preserve matched plan enrichment
+    Epics --> Epics: preserve matched epic enrichment
     Epics --> [*]: first contract complete
 ```
 
@@ -30,7 +30,8 @@ stateDiagram-v2
 ```mermaid
 flowchart LR
     Current["Current stage\nselected from events"] --> Intake["Intake\nstage input data objects"]
-    Intake --> Scaffold["Scaffold\nproject docs for review"]
+    Intake --> Derive["Derive slots\ninput id + stage id + variant key"]
+    Derive --> Scaffold["Scaffold\nproject docs for review"]
     Scaffold --> Agent["Agent\nupdate current projection"]
     Agent --> Review["User review\napprove or request update"]
     Review --> Gate["Gate\nclassify open questions"]
@@ -98,7 +99,7 @@ flowchart LR
     Native["Native sources\nflows.mermaid, uml.mermaid, tree.mermaid"] --> Embeds["Markdown embeds\nSCHEMAS.md generated sections"]
 
     Projectors --> Generated["Generated structure\nsafe to rewrite"]
-    Markdown --> Enrichment["Enrichment by stable ID\npreserved across scaffolds"]
+    Markdown --> Enrichment["Enrichment by derived identity\npreserved across scaffolds"]
     Markdown --> Disposable["Unkeyed edits\nnot authoritative"]
     Drift --> Halt["Unresolved roll drift\nhalts advancement"]
 ```
@@ -129,6 +130,7 @@ classDiagram
       +stage_id()
       +intake_type()
       +output_type()
+      +derive_slots(input_data)
       +scaffold(input_data)
       +agent_context(input_data)
       +accept(review_data)
@@ -148,12 +150,25 @@ classDiagram
 
     class StageData {
       +str id
+      +str stable_identity
       +dict values
+    }
+
+    class DerivedSlot {
+      +str id
+      +str upstream_identity
+      +str stage_id
+      +str variant_key
     }
 
     class StageOutput {
       +str next_stage_id
       +list data_objects
+    }
+
+    class Enrichment {
+      +str slot_id
+      +dict values
     }
 
     class Epic {
@@ -209,7 +224,9 @@ classDiagram
     Plan "1" --> "*" ArtifactRef
     StageRunner --> PlanningStage
     StageRunner --> StageData
+    StageRunner --> DerivedSlot
     StageRunner --> StageOutput
+    StageRunner --> Enrichment
     RollRunner --> StageRunner
     DomainEvent ..> Plan
     Projector ..> ArtifactRef
@@ -227,7 +244,8 @@ flowchart TB
     App --> Aggregate["Plan aggregate\nstate and transition rules"]
     App --> Runner["Stage runner\ndata in and data out"]
     Runner --> Stage["Current stage\none class in one file"]
-    Stage --> Scaffold["Scaffold policy\nstable IDs and generated sections"]
+    Stage --> Slots["Derived slots\ninput id + stage id + variant key"]
+    Slots --> Scaffold["Scaffold policy\nderived IDs and generated sections"]
     App --> Roll["Roll runner\nDRAFT seed through children"]
     Aggregate --> Gates["Stage gates\nopen question classification"]
     Gates --> Confirm["User confirmation\nrequired to unblock"]
@@ -272,7 +290,8 @@ sequenceDiagram
     CLI->>App: next()
     App->>Plan: reconstruct from events
     App->>Plan: get current stage
-    App->>Plan: accept current stage output
+    App->>Plan: derive slots from current input
+    App->>Plan: accept matched stage output
     Plan-->>App: stage output events or blocker report
     App->>DB: append event atomically
     DB-->>Proj: notification log
@@ -285,10 +304,12 @@ sequenceDiagram
 PlanCreated
 PlanSeededFromDraft
 DraftUpdated
-DraftInputBlockImported
-RollUpdateRequested
-RollUpdateHalted
+RollRequested
+RollHalted
 StageOutputAccepted
+StageSlotsDerived
+StageEnrichmentPreserved
+StageEnrichmentOrphaned
 PlanContractScaffolded
 OpenQuestionAdded
 OpenQuestionClassified
@@ -311,9 +332,11 @@ artifact shape.
 
 The event store is the authority. Files are deterministic scaffolded
 projections. Stage review output is durable only when `next` accepts it into the
-event stream. Generated structure may be rewritten, but enrichment attached to
-stable IDs must be preserved or reported as unresolved drift. Unresolved roll
-updates halt advancement.
+event stream. Generated structure may be rewritten from derived slots, but
+enrichment attached to matching derived stable identities must be preserved or
+reported as unresolved drift. Unresolved roll drift halts advancement. Roll
+always runs forward from `DRAFT.md` seed data to child stages; child projection
+shape does not flow back into the draft.
 
 Agents may add questions and set blocking classifications. Non-blocking
 classifications require user confirmation before a gate can advance.
@@ -367,7 +390,8 @@ flowchart TD
 ```mermaid
 flowchart TD
     Command["command node"] --> Stage["stage: Name\nfile: application/stages/name.py\nclass: Name"]
-    Stage --> Domain["domain object or port"]
+    Stage --> Slot["derived slot\ninput id + stage id + variant key"]
+    Slot --> Domain["domain object or port"]
     Stage --> Event["domain event or projection"]
 ```
 
@@ -377,6 +401,7 @@ flowchart TD
 classDiagram
     class PlanStage {
       <<file:application/stages/plan_stage.py>>
+      +derive_slots(plan_seed)
       +scaffold(plan_facts)
       +accept(review_data)
     }

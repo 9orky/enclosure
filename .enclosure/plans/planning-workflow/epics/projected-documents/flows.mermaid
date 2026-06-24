@@ -11,6 +11,7 @@ flowchart LR
     subgraph loop["Closed Stage Loop"]
       active["current stage\nselected from event state"]
       intake["input data objects\nfrom prior stage or DRAFT seed"]
+      slots["derived output slots\ninput id + stage id + variant key"]
       scaffold["stage scaffold\nproject docs for review"]
       agent_update["agent update\nbounded by stage data"]
       user_review["user review\napprove or request update"]
@@ -29,6 +30,7 @@ flowchart LR
 
     subgraph projections["Events / Projections"]
       events["event stream\ncanonical facts"]
+      enrichment["accepted enrichment\nkeyed by derived slot id"]
       files["projection files\nDRAFT / PLAN / UML / epics"]
       native["native Mermaid projections\nflows / uml / tree"]
       schemas["SCHEMAS.md\npasted display projection"]
@@ -43,7 +45,8 @@ flowchart LR
     active --> registry
     registry --> runner
     runner --> intake
-    intake --> scaffold
+    intake --> slots
+    slots --> scaffold
     scaffold --> files
     scaffold --> native
     native --> schemas
@@ -52,6 +55,8 @@ flowchart LR
     user_review --> output
     output --> events
     events --> active
+    events --> enrichment
+    enrichment --> slots
     cmd_agent --> guidance
     draft -. implements .-> iface
     plan -. implements .-> iface
@@ -61,6 +66,7 @@ flowchart LR
     epics --> registry
     roll --> draft
     roll --> runner
+    roll --> intake
     runner --> drift
 
     classDef command fill:#e0f2fe,stroke:#0284c7,color:#172033;
@@ -68,6 +74,6 @@ flowchart LR
     classDef service fill:#fef9c3,stroke:#ca8a04,color:#172033;
     classDef output fill:#f1f5f9,stroke:#64748b,color:#172033;
     class cmd_start,cmd_next,cmd_agent,cmd_roll command;
-    class active,intake,scaffold,agent_update,user_review,output loop;
+    class active,intake,slots,scaffold,agent_update,user_review,output loop;
     class iface,draft,plan,epics,registry,runner,roll service;
-    class events,files,native,schemas,guidance,drift output;
+    class events,enrichment,files,native,schemas,guidance,drift output;

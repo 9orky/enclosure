@@ -62,6 +62,9 @@ Users should not need to know these stage names while operating the workflow.
 Commands derive the active plan and current stage from event state. Each stage
 receives a list of typed data objects, scaffolds reviewable projections, accepts
 agent and user updates, and emits the data objects that seed the next stage.
+The upstream data does not describe what the next projection will look like.
+Projection shape, output object type, and output cardinality are owned by the
+stage implementation.
 
 The first implementation should use the Python `eventsourcing` package with
 SQLite persistence for the planning core. Plan commands append domain events;
@@ -96,15 +99,15 @@ plan as projected metadata, but it should not be the locking mechanism.
 
 Structured data in frontmatter should be a projected machine-readable view, not
 the canonical database. Markdown projections may contain readable explanation
-and current-stage review surfaces. Generated structure, stable IDs, section
-names, and ordering are owned by the planning module. Enrichment attached to
-stable IDs must survive repeated scaffolding unless a roll update reports
-unresolved drift.
+and current-stage review surfaces. Generated structure, derived stable
+identities, section names, and ordering are owned by the planning module.
+Enrichment attached to derived stable identities must survive repeated
+scaffolding unless roll reports unresolved drift.
 
 Generated artifacts should declare their source and sync policy. Regeneration
 may rewrite generated structure, but it must preserve enrichment attached to
-stable IDs or report unresolved drift. User input is durable only after it is
-accepted as current-stage output into the event store.
+derived stable identities or report unresolved drift. User input is durable only
+after it is accepted as current-stage output into the event store.
 
 Native source files should own native formats as projections. For example,
 `flows.mermaid`, `uml.mermaid`, and `tree.mermaid` should remain the native
@@ -122,6 +125,17 @@ The public command surface should be only `start`, `next`, `agent`, and `roll`,
 with no command parameters required by the caller. `roll` is special because it
 starts from the `DRAFT.md` seed and continues across child stages through the
 same stage contract.
+
+Roll is a forward-only recomputation from seed to tree. `DRAFT.md` owns only the
+seed data objects. A downstream stage derives deterministic output slots from
+the stable identity of its input objects plus its own stage and variant rules.
+For example, five seed objects may produce five plan objects, or five declared
+variants, because that cardinality is known by the stage implementation. During
+roll, generated fields are refreshed, missing derived slots are created, and
+accepted enrichment is preserved by derived stable identity. Removed or renamed
+upstream identities orphan downstream enrichment unless an explicit alias or
+drift resolution reconnects it. Downstream projection shape is never pushed back
+into `DRAFT.md`.
 
 Projection sync should be strict. The workflow cannot advance while projected
 files are out of sync with the event store.
@@ -263,13 +277,17 @@ the complete process.
 - Users can run the loop with only `start`, `next`, `agent`, and `roll`.
 - New stages can be added as one class in one file implementing the stage
   interface.
-- Repeated scaffolding preserves enrichment attached to stable IDs.
+- Roll always recomputes forward from seed data to projected tree.
+- Stage output slots are derived deterministically from upstream stable
+  identities and stage-owned variant rules.
+- Repeated scaffolding preserves enrichment attached to derived stable
+  identities.
 - Mermaid contracts can be compared with actual implementation structure.
 - Drift between projected files and event-sourced state can be detected and
   repaired or imported.
 - User review output can be accepted as stage output events.
 - Stage advancement is blocked when projections are not strictly synchronized.
-- Roll updates halt advancement when required updates remain unresolved.
+- Roll halts advancement when required drift remains unresolved.
 - New artifact types can be added without rewriting the whole planner.
 - Open questions cannot be silently carried across stage boundaries.
 - Agents cannot silently unblock questions they introduced or reclassified.

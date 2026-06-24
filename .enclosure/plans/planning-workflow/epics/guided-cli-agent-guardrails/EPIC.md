@@ -72,5 +72,5 @@ invoke those rules safely.
   reports allowed moves.
 - `workspace plan agent` produces constrained agent guidance.
 - `workspace plan roll` starts from the draft seed and refreshes child stages
-  through the same stage loop.
+  forward through the same stage loop.
 - The agent guidance never grants permission to run arbitrary plan mutations.

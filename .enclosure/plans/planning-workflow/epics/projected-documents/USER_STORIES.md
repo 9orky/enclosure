@@ -18,6 +18,9 @@ stories:
   - id: run-stage-loop
     title: Run the closed stage loop
     status: candidate
+  - id: derive-output-slots
+    title: Derive deterministic output slots
+    status: candidate
   - id: add-stage-class
     title: Add stages as one class in one file
     status: candidate
@@ -45,6 +48,22 @@ Acceptance criteria:
 - The agent updates only the current stage projection and context.
 - User acceptance records stage output data that seeds the next stage.
 - The same loop works for draft, plan, and epic projections.
+
+## derive-output-slots
+
+As a developer, I want each stage to derive output slots deterministically so
+that roll can refresh generated structure without losing filled content.
+
+Acceptance criteria:
+
+- A stage derives each output slot from upstream stable identity, stage id, and
+  stage-owned variant key.
+- The stage implementation owns output type, output cardinality, and variant
+  rules.
+- Generated fields are refreshed during roll.
+- Existing enrichment is preserved when the derived slot identity still exists.
+- Orphaned enrichment is reported as drift when the upstream identity no longer
+  maps to a derived slot.
 
 ## add-stage-class
 
@@ -80,8 +99,9 @@ that child projections can be updated consistently.
 Acceptance criteria:
 
 - `roll` starts from the draft seed.
-- `roll` continues through child stages using the same stage interface.
-- Roll output preserves enrichment attached to stable IDs.
+- `roll` continues forward through child stages using the same stage interface.
+- `roll` does not read child projection shape back into the draft seed.
+- Roll output preserves enrichment attached to derived stable identities.
 - Unresolved conflicts halt with a report instead of overwriting reviewed
   enrichment.
 

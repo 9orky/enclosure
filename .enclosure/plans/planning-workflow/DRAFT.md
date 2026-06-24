@@ -19,14 +19,18 @@ key_decisions:
   - Use the Python eventsourcing package with SQLite persistence for the planning core.
   - Limit the first predictable workflow to three stages: draft seed, plan contract, and epics.
   - Start from a valid DRAFT.md, then scaffold PLAN.md and UML.md with stable named sections.
-  - PLAN.md and UML.md should scaffold epic packages with stable IDs and predictable file names.
+  - PLAN.md and UML.md should scaffold epic packages with derived IDs and predictable file names.
   - Users should not need to know internal stage names or step identifiers.
   - The public command surface should be start, next, agent, and roll, without caller-provided params.
   - Every stage should receive typed input data and emit typed output data for the next stage.
+  - DRAFT.md should own seed objects only; it should not know downstream scaffold shape.
+  - Stage implementation should own output object type, output cardinality, and variant rules.
+  - Stage output identities should be derived from upstream stable identities plus stage-owned variant keys.
   - A stage should be addable as one class in one file implementing the shared stage interface.
   - Repeated scaffolding may add missing IDs and sections, but must preserve existing enrichment.
-  - Roll starts from the DRAFT seed and continues across child stages through the same loop.
-  - Roll updates must halt advancement when required projected updates remain unresolved.
+  - Roll starts from the DRAFT seed and recomputes forward across child stages through the same loop.
+  - Roll must not push downstream projection knowledge back into DRAFT.md.
+  - Roll must halt advancement when required projected drift remains unresolved.
   - Every workflow state should scaffold, accept agent updates, receive user approval or update requests, and seed the next stage through next.
   - Open questions must be classified before a plan can cross a stage boundary.
   - Blocking open questions should prevent promotion to the next state.
@@ -128,7 +132,7 @@ open_questions:
   - question: Which markdown sections are protected, generated, or freely editable?
     status: answered
     explanation: Projections need clear ownership boundaries so regeneration does not overwrite useful human-authored prose.
-    decision: Use deterministic scaffolded projections. The planner owns generated structure, stable IDs, ordering, and section names; enrichment attached to stable IDs is preserved unless drift is reported.
+    decision: Use deterministic scaffolded projections. The planner owns generated structure, derived stable identities, ordering, and section names; enrichment attached to derived stable identities is preserved unless drift is reported.
   - question: How should direct manual edits to projected markdown be imported back into the event stream?
     status: answered
     explanation: Users may naturally edit markdown files, but the event store must remain authoritative without silently losing those edits.
@@ -147,9 +151,10 @@ If a user edits a projected file directly, the planner must either import that
 edit through a command that records events or report the file as drift.
 
 Projected markdown files are deterministic scaffolded projections. The planner
-owns generated structure, stable IDs, ordering, and section names. Human or
-agent enrichment attached to those stable IDs should be preserved across
-repeated scaffolding unless a roll update reports a conflict or drift.
+owns generated structure, derived stable identities, ordering, and section
+names. Human or agent enrichment attached to those identities should be
+preserved across repeated scaffolding unless roll reports a conflict or
+drift.
 
 User-editable areas must be explicit stage review surfaces. `workspace plan
 next` accepts the current reviewed stage output into events, then strict sync
@@ -164,7 +169,7 @@ contract to epic packages.
 
 The authoritative planning model should be event sourced. Plan creation, draft
 updates, stage output acceptance, question classification, stage-gate checks,
-promotions, roll updates, and epic splits should be recorded as durable events
+promotions, roll requests, and epic splits should be recorded as durable events
 in a local SQLite-backed event store.
 
 Markdown documents, frontmatter, diagrams, and epic packages should be generated
@@ -192,9 +197,20 @@ seed. That seed deterministically creates the next data set and projected
 documents. Later stages use the same loop: the stage receives input objects,
 scaffolds projections, the agent updates them, the user approves or asks for
 changes, and `next` records output objects that seed the following stage. Later
-roll updates start from the updated draft seed and continue through child stages
+roll requests start from the updated draft seed and continue through child stages
 with the same contract. Existing descriptions, rationale, tags, and other
-enrichment are preserved by stable ID or reported as unresolved drift.
+enrichment are preserved by derived stable identity or reported as unresolved
+drift.
+
+`DRAFT.md` does not know what the next stage will scaffold. It only records seed
+objects. Each stage owns the transform from its input objects to deterministic
+output slots. A stage may produce one output object per input object, a fixed
+set of variants per input object, or another cardinality declared by that stage.
+The output identity is derived from the upstream stable identity, the stage id,
+and the stage-owned variant key. Roll refreshes generated structure in that
+direction only: seed to plan data, plan data to epic data, epic data to the
+projected tree. Filled content survives when its derived identity still exists;
+missing slots are created; orphaned enrichment is reported as drift.
 
 The existing promoted artifacts should be kept because they represent later
 stage projections. They should declare event-store lineage and be refreshed when
@@ -229,6 +245,8 @@ core direction:
 - every state uses the same scaffold/agent/user/accept loop;
 - the only public subcommands are start, next, agent, and roll;
 - stages are data-in/data-out classes behind the command loop;
+- roll is forward-only from DRAFT seed to projected tree;
+- downstream stage shape is owned by stage implementations, not by DRAFT.md;
 - open questions are classified before stage transitions.
 
 Current gate status: ready to split into epics. There are no blocking questions

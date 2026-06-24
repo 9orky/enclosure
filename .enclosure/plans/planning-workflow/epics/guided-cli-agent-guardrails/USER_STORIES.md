@@ -68,11 +68,13 @@ Acceptance criteria:
 
 ## roll-plan-chain
 
-As a user, I want `workspace plan roll` to refresh projected children from the
-draft seed so that the plan chain can update consistently after draft changes.
+As a user, I want `workspace plan roll` to refresh projected children forward
+from the draft seed so that the plan chain can update consistently after draft
+changes.
 
 Acceptance criteria:
 
 - Roll requires no command parameters.
 - Roll starts from `DRAFT.md` and continues across child stages.
+- Roll does not push child projection shape back into `DRAFT.md`.
 - Roll reports unresolved drift instead of overwriting reviewed enrichment.

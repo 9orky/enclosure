@@ -32,7 +32,8 @@ projection updates their content is pasted into the sections below.
 
 `tree.mermaid` defines the expected files, `uml.mermaid` defines expected
 symbols and file ownership, and `flows.mermaid` defines the closed stage loop
-that turns input data into projected documents and next-stage output data.
+that turns input data into derived output slots, projected documents, and
+next-stage output data.
 
 ## Flow
 
@@ -50,6 +51,7 @@ flowchart LR
     subgraph loop["Closed Stage Loop"]
       active["current stage\nselected from event state"]
       intake["input data objects\nfrom prior stage or DRAFT seed"]
+      slots["derived output slots\ninput id + stage id + variant key"]
       scaffold["stage scaffold\nproject docs for review"]
       agent_update["agent update\nbounded by stage data"]
       user_review["user review\napprove or request update"]
@@ -68,6 +70,7 @@ flowchart LR
 
     subgraph projections["Events / Projections"]
       events["event stream\ncanonical facts"]
+      enrichment["accepted enrichment\nkeyed by derived slot id"]
       files["projection files\nDRAFT / PLAN / UML / epics"]
       native["native Mermaid projections\nflows / uml / tree"]
       schemas["SCHEMAS.md\npasted display projection"]
@@ -82,7 +85,8 @@ flowchart LR
     active --> registry
     registry --> runner
     runner --> intake
-    intake --> scaffold
+    intake --> slots
+    slots --> scaffold
     scaffold --> files
     scaffold --> native
     native --> schemas
@@ -91,6 +95,8 @@ flowchart LR
     user_review --> output
     output --> events
     events --> active
+    events --> enrichment
+    enrichment --> slots
     cmd_agent --> guidance
     draft -. implements .-> iface
     plan -. implements .-> iface
@@ -100,6 +106,7 @@ flowchart LR
     epics --> registry
     roll --> draft
     roll --> runner
+    roll --> intake
     runner --> drift
 
     classDef command fill:#e0f2fe,stroke:#0284c7,color:#172033;
@@ -107,9 +114,9 @@ flowchart LR
     classDef service fill:#fef9c3,stroke:#ca8a04,color:#172033;
     classDef output fill:#f1f5f9,stroke:#64748b,color:#172033;
     class cmd_start,cmd_next,cmd_agent,cmd_roll command;
-    class active,intake,scaffold,agent_update,user_review,output loop;
+    class active,intake,slots,scaffold,agent_update,user_review,output loop;
     class iface,draft,plan,epics,registry,runner,roll service;
-    class events,files,native,schemas,guidance,drift output;
+    class events,enrichment,files,native,schemas,guidance,drift output;
 ```
 
 ## UML
@@ -123,6 +130,7 @@ classDiagram
       +stage_id()
       +intake_type()
       +output_type()
+      +derive_slots(input_data)
       +scaffold(input_data)
       +agent_context(input_data)
       +accept(review_data)
@@ -131,6 +139,7 @@ classDiagram
     class DraftStage {
       <<file:application/stages/draft_stage.py>>
       +stage_id()
+      +derive_slots(draft_seed)
       +scaffold(draft_seed)
       +accept(review_data)
     }
@@ -138,6 +147,7 @@ classDiagram
     class PlanStage {
       <<file:application/stages/plan_stage.py>>
       +stage_id()
+      +derive_slots(plan_facts)
       +scaffold(plan_facts)
       +accept(review_data)
     }
@@ -145,6 +155,7 @@ classDiagram
     class EpicsStage {
       <<file:application/stages/epics_stage.py>>
       +stage_id()
+      +derive_slots(epic_facts)
       +scaffold(epic_facts)
       +accept(review_data)
     }
@@ -186,13 +197,28 @@ classDiagram
     class StageData {
       <<file:domain/stage_data.py>>
       +str id
+      +str stable_identity
       +dict values
+    }
+
+    class DerivedSlot {
+      <<file:domain/stage_data.py>>
+      +str id
+      +str upstream_identity
+      +str stage_id
+      +str variant_key
     }
 
     class StageOutput {
       <<file:domain/stage_data.py>>
       +str next_stage_id
       +list data_objects
+    }
+
+    class Enrichment {
+      <<file:domain/enrichment.py>>
+      +str slot_id
+      +dict values
     }
 
     PlanningStage <|.. DraftStage
@@ -203,7 +229,9 @@ classDiagram
     StageRunner --> PlanningStage
     StageRunner --> ProjectionStore
     StageRunner --> StageData
+    StageRunner --> DerivedSlot
     StageRunner --> StageOutput
+    StageRunner --> Enrichment
     RollRunner --> DraftStage
     RollRunner --> StageRunner
     SchemaPageProjection --> ProjectionStore
@@ -219,6 +247,7 @@ treeView-beta
   "workspace_plan"
     "domain"
       "stage_data.py"
+      "enrichment.py"
     "application"
       "projections.py"
       "roll.py"
