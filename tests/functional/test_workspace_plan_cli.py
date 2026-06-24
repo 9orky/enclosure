@@ -56,6 +56,68 @@ def test_plan_next_projects_plan_stage_files(tmp_path: Path) -> None:
     assert "Stage: plan" in status.stdout
 
 
+def test_plan_next_records_open_question_and_answer_from_stage_file(
+    tmp_path: Path,
+) -> None:
+    project_root = copy_fixture(tmp_path, "clean_architecture")
+
+    started = run_cli(project_root, "workspace", "plan", "start", "Planning Workflow")
+    draft_path = (
+        project_root / ".enclosure" / "plans" / "planning-workflow" / "DRAFT.md"
+    )
+    draft_content = draft_path.read_text(encoding="utf-8")
+    draft_path.write_text(
+        draft_content
+        + "\n".join(
+            [
+                "## Open Questions",
+                "",
+                "### Which scope blocks the draft?",
+                "",
+                "We need a concrete answer before advancing.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    blocked = run_cli(project_root, "workspace", "plan", "next")
+    blocked_status = run_cli(project_root, "workspace", "plan")
+    draft_path.write_text(
+        draft_content
+        + "\n".join(
+            [
+                "## Open Questions",
+                "",
+                "### Which scope blocks the draft?",
+                "",
+                "We need a concrete answer before advancing.",
+                "",
+                "#### Answer",
+                "",
+                "The draft scope is complete.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    advanced = run_cli(project_root, "workspace", "plan", "next")
+    advanced_status = run_cli(project_root, "workspace", "plan")
+
+    assert started.returncode == 0, started.stderr
+    assert blocked.returncode == 1
+    assert "Blocking open questions prevent stage advance" in blocked.stderr
+    assert "draft:draft-md:which-scope-blocks-the-draft" in blocked.stderr
+    assert blocked_status.returncode == 0, blocked_status.stderr
+    assert "Stage: draft" in blocked_status.stdout
+    assert "Questions: 1" in blocked_status.stdout
+    assert advanced.returncode == 0, advanced.stderr
+    assert "Stage: plan" in advanced.stdout
+    assert advanced_status.returncode == 0, advanced_status.stderr
+    assert "Stage: plan" in advanced_status.stdout
+    assert "Questions: 1" in advanced_status.stdout
+
+
 def test_plan_agent_reports_current_stage_file_models(tmp_path: Path) -> None:
     project_root = copy_fixture(tmp_path, "clean_architecture")
 

@@ -4,7 +4,7 @@ from .events import DomainEvent
 from .enrichment import Enrichment
 from .plan import Plan, PlanId, PlanState, ProjectionRecord
 from .ports import ProjectionStore, StageCatalog
-from .questions import OpenQuestion, QuestionStatus
+from .questions import OpenQuestion, QuestionStatus, extract_open_questions
 from .stage import PlanningStage, StageFileContract, StageSchemaContract
 from .stage_data import (
     AgentContext,
@@ -55,4 +55,5 @@ __all__ = [
     "StageResult",
     "StageSchemaContract",
     "ValidationResult",
+    "extract_open_questions",
 ]

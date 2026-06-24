@@ -75,6 +75,12 @@ class WorkspacePlanModule:
         registry = self._stage_registry()
         stage = registry.current_for(plan)
         projection = self._read_stage_projection(plan, stage)
+        blocking_questions = self._record_projection_questions(app, plan, projection)
+        if blocking_questions:
+            raise ValueError(
+                "Blocking open questions prevent stage advance: "
+                + ", ".join(question.id for question in blocking_questions)
+            )
         review = stage.parse_review(projection)
         validation = stage.validate_review(review)
         if not validation.valid:
@@ -205,6 +211,26 @@ class WorkspacePlanModule:
                 )
             )
         return domain.StageProjection(stage_id=stage.stage_id(), artifacts=artifacts)
+
+    def _record_projection_questions(
+        self,
+        app: application.PlanningApplication,
+        plan: domain.Plan,
+        projection: domain.StageProjection,
+    ) -> list[domain.OpenQuestion]:
+        questions = domain.extract_open_questions(projection)
+        for question in questions:
+            plan.change_question(
+                question.id,
+                question.text,
+                question.explanation,
+                question.status,
+                question.blocking,
+                question.revisit_stage,
+            )
+        if questions:
+            app.save(plan)
+        return [question for question in questions if question.blocking]
 
     def _plan_root(self, plan: domain.Plan) -> Path:
         slug = "-".join(
