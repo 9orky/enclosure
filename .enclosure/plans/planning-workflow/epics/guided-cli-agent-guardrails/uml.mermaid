@@ -1,0 +1,50 @@
+%% contract: symbols
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eef2ff", "primaryTextColor": "#172033", "primaryBorderColor": "#64748b", "lineColor": "#64748b"}}}%%
+classDiagram
+    class ShowPlanStatus {
+      <<file:application/use_cases/show_plan_status.py>>
+      +execute()
+    }
+
+    class RunPlanNext {
+      <<file:application/use_cases/run_plan_next.py>>
+      +execute()
+    }
+
+    class PrepareAgentGuidance {
+      <<file:application/use_cases/prepare_agent_guidance.py>>
+      +execute()
+    }
+
+    class RenderAllowedActions {
+      <<file:application/use_cases/render_allowed_actions.py>>
+      +execute(plan_state)
+    }
+
+    class PlanCli {
+      <<file:ui/cli.py>>
+      +status()
+      +start()
+      +next()
+      +agent()
+    }
+
+    class NextActionService {
+      <<file:application/next_actions.py>>
+      +allowed_commands()
+      +blocked_commands()
+    }
+
+    class AgentGuidance {
+      <<file:application/agent_guidance.py>>
+      +render_context()
+      +requires_confirmation()
+    }
+
+    PlanCli --> ShowPlanStatus
+    PlanCli --> RunPlanNext
+    PlanCli --> PrepareAgentGuidance
+    ShowPlanStatus --> NextActionService
+    RunPlanNext --> NextActionService
+    PrepareAgentGuidance --> AgentGuidance
+    RenderAllowedActions --> NextActionService

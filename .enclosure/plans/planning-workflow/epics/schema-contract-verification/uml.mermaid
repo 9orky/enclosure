@@ -1,0 +1,58 @@
+%% contract: symbols
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eef2ff", "primaryTextColor": "#172033", "primaryBorderColor": "#64748b", "lineColor": "#64748b"}}}%%
+classDiagram
+    class ParsePlannedContracts {
+      <<file:application/use_cases/parse_planned_contracts.py>>
+      +execute(epic_id)
+    }
+
+    class DeriveActualSchemas {
+      <<file:application/use_cases/derive_actual_schemas.py>>
+      +execute(scope)
+    }
+
+    class CompareSchemaContracts {
+      <<file:application/use_cases/compare_schema_contracts.py>>
+      +execute(expected, actual)
+    }
+
+    class ReportContractDrift {
+      <<file:application/use_cases/report_contract_drift.py>>
+      +execute(report)
+    }
+
+    class ContractParser {
+      <<file:application/contract_parser.py>>
+      +parse_tree()
+      +parse_uml()
+      +parse_use_cases()
+    }
+
+    class ActualSchemaProvider {
+      <<file:application/actual_schema.py>>
+      +query_modwire()
+      +normalize_symbols()
+    }
+
+    class ContractComparator {
+      <<file:application/contract_compare.py>>
+      +compare_files()
+      +compare_symbols()
+      +compare_use_cases()
+    }
+
+    class DriftReport {
+      <<file:application/drift_report.py>>
+      +list_missing()
+      +list_extra()
+      +list_mismatched()
+      +render_agent_guidance()
+    }
+
+    ParsePlannedContracts --> ContractParser
+    DeriveActualSchemas --> ActualSchemaProvider
+    CompareSchemaContracts --> ContractComparator
+    ReportContractDrift --> DriftReport
+    ContractParser --> ContractComparator
+    ActualSchemaProvider --> ContractComparator
+    ContractComparator --> DriftReport

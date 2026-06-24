@@ -1,0 +1,63 @@
+---
+plan_id: planning-workflow
+epic_id: event-sourced-core
+title: Event-Sourced Planning Core Stories
+status: dry-run
+stage: epics
+source: event_store
+generated_from: eventsourcing projection
+sync_policy: projection
+managed_files:
+  - EPIC.md
+  - USER_STORIES.md
+  - SCHEMAS.md
+  - flows.mermaid
+  - uml.mermaid
+  - tree.mermaid
+stories:
+  - id: create-active-plan
+    title: Create the active plan
+    status: candidate
+  - id: append-plan-events
+    title: Append planning events transactionally
+    status: candidate
+  - id: reconstruct-plan-state
+    title: Reconstruct plan state from event history
+    status: candidate
+---
+
+# User Stories
+
+## create-active-plan
+
+As a workspace user, I want to start one active plan so that all later planning
+commands operate on a single unambiguous planning context.
+
+Acceptance criteria:
+
+- Starting a plan records a `PlanCreated` event.
+- Starting a second active plan is rejected.
+- Status can identify the active plan without scanning projected files.
+
+## append-plan-events
+
+As the planning module, I want every meaningful plan change to append a domain
+event so that planning history is durable and inspectable.
+
+Acceptance criteria:
+
+- Draft updates, question changes, stage checks, and promotions append events.
+- Events are persisted in SQLite.
+- Failed commands do not leave partial state.
+
+## reconstruct-plan-state
+
+As an agent or command, I want the current plan state reconstructed from events
+so that decisions are based on the authoritative model.
+
+Acceptance criteria:
+
+- Application queries rebuild current state from event history.
+- Reconstructed state includes current stage, active flag, questions, and known
+  projections.
+- Projectors do not read projected markdown as the authority.

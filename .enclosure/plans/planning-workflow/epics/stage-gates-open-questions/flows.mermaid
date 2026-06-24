@@ -1,0 +1,47 @@
+%% contract: use_cases
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#e0f2fe", "primaryTextColor": "#172033", "primaryBorderColor": "#0284c7", "lineColor": "#64748b", "tertiaryColor": "#f8fafc"}}}%%
+flowchart LR
+    subgraph commands["Commands"]
+      cmd_add["command: workspace plan question add"]
+      cmd_classify["command: workspace plan question classify"]
+      cmd_confirm["command: workspace plan question confirm"]
+      cmd_check["command: workspace plan check"]
+    end
+
+    subgraph use_cases["Use Cases"]
+      uc_add["usecase: AddOpenQuestion\nfile: application/use_cases/add_open_question.py\nclass: AddOpenQuestion"]
+      uc_classify["usecase: ClassifyOpenQuestion\nfile: application/use_cases/classify_open_question.py\nclass: ClassifyOpenQuestion"]
+      uc_confirm["usecase: ConfirmQuestionClassification\nfile: application/use_cases/confirm_question_classification.py\nclass: ConfirmQuestionClassification"]
+      uc_gate["usecase: CheckStageGate\nfile: application/use_cases/check_stage_gate.py\nclass: CheckStageGate"]
+    end
+
+    subgraph domain_layer["Domain"]
+      question["domain: OpenQuestion"]
+      confirmation["domain: UserConfirmation"]
+      gate["domain: StageGate"]
+    end
+
+    subgraph outputs["Outputs"]
+      decision["result: allow or block advance"]
+    end
+
+    cmd_add --> uc_add
+    cmd_classify --> uc_classify
+    cmd_confirm --> uc_confirm
+    cmd_check --> uc_gate
+    uc_add --> question
+    uc_classify --> question
+    uc_confirm --> confirmation
+    uc_gate --> gate
+    question --> gate
+    confirmation --> gate
+    gate --> decision
+
+    classDef command fill:#e0f2fe,stroke:#0284c7,color:#172033;
+    classDef usecase fill:#dcfce7,stroke:#16a34a,color:#172033;
+    classDef domain fill:#ffedd5,stroke:#ea580c,color:#172033;
+    classDef output fill:#f1f5f9,stroke:#64748b,color:#172033;
+    class cmd_add,cmd_classify,cmd_confirm,cmd_check command;
+    class uc_add,uc_classify,uc_confirm,uc_gate usecase;
+    class question,confirmation,gate domain;
+    class decision output;

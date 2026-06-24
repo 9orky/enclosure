@@ -1,0 +1,49 @@
+%% contract: symbols
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eef2ff", "primaryTextColor": "#172033", "primaryBorderColor": "#64748b", "lineColor": "#64748b"}}}%%
+classDiagram
+    class AddOpenQuestion {
+      <<file:application/use_cases/add_open_question.py>>
+      +execute(question, explanation)
+    }
+
+    class ClassifyOpenQuestion {
+      <<file:application/use_cases/classify_open_question.py>>
+      +execute(question_id, status)
+    }
+
+    class ConfirmQuestionClassification {
+      <<file:application/use_cases/confirm_question_classification.py>>
+      +execute(question_id)
+    }
+
+    class CheckStageGate {
+      <<file:application/use_cases/check_stage_gate.py>>
+      +execute(plan_id)
+    }
+
+    class OpenQuestion {
+      <<file:domain/gates.py>>
+      +str question
+      +str explanation
+      +QuestionStatus status
+      +str decision
+      +str revisit_at
+    }
+
+    class StageGate {
+      <<file:domain/gates.py>>
+      +check()
+      +blocking_questions()
+    }
+
+    class UserConfirmation {
+      <<file:domain/gates.py>>
+      +confirm_classification()
+    }
+
+    AddOpenQuestion --> OpenQuestion
+    ClassifyOpenQuestion --> OpenQuestion
+    ConfirmQuestionClassification --> UserConfirmation
+    CheckStageGate --> StageGate
+    StageGate --> OpenQuestion
+    UserConfirmation --> OpenQuestion

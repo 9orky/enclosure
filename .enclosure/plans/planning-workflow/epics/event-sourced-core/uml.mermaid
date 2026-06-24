@@ -1,0 +1,46 @@
+%% contract: symbols
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eef2ff", "primaryTextColor": "#172033", "primaryBorderColor": "#64748b", "lineColor": "#64748b"}}}%%
+classDiagram
+    class StartPlan {
+      <<file:application/use_cases/start_plan.py>>
+      +execute(name, idea)
+    }
+
+    class AppendPlanEvent {
+      <<file:application/use_cases/append_plan_event.py>>
+      +execute(plan_id, event)
+    }
+
+    class GetActivePlan {
+      <<file:application/use_cases/get_active_plan.py>>
+      +execute()
+    }
+
+    class PlanningApplication {
+      <<file:application/planning_app.py>>
+      +create_plan()
+      +append_event()
+      +get_plan()
+    }
+
+    class Plan {
+      <<file:domain/plan.py>>
+      +str id
+      +str title
+      +PlanState state
+      +bool active
+      +advance()
+    }
+
+    class DomainEvent {
+      <<file:domain/events.py>>
+      +UUID originator_id
+      +int originator_version
+      +datetime timestamp
+    }
+
+    StartPlan --> PlanningApplication
+    AppendPlanEvent --> PlanningApplication
+    GetActivePlan --> PlanningApplication
+    PlanningApplication --> Plan
+    DomainEvent ..> Plan
