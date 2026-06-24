@@ -98,52 +98,59 @@ flowchart LR
 ```mermaid
 classDiagram
     class PlanningApplication {
-      +start()
-      +next()
-      +agent()
-      +roll()
-      +get_plan()
+      <<Application>>
+      +start() Plan
+      +next() StageOutput
+      +agent() str
+      +roll() List~StageOutput~
+      +get_plan(PlanId) Plan
     }
 
     class Plan {
+      <<Aggregate>>
       +str id
       +str title
       +PlanState state
       +bool active
-      +current_stage()
-      +accept_stage_output()
-      +classify_question()
+      +current_stage() PlanningStage
+      +accept_stage_output(StageOutput) Plan
+      +classify_question(OpenQuestion, QuestionStatus) OpenQuestion
     }
 
     class PlanningStage {
-      +stage_id()
-      +intake_type()
-      +output_type()
-      +derive_slots(input_data)
-      +scaffold(input_data)
-      +agent_context(input_data)
-      +accept(review_data)
+      <<Interface>>
+      +stage_id() str
+      +intake_type() type
+      +output_type() type
+      +derive_slots(StageData) List~DerivedSlot~
+      +scaffold(StageData) StageOutput
+      +agent_context(StageData) str
+      +accept(ReviewData) StageOutput
     }
 
     class StageRunner {
-      +run_current()
-      +advance_current()
-      +prepare_agent()
+      <<Service>>
+      +run_current() StageOutput
+      +advance_current() StageOutput
+      +prepare_agent() str
     }
 
     class RollRunner {
-      +start_from_draft()
-      +continue_children()
-      +halt_on_drift()
+      <<Service>>
+      +start_from_draft() StageOutput
+      +continue_children() List~StageOutput~
+      +halt_on_drift() None
     }
 
     class StageData {
+      <<ValueObject>>
       +str id
       +str stable_identity
-      +dict values
+      +Mapping~str_to_Any~ values
     }
 
     class DerivedSlot {
+      <<ValueObject>>
       +str id
       +str upstream_identity
       +str stage_id
@@ -151,31 +158,36 @@ classDiagram
     }
 
     class StageOutput {
+      <<ValueObject>>
       +str next_stage_id
-      +list data_objects
+      +List~StageData~ data_objects
     }
 
     class Enrichment {
+      <<ValueObject>>
       +str slot_id
-      +dict values
+      +Mapping~str_to_Any~ values
     }
 
     class Epic {
+      <<ValueObject>>
       +str id
       +str title
       +str value
-      +list stories
+      +List~UserStory~ stories
     }
 
     class UserStory {
+      <<ValueObject>>
       +str id
       +str actor
       +str goal
       +str benefit
-      +list acceptance_criteria
+      +List~str~ acceptance_criteria
     }
 
     class OpenQuestion {
+      <<Entity>>
       +str question
       +QuestionStatus status
       +str explanation
@@ -185,43 +197,47 @@ classDiagram
     }
 
     class ArtifactRef {
+      <<ValueObject>>
       +str path
       +str type
       +str source_policy
     }
 
     class DomainEvent {
+      <<Event>>
       +UUID originator_id
       +int originator_version
       +datetime timestamp
     }
 
     class Projector {
-      +project(event, context)
+      <<Interface>>
+      +project(DomainEvent, ProjectionContext) ArtifactRef
     }
 
     class Validator {
-      +validate(candidate)
+      <<Interface>>
+      +validate(Plan) ValidationResult
     }
 
-    PlanningApplication --> Plan
-    PlanningApplication --> StageRunner
-    PlanningApplication --> RollRunner
-    Plan "1" --> "*" Epic
-    Epic "1" --> "*" UserStory
-    Plan "1" --> "*" OpenQuestion
-    Plan "1" --> "*" ArtifactRef
-    StageRunner --> PlanningStage
-    StageRunner --> StageData
-    StageRunner --> DerivedSlot
-    StageRunner --> StageOutput
-    StageRunner --> Enrichment
-    RollRunner --> StageRunner
-    DomainEvent ..> Plan
-    Projector ..> ArtifactRef
-    Validator ..> Plan
-    Validator ..> Epic
-    Validator ..> UserStory
+    PlanningApplication "1" --> "1" Plan : loads active aggregate
+    PlanningApplication "1" --> "1" StageRunner : runs current stage
+    PlanningApplication "1" --> "1" RollRunner : refreshes projections
+    Plan "1" --> "0..*" Epic : owns
+    Epic "1" --> "1..*" UserStory : contains
+    Plan "1" --> "0..*" OpenQuestion : tracks
+    Plan "1" --> "0..*" ArtifactRef : projects
+    StageRunner "1" --> "1" PlanningStage : executes
+    StageRunner "1" --> "1..*" StageData : reads
+    StageRunner "1" --> "0..*" DerivedSlot : derives
+    StageRunner "1" --> "1" StageOutput : returns
+    StageRunner "1" --> "0..*" Enrichment : preserves
+    RollRunner "1" --> "1" StageRunner : delegates stages
+    DomainEvent "*" ..> "1" Plan : mutates
+    Projector "1" ..> "0..*" ArtifactRef : writes
+    Validator "1" ..> "1" Plan : validates plan
+    Validator "1" ..> "0..*" Epic : validates epics
+    Validator "1" ..> "0..*" UserStory : validates stories
 ```
 
 ## Pattern Fit
@@ -398,12 +414,21 @@ flowchart TD
 
 ```mermaid
 classDiagram
+    class PlanningStage {
+      <<Interface: application/stages/base.py>>
+      +derive_slots(StageData) List~DerivedSlot~
+      +scaffold(StageData) StageOutput
+      +accept(ReviewData) StageOutput
+    }
+
     class PlanStage {
       <<file:application/stages/plan_stage.py>>
-      +derive_slots(plan_seed)
-      +scaffold(plan_facts)
-      +accept(review_data)
+      +derive_slots(StageData) List~DerivedSlot~
+      +scaffold(StageData) StageOutput
+      +accept(ReviewData) StageOutput
     }
+
+    PlanningStage <|.. PlanStage : implements
 ```
 
 ## Swimlane Flow Convention

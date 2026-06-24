@@ -33,8 +33,14 @@ flowchart LR
     end
 
     subgraph app_domain["Application / Domain"]
-      app_service["application service\nuses ports"]
-      domain_model["domain model\nno outward imports"]
+      app_service["service: application service\nuses ports"]
+      domain_model["domain: domain model\nno outward imports"]
+    end
+
+    subgraph outputs["Outputs"]
+      dependency_rule{"decision: dependency crosses layer?"}
+      allowed["output: dependency allowed"]
+      blocked["halt: dependency blocked"]
     end
 
     port_shape -. shapes .-> event_store
@@ -43,24 +49,29 @@ flowchart LR
     adapter_shape -. shapes .-> sqlite_store
     adapter_shape -. shapes .-> filesystem_projection
     adapter_shape -. shapes .-> modwire_provider
-    adapter_binding --> adapter_shape
-    adapter_binding --> port_shape
-    app_service --> event_store
-    app_service --> projection_store
-    app_service --> schema_provider
-    sqlite_store --> event_store
-    filesystem_projection --> projection_store
-    modwire_provider --> schema_provider
-    app_service --> domain_model
+    adapter_binding -->|describes| adapter_shape
+    adapter_binding -->|binds to| port_shape
+    app_service -->|depends on| event_store
+    app_service -->|depends on| projection_store
+    app_service -->|depends on| schema_provider
+    sqlite_store -. implements .-> event_store
+    filesystem_projection -. implements .-> projection_store
+    modwire_provider -. implements .-> schema_provider
+    app_service -->|uses| domain_model
+    app_service -->|checked by| dependency_rule
+    dependency_rule -->|through port| allowed
+    dependency_rule -->|deep import| blocked
 
     classDef shared fill:#e0f2fe,stroke:#0284c7,color:#172033;
     classDef port fill:#f3e8ff,stroke:#9333ea,color:#172033;
     classDef adapter fill:#dcfce7,stroke:#16a34a,color:#172033;
     classDef core fill:#ffedd5,stroke:#ea580c,color:#172033;
+    classDef output fill:#f1f5f9,stroke:#64748b,color:#172033;
     class port_shape,adapter_shape,adapter_binding shared;
     class event_store,projection_store,schema_provider port;
     class sqlite_store,filesystem_projection,modwire_provider adapter;
     class app_service,domain_model core;
+    class dependency_rule,allowed,blocked output;
 ```
 
 ## UML
@@ -70,20 +81,23 @@ flowchart LR
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eef2ff", "primaryTextColor": "#172033", "primaryBorderColor": "#64748b", "lineColor": "#64748b"}}}%%
 classDiagram
     class Port {
-      <<Protocol: shared/hexagonal/ports.py>>
+      <<Interface: shared/hexagonal/ports.py>>
+      +name() str
     }
 
     class InboundPort {
-      <<Protocol: shared/hexagonal/ports.py>>
+      <<Interface: shared/hexagonal/ports.py>>
+      +name() str
     }
 
     class OutboundPort {
-      <<Protocol: shared/hexagonal/ports.py>>
+      <<Interface: shared/hexagonal/ports.py>>
+      +name() str
     }
 
     class Adapter {
-      <<Protocol: shared/hexagonal/adapters.py>>
-      +port()
+      <<Interface: shared/hexagonal/adapters.py>>
+      +port() Port
     }
 
     class AdapterBinding {
@@ -95,16 +109,16 @@ classDiagram
 
     class HexagonalDependencyRule {
       <<file:shared/hexagonal/dependencies.py>>
-      +allows(source_layer, target_layer)
-      +requires_port(source_layer, target_layer)
+      +allows(str, str) bool
+      +requires_port(str, str) bool
     }
 
-    Port <|-- InboundPort
-    Port <|-- OutboundPort
-    Adapter --> Port
-    AdapterBinding --> Adapter
-    AdapterBinding --> Port
-    HexagonalDependencyRule --> Port
+    Port <|-- InboundPort : specializes
+    Port <|-- OutboundPort : specializes
+    Adapter "1" --> "1" Port : exposes
+    AdapterBinding "1" --> "1" Adapter : describes
+    AdapterBinding "1" --> "1" Port : binds
+    HexagonalDependencyRule "1" ..> "1" Port : requires boundary
 ```
 
 ## Tree
@@ -114,6 +128,7 @@ classDiagram
 %%{init: {"theme": "base", "themeVariables": {"labelColor": "#172033", "lineColor": "#64748b"}}}%%
 treeView-beta
   "shared"
+    "__init__.py"
     "hexagonal"
       "__init__.py"
       "ports.py"

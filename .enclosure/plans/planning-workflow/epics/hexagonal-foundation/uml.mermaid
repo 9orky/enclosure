@@ -2,20 +2,23 @@
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eef2ff", "primaryTextColor": "#172033", "primaryBorderColor": "#64748b", "lineColor": "#64748b"}}}%%
 classDiagram
     class Port {
-      <<Protocol: shared/hexagonal/ports.py>>
+      <<Interface: shared/hexagonal/ports.py>>
+      +name() str
     }
 
     class InboundPort {
-      <<Protocol: shared/hexagonal/ports.py>>
+      <<Interface: shared/hexagonal/ports.py>>
+      +name() str
     }
 
     class OutboundPort {
-      <<Protocol: shared/hexagonal/ports.py>>
+      <<Interface: shared/hexagonal/ports.py>>
+      +name() str
     }
 
     class Adapter {
-      <<Protocol: shared/hexagonal/adapters.py>>
-      +port()
+      <<Interface: shared/hexagonal/adapters.py>>
+      +port() Port
     }
 
     class AdapterBinding {
@@ -27,13 +30,13 @@ classDiagram
 
     class HexagonalDependencyRule {
       <<file:shared/hexagonal/dependencies.py>>
-      +allows(source_layer, target_layer)
-      +requires_port(source_layer, target_layer)
+      +allows(str, str) bool
+      +requires_port(str, str) bool
     }
 
-    Port <|-- InboundPort
-    Port <|-- OutboundPort
-    Adapter --> Port
-    AdapterBinding --> Adapter
-    AdapterBinding --> Port
-    HexagonalDependencyRule --> Port
+    Port <|-- InboundPort : specializes
+    Port <|-- OutboundPort : specializes
+    Adapter "1" --> "1" Port : exposes
+    AdapterBinding "1" --> "1" Adapter : describes
+    AdapterBinding "1" --> "1" Port : binds
+    HexagonalDependencyRule "1" ..> "1" Port : requires boundary

@@ -3,86 +3,86 @@
 classDiagram
     class RunPlanStart {
       <<file:application/use_cases/run_plan_start.py>>
-      +execute()
+      +execute() CommandResult
     }
 
     class RunPlanNext {
       <<file:application/use_cases/run_plan_next.py>>
-      +execute()
+      +execute() CommandResult
     }
 
     class PrepareAgentGuidance {
       <<file:application/use_cases/prepare_agent_guidance.py>>
-      +execute()
+      +execute() AgentGuidance
     }
 
     class RunPlanRoll {
       <<file:application/use_cases/run_plan_roll.py>>
-      +execute()
+      +execute() CommandResult
     }
 
     class PlanCli {
       <<file:ui/cli.py>>
-      +start()
-      +next()
-      +agent()
-      +roll()
+      +start() int
+      +next() int
+      +agent() int
+      +roll() int
     }
 
     class NextActionService {
       <<file:application/next_actions.py>>
-      +allowed_commands()
-      +blocked_commands()
+      +allowed_commands() List~str~
+      +blocked_commands() List~str~
     }
 
     class AgentGuidance {
       <<file:application/agent_guidance.py>>
-      +render_context()
-      +requires_confirmation()
+      +render_context() str
+      +requires_confirmation() bool
     }
 
     class StageRunnerPort {
       <<OutboundPort: application/workflow_ports.py>>
-      +advance_current()
-      +prepare_agent()
+      +advance_current() StageOutput
+      +prepare_agent() str
     }
 
     class RollRunnerPort {
       <<OutboundPort: application/workflow_ports.py>>
-      +start_from_draft()
+      +start_from_draft() StageOutput
     }
 
     class StageGatePort {
       <<OutboundPort: application/workflow_ports.py>>
-      +check(plan_id)
+      +check(PlanId) StageGateDecision
     }
 
     class StageRunner {
       <<external:projected-documents/application/stage_runner.py>>
-      +advance_current()
+      +advance_current() StageOutput
     }
 
     class RollRunner {
       <<external:projected-documents/application/roll.py>>
-      +start_from_draft()
+      +start_from_draft() StageOutput
     }
 
     class CheckStageGate {
       <<external:stage-gates-open-questions/application/use_cases/check_stage_gate.py>>
-      +execute(plan_id)
+      +execute(PlanId) StageGateDecision
     }
 
-    PlanCli --> RunPlanStart
-    PlanCli --> RunPlanNext
-    PlanCli --> PrepareAgentGuidance
-    PlanCli --> RunPlanRoll
-    RunPlanStart --> NextActionService
-    RunPlanNext --> NextActionService
-    RunPlanNext --> StageRunnerPort
-    RunPlanNext --> StageGatePort
-    PrepareAgentGuidance --> AgentGuidance
-    RunPlanRoll --> RollRunnerPort
-    RunPlanRoll --> NextActionService
-    StageRunner ..|> StageRunnerPort
-    RollRunner ..|> RollRunnerPort
-    CheckStageGate ..|> StageGatePort
+    PlanCli "1" --> "1" RunPlanStart : dispatches start
+    PlanCli "1" --> "1" RunPlanNext : dispatches next
+    PlanCli "1" --> "1" PrepareAgentGuidance : dispatches agent
+    PlanCli "1" --> "1" RunPlanRoll : dispatches roll
+    RunPlanStart "1" --> "1" NextActionService : reports moves
+    RunPlanNext "1" --> "1" NextActionService : reports moves
+    RunPlanNext "1" --> "1" StageRunnerPort : advances stage
+    RunPlanNext "1" --> "1" StageGatePort : checks gate
+    PrepareAgentGuidance "1" --> "1" AgentGuidance : renders context
+    RunPlanRoll "1" --> "1" RollRunnerPort : refreshes projections
+    RunPlanRoll "1" --> "1" NextActionService : reports moves
+    StageRunner "1" ..|> "1" StageRunnerPort : implements
+    RollRunner "1" ..|> "1" RollRunnerPort : implements
+    CheckStageGate "1" ..|> "1" StageGatePort : implements

@@ -9,10 +9,10 @@ These schemas are implementation contracts. `tree.mermaid` defines the expected 
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#e0f2fe", "primaryTextColor": "#172033", "primaryBorderColor": "#0284c7", "lineColor": "#64748b", "tertiaryColor": "#f8fafc"}}}%%
 flowchart LR
     subgraph signals["Verification Signals"]
-      signal_parse["signal: planned contracts available"]
-      signal_actual["signal: implementation schema available"]
-      signal_compare["signal: compare requested by stage loop"]
-      signal_report["signal: drift report requested"]
+      signal_parse(["signal: planned contracts available"])
+      signal_actual(["signal: implementation schema available"])
+      signal_compare(["signal: compare requested by stage loop"])
+      signal_report(["signal: drift report requested"])
     end
 
     subgraph use_cases["Use Cases"]
@@ -34,21 +34,25 @@ flowchart LR
     end
 
     subgraph outputs["Outputs"]
+      match{"decision: contracts match?"}
       agent["output: AgentRepairInstruction"]
+      pass["output: contract verified"]
     end
 
-    signal_parse --> uc_parse
-    signal_actual --> uc_actual
-    signal_compare --> uc_compare
-    signal_report --> uc_report
-    uc_parse --> expected
-    uc_actual --> modwire
-    modwire --> actual
-    expected --> uc_compare
-    actual --> uc_compare
-    uc_compare --> drift
-    drift --> uc_report
-    uc_report --> agent
+    signal_parse -->|loads planned sources| uc_parse
+    signal_actual -->|requests actual structure| uc_actual
+    signal_compare -->|starts comparison| uc_compare
+    signal_report -->|requests guidance| uc_report
+    uc_parse -->|produces| expected
+    uc_actual -->|queries through| modwire
+    modwire -->|returns| actual
+    expected -->|left side| uc_compare
+    actual -->|right side| uc_compare
+    uc_compare -->|produces| drift
+    drift -->|evaluated by| match
+    match -->|no drift| pass
+    match -->|drift found| uc_report
+    uc_report -->|renders| agent
     modwire_adapter -. implements .-> modwire
 
     classDef signal fill:#e0f2fe,stroke:#0284c7,color:#172033;
@@ -62,7 +66,7 @@ flowchart LR
     class expected,actual,drift model;
     class modwire port;
     class modwire_adapter adapter;
-    class agent output;
+    class match,agent,pass output;
 ```
 
 ## UML
@@ -73,72 +77,72 @@ flowchart LR
 classDiagram
     class ParsePlannedContracts {
       <<file:application/use_cases/parse_planned_contracts.py>>
-      +execute(epic_id)
+      +execute(str) ExpectedSchema
     }
 
     class DeriveActualSchemas {
       <<file:application/use_cases/derive_actual_schemas.py>>
-      +execute(scope)
+      +execute(SchemaScope) ActualSchema
     }
 
     class CompareSchemaContracts {
       <<file:application/use_cases/compare_schema_contracts.py>>
-      +execute(expected, actual)
+      +execute(ExpectedSchema, ActualSchema) DriftReport
     }
 
     class ReportContractDrift {
       <<file:application/use_cases/report_contract_drift.py>>
-      +execute(report)
+      +execute(DriftReport) AgentRepairInstruction
     }
 
     class ContractParser {
       <<file:application/contract_parser.py>>
-      +parse_tree()
-      +parse_uml()
-      +parse_use_cases()
+      +parse_tree(str) ExpectedSchema
+      +parse_uml(str) ExpectedSchema
+      +parse_use_cases(str) ExpectedSchema
     }
 
     class ActualSchemaProvider {
       <<file:application/actual_schema.py>>
-      +query_modwire()
-      +normalize_symbols()
+      +query_modwire(SchemaScope) ActualSchema
+      +normalize_symbols(ActualSchema) ActualSchema
     }
 
     class ModwireSchemaProvider {
       <<OutboundPort: application/modwire_schema_provider.py>>
-      +get_schema(scope)
+      +get_schema(SchemaScope) ActualSchema
     }
 
     class ModwireSchemaProviderAdapter {
       <<Adapter: infrastructure/modwire_schema_provider.py>>
-      +port()
-      +get_schema(scope)
+      +port() ModwireSchemaProvider
+      +get_schema(SchemaScope) ActualSchema
     }
 
     class ContractComparator {
       <<file:application/contract_compare.py>>
-      +compare_files()
-      +compare_symbols()
-      +compare_use_cases()
+      +compare_files(ExpectedSchema, ActualSchema) DriftReport
+      +compare_symbols(ExpectedSchema, ActualSchema) DriftReport
+      +compare_use_cases(ExpectedSchema, ActualSchema) DriftReport
     }
 
     class DriftReport {
       <<file:application/drift_report.py>>
-      +list_missing()
-      +list_extra()
-      +list_mismatched()
-      +render_agent_guidance()
+      +list_missing() List~SchemaMismatch~
+      +list_extra() List~SchemaMismatch~
+      +list_mismatched() List~SchemaMismatch~
+      +render_agent_guidance() AgentRepairInstruction
     }
 
-    ParsePlannedContracts --> ContractParser
-    DeriveActualSchemas --> ActualSchemaProvider
-    CompareSchemaContracts --> ContractComparator
-    ReportContractDrift --> DriftReport
-    ContractParser --> ContractComparator
-    ActualSchemaProvider --> ModwireSchemaProvider
-    ModwireSchemaProviderAdapter ..|> ModwireSchemaProvider
-    ActualSchemaProvider --> ContractComparator
-    ContractComparator --> DriftReport
+    ParsePlannedContracts "1" --> "1" ContractParser : parses planned contracts
+    DeriveActualSchemas "1" --> "1" ActualSchemaProvider : derives actual schema
+    CompareSchemaContracts "1" --> "1" ContractComparator : compares schemas
+    ReportContractDrift "1" --> "1" DriftReport : renders guidance
+    ContractParser "1" --> "1" ContractComparator : supplies expected schema
+    ActualSchemaProvider "1" --> "1" ModwireSchemaProvider : queries
+    ModwireSchemaProviderAdapter "1" ..|> "1" ModwireSchemaProvider : implements
+    ActualSchemaProvider "1" --> "1" ContractComparator : supplies actual schema
+    ContractComparator "1" --> "1" DriftReport : produces
 ```
 
 ## Tree
@@ -148,17 +152,21 @@ classDiagram
 %%{init: {"theme": "base", "themeVariables": {"labelColor": "#172033", "lineColor": "#64748b"}}}%%
 treeView-beta
   "workspace_plan"
+    "__init__.py"
     "application"
+      "__init__.py"
       "contract_parser.py"
       "actual_schema.py"
       "modwire_schema_provider.py"
       "contract_compare.py"
       "drift_report.py"
       "use_cases"
+        "__init__.py"
         "parse_planned_contracts.py"
         "derive_actual_schemas.py"
         "compare_schema_contracts.py"
         "report_contract_drift.py"
     "infrastructure"
+      "__init__.py"
       "modwire_schema_provider.py"
 ```

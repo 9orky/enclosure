@@ -3,69 +3,69 @@
 classDiagram
     class ParsePlannedContracts {
       <<file:application/use_cases/parse_planned_contracts.py>>
-      +execute(epic_id)
+      +execute(str) ExpectedSchema
     }
 
     class DeriveActualSchemas {
       <<file:application/use_cases/derive_actual_schemas.py>>
-      +execute(scope)
+      +execute(SchemaScope) ActualSchema
     }
 
     class CompareSchemaContracts {
       <<file:application/use_cases/compare_schema_contracts.py>>
-      +execute(expected, actual)
+      +execute(ExpectedSchema, ActualSchema) DriftReport
     }
 
     class ReportContractDrift {
       <<file:application/use_cases/report_contract_drift.py>>
-      +execute(report)
+      +execute(DriftReport) AgentRepairInstruction
     }
 
     class ContractParser {
       <<file:application/contract_parser.py>>
-      +parse_tree()
-      +parse_uml()
-      +parse_use_cases()
+      +parse_tree(str) ExpectedSchema
+      +parse_uml(str) ExpectedSchema
+      +parse_use_cases(str) ExpectedSchema
     }
 
     class ActualSchemaProvider {
       <<file:application/actual_schema.py>>
-      +query_modwire()
-      +normalize_symbols()
+      +query_modwire(SchemaScope) ActualSchema
+      +normalize_symbols(ActualSchema) ActualSchema
     }
 
     class ModwireSchemaProvider {
       <<OutboundPort: application/modwire_schema_provider.py>>
-      +get_schema(scope)
+      +get_schema(SchemaScope) ActualSchema
     }
 
     class ModwireSchemaProviderAdapter {
       <<Adapter: infrastructure/modwire_schema_provider.py>>
-      +port()
-      +get_schema(scope)
+      +port() ModwireSchemaProvider
+      +get_schema(SchemaScope) ActualSchema
     }
 
     class ContractComparator {
       <<file:application/contract_compare.py>>
-      +compare_files()
-      +compare_symbols()
-      +compare_use_cases()
+      +compare_files(ExpectedSchema, ActualSchema) DriftReport
+      +compare_symbols(ExpectedSchema, ActualSchema) DriftReport
+      +compare_use_cases(ExpectedSchema, ActualSchema) DriftReport
     }
 
     class DriftReport {
       <<file:application/drift_report.py>>
-      +list_missing()
-      +list_extra()
-      +list_mismatched()
-      +render_agent_guidance()
+      +list_missing() List~SchemaMismatch~
+      +list_extra() List~SchemaMismatch~
+      +list_mismatched() List~SchemaMismatch~
+      +render_agent_guidance() AgentRepairInstruction
     }
 
-    ParsePlannedContracts --> ContractParser
-    DeriveActualSchemas --> ActualSchemaProvider
-    CompareSchemaContracts --> ContractComparator
-    ReportContractDrift --> DriftReport
-    ContractParser --> ContractComparator
-    ActualSchemaProvider --> ModwireSchemaProvider
-    ModwireSchemaProviderAdapter ..|> ModwireSchemaProvider
-    ActualSchemaProvider --> ContractComparator
-    ContractComparator --> DriftReport
+    ParsePlannedContracts "1" --> "1" ContractParser : parses planned contracts
+    DeriveActualSchemas "1" --> "1" ActualSchemaProvider : derives actual schema
+    CompareSchemaContracts "1" --> "1" ContractComparator : compares schemas
+    ReportContractDrift "1" --> "1" DriftReport : renders guidance
+    ContractParser "1" --> "1" ContractComparator : supplies expected schema
+    ActualSchemaProvider "1" --> "1" ModwireSchemaProvider : queries
+    ModwireSchemaProviderAdapter "1" ..|> "1" ModwireSchemaProvider : implements
+    ActualSchemaProvider "1" --> "1" ContractComparator : supplies actual schema
+    ContractComparator "1" --> "1" DriftReport : produces

@@ -2,10 +2,10 @@
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#e0f2fe", "primaryTextColor": "#172033", "primaryBorderColor": "#0284c7", "lineColor": "#64748b", "tertiaryColor": "#f8fafc"}}}%%
 flowchart LR
     subgraph commands["Parameterless Commands"]
-      cmd_start["command: workspace plan start"]
-      cmd_next["command: workspace plan next"]
-      cmd_agent["command: workspace plan agent"]
-      cmd_roll["command: workspace plan roll"]
+      cmd_start(["command: workspace plan start"])
+      cmd_next(["command: workspace plan next"])
+      cmd_agent(["command: workspace plan agent"])
+      cmd_roll(["command: workspace plan roll"])
     end
 
     subgraph loop["Closed Stage Loop"]
@@ -14,7 +14,7 @@ flowchart LR
       slots["derived output slots\ninput id + stage id + variant key"]
       scaffold["stage scaffold\nproject docs for review"]
       agent_update["agent update\nbounded by stage data"]
-      user_review["user review\napprove or request update"]
+      user_review{"decision: user review"}
       output["output data objects\nseed next stage"]
     end
 
@@ -23,9 +23,9 @@ flowchart LR
       draft["stage: DraftStage\nfile: application/stages/draft_stage.py\nclass: DraftStage"]
       plan["stage: PlanStage\nfile: application/stages/plan_stage.py\nclass: PlanStage"]
       epics["stage: EpicsStage\nfile: application/stages/epics_stage.py\nclass: EpicsStage"]
-      registry["service: StageRegistry"]
-      runner["service: StageRunner"]
-      roll["service: RollRunner"]
+      registry["service: StageRegistry\nfile: application/stage_registry.py\nclass: StageRegistry"]
+      runner["service: StageRunner\nfile: application/stage_runner.py\nclass: StageRunner"]
+      roll["service: RollRunner\nfile: application/roll.py\nclass: RollRunner"]
     end
 
     subgraph projection_ports["Application Ports"]
@@ -37,46 +37,47 @@ flowchart LR
     end
 
     subgraph projections["Events / Projections"]
-      events["event stream\ncanonical facts"]
+      events[("event stream\ncanonical facts")]
       enrichment["accepted enrichment\nkeyed by derived slot id"]
-      files["projection files\nDRAFT / PLAN / UML / epics"]
-      native["native Mermaid projections\nflows / uml / tree"]
-      schemas["SCHEMAS.md\npasted display projection"]
+      files["documents: projection files\nDRAFT / PLAN / UML / epics"]
+      native["documents: native Mermaid projections\nflows / uml / tree"]
+      schemas["document: SCHEMAS.md\npasted display projection"]
       guidance["agent guidance\ncurrent stage only"]
       drift["halt: unresolved drift"]
     end
 
-    cmd_start --> active
-    cmd_next --> active
-    cmd_agent --> active
-    cmd_roll --> roll
-    active --> registry
-    registry --> runner
-    runner --> intake
-    runner --> projection_store
-    intake --> slots
-    slots --> scaffold
-    scaffold --> files
-    scaffold --> native
-    native --> schemas
-    files --> agent_update
-    agent_update --> user_review
-    user_review --> output
-    output --> events
-    events --> active
-    events --> enrichment
-    enrichment --> slots
-    cmd_agent --> guidance
+    cmd_start -->|loads first stage| active
+    cmd_next -->|accepts reviewed output| active
+    cmd_agent -->|requests guidance| active
+    cmd_roll -->|refreshes forward| roll
+    active -->|resolved by| registry
+    registry -->|selects| runner
+    runner -->|loads| intake
+    runner -->|writes through| projection_store
+    intake -->|derives| slots
+    slots -->|builds| scaffold
+    scaffold -->|writes| files
+    scaffold -->|writes| native
+    native -->|embedded into| schemas
+    files -->|bounds context for| agent_update
+    agent_update -->|submitted for| user_review
+    user_review -->|approved| output
+    user_review -->|needs update| agent_update
+    output -->|appended as facts| events
+    events -->|selects next stage| active
+    events -->|restores enrichment| enrichment
+    enrichment -->|reconnects by slot id| slots
+    cmd_agent -->|renders| guidance
     draft -. implements .-> iface
     plan -. implements .-> iface
     epics -. implements .-> iface
-    draft --> registry
-    plan --> registry
-    epics --> registry
-    roll --> draft
-    roll --> runner
-    roll --> intake
-    runner --> drift
+    draft -->|registered as stage| registry
+    plan -->|registered as stage| registry
+    epics -->|registered as stage| registry
+    roll -->|starts from| draft
+    roll -->|delegates execution| runner
+    roll -->|loads seed data| intake
+    runner -->|halts on drift| drift
     filesystem_store -. implements .-> projection_store
 
     classDef command fill:#e0f2fe,stroke:#0284c7,color:#172033;

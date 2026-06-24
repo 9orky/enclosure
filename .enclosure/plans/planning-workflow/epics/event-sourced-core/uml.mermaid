@@ -3,39 +3,39 @@
 classDiagram
     class StartPlan {
       <<file:application/use_cases/start_plan.py>>
-      +execute()
+      +execute() Plan
     }
 
     class AppendPlanEvent {
       <<file:application/use_cases/append_plan_event.py>>
-      +execute(plan_id, event)
+      +execute(PlanId, DomainEvent) Plan
     }
 
     class GetActivePlan {
       <<file:application/use_cases/get_active_plan.py>>
-      +execute()
+      +execute() Plan
     }
 
     class PlanningApplication {
       <<file:application/planning_app.py>>
-      +create_plan()
-      +append_event()
-      +get_plan()
+      +create_plan() Plan
+      +append_event(PlanId, DomainEvent) Plan
+      +get_plan(PlanId) Plan
     }
 
     class EventStore {
       <<OutboundPort: application/ports.py>>
-      +append(event)
-      +load(plan_id)
-      +iter_events(plan_id)
+      +append(DomainEvent) None
+      +load(PlanId) List~DomainEvent~
+      +iter_events(PlanId) Iterable~DomainEvent~
     }
 
     class SQLiteEventStore {
       <<Adapter: infrastructure/event_store.py>>
-      +port()
-      +append(event)
-      +load(plan_id)
-      +iter_events(plan_id)
+      +port() EventStore
+      +append(DomainEvent) None
+      +load(PlanId) List~DomainEvent~
+      +iter_events(PlanId) Iterable~DomainEvent~
     }
 
     class Plan {
@@ -44,7 +44,7 @@ classDiagram
       +str title
       +PlanState state
       +bool active
-      +advance()
+      +advance(DomainEvent) Plan
     }
 
     class DomainEvent {
@@ -54,10 +54,18 @@ classDiagram
       +datetime timestamp
     }
 
-    StartPlan --> PlanningApplication
-    AppendPlanEvent --> PlanningApplication
-    GetActivePlan --> PlanningApplication
-    PlanningApplication --> Plan
-    PlanningApplication --> EventStore
-    SQLiteEventStore ..|> EventStore
-    DomainEvent ..> Plan
+    class PlanState {
+      <<Enumeration: domain/plan.py>>
+      +str DRAFT$
+      +str ACTIVE$
+      +str COMPLETE$
+    }
+
+    StartPlan "1" --> "1" PlanningApplication : invokes
+    AppendPlanEvent "1" --> "1" PlanningApplication : invokes
+    GetActivePlan "1" --> "1" PlanningApplication : invokes
+    PlanningApplication "1" --> "1" Plan : reconstructs
+    PlanningApplication "1" --> "1" EventStore : persists events
+    SQLiteEventStore "1" ..|> "1" EventStore : implements
+    Plan "1" --> "1" PlanState : has state
+    DomainEvent "*" ..> "1" Plan : mutates

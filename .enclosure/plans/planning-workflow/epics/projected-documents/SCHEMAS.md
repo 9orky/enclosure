@@ -16,10 +16,10 @@ next-stage output data.
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#e0f2fe", "primaryTextColor": "#172033", "primaryBorderColor": "#0284c7", "lineColor": "#64748b", "tertiaryColor": "#f8fafc"}}}%%
 flowchart LR
     subgraph commands["Parameterless Commands"]
-      cmd_start["command: workspace plan start"]
-      cmd_next["command: workspace plan next"]
-      cmd_agent["command: workspace plan agent"]
-      cmd_roll["command: workspace plan roll"]
+      cmd_start(["command: workspace plan start"])
+      cmd_next(["command: workspace plan next"])
+      cmd_agent(["command: workspace plan agent"])
+      cmd_roll(["command: workspace plan roll"])
     end
 
     subgraph loop["Closed Stage Loop"]
@@ -28,7 +28,7 @@ flowchart LR
       slots["derived output slots\ninput id + stage id + variant key"]
       scaffold["stage scaffold\nproject docs for review"]
       agent_update["agent update\nbounded by stage data"]
-      user_review["user review\napprove or request update"]
+      user_review{"decision: user review"}
       output["output data objects\nseed next stage"]
     end
 
@@ -37,9 +37,9 @@ flowchart LR
       draft["stage: DraftStage\nfile: application/stages/draft_stage.py\nclass: DraftStage"]
       plan["stage: PlanStage\nfile: application/stages/plan_stage.py\nclass: PlanStage"]
       epics["stage: EpicsStage\nfile: application/stages/epics_stage.py\nclass: EpicsStage"]
-      registry["service: StageRegistry"]
-      runner["service: StageRunner"]
-      roll["service: RollRunner"]
+      registry["service: StageRegistry\nfile: application/stage_registry.py\nclass: StageRegistry"]
+      runner["service: StageRunner\nfile: application/stage_runner.py\nclass: StageRunner"]
+      roll["service: RollRunner\nfile: application/roll.py\nclass: RollRunner"]
     end
 
     subgraph projection_ports["Application Ports"]
@@ -51,46 +51,47 @@ flowchart LR
     end
 
     subgraph projections["Events / Projections"]
-      events["event stream\ncanonical facts"]
+      events[("event stream\ncanonical facts")]
       enrichment["accepted enrichment\nkeyed by derived slot id"]
-      files["projection files\nDRAFT / PLAN / UML / epics"]
-      native["native Mermaid projections\nflows / uml / tree"]
-      schemas["SCHEMAS.md\npasted display projection"]
+      files["documents: projection files\nDRAFT / PLAN / UML / epics"]
+      native["documents: native Mermaid projections\nflows / uml / tree"]
+      schemas["document: SCHEMAS.md\npasted display projection"]
       guidance["agent guidance\ncurrent stage only"]
       drift["halt: unresolved drift"]
     end
 
-    cmd_start --> active
-    cmd_next --> active
-    cmd_agent --> active
-    cmd_roll --> roll
-    active --> registry
-    registry --> runner
-    runner --> intake
-    runner --> projection_store
-    intake --> slots
-    slots --> scaffold
-    scaffold --> files
-    scaffold --> native
-    native --> schemas
-    files --> agent_update
-    agent_update --> user_review
-    user_review --> output
-    output --> events
-    events --> active
-    events --> enrichment
-    enrichment --> slots
-    cmd_agent --> guidance
+    cmd_start -->|loads first stage| active
+    cmd_next -->|accepts reviewed output| active
+    cmd_agent -->|requests guidance| active
+    cmd_roll -->|refreshes forward| roll
+    active -->|resolved by| registry
+    registry -->|selects| runner
+    runner -->|loads| intake
+    runner -->|writes through| projection_store
+    intake -->|derives| slots
+    slots -->|builds| scaffold
+    scaffold -->|writes| files
+    scaffold -->|writes| native
+    native -->|embedded into| schemas
+    files -->|bounds context for| agent_update
+    agent_update -->|submitted for| user_review
+    user_review -->|approved| output
+    user_review -->|needs update| agent_update
+    output -->|appended as facts| events
+    events -->|selects next stage| active
+    events -->|restores enrichment| enrichment
+    enrichment -->|reconnects by slot id| slots
+    cmd_agent -->|renders| guidance
     draft -. implements .-> iface
     plan -. implements .-> iface
     epics -. implements .-> iface
-    draft --> registry
-    plan --> registry
-    epics --> registry
-    roll --> draft
-    roll --> runner
-    roll --> intake
-    runner --> drift
+    draft -->|registered as stage| registry
+    plan -->|registered as stage| registry
+    epics -->|registered as stage| registry
+    roll -->|starts from| draft
+    roll -->|delegates execution| runner
+    roll -->|loads seed data| intake
+    runner -->|halts on drift| drift
     filesystem_store -. implements .-> projection_store
 
     classDef command fill:#e0f2fe,stroke:#0284c7,color:#172033;
@@ -114,97 +115,97 @@ flowchart LR
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eef2ff", "primaryTextColor": "#172033", "primaryBorderColor": "#64748b", "lineColor": "#64748b"}}}%%
 classDiagram
     class PlanningStage {
-      <<file:application/stages/base.py>>
-      +stage_id()
-      +intake_type()
-      +output_type()
-      +derive_slots(input_data)
-      +scaffold(input_data)
-      +agent_context(input_data)
-      +accept(review_data)
+      <<Interface: application/stages/base.py>>
+      +stage_id() str
+      +intake_type() type
+      +output_type() type
+      +derive_slots(StageData) List~DerivedSlot~
+      +scaffold(StageData) StageOutput
+      +agent_context(StageData) str
+      +accept(ReviewData) StageOutput
     }
 
     class DraftStage {
       <<file:application/stages/draft_stage.py>>
-      +stage_id()
-      +derive_slots(draft_seed)
-      +scaffold(draft_seed)
-      +accept(review_data)
+      +stage_id() str
+      +derive_slots(StageData) List~DerivedSlot~
+      +scaffold(StageData) StageOutput
+      +accept(ReviewData) StageOutput
     }
 
     class PlanStage {
       <<file:application/stages/plan_stage.py>>
-      +stage_id()
-      +derive_slots(plan_facts)
-      +scaffold(plan_facts)
-      +accept(review_data)
+      +stage_id() str
+      +derive_slots(StageData) List~DerivedSlot~
+      +scaffold(StageData) StageOutput
+      +accept(ReviewData) StageOutput
     }
 
     class EpicsStage {
       <<file:application/stages/epics_stage.py>>
-      +stage_id()
-      +derive_slots(epic_facts)
-      +scaffold(epic_facts)
-      +accept(review_data)
+      +stage_id() str
+      +derive_slots(StageData) List~DerivedSlot~
+      +scaffold(StageData) StageOutput
+      +accept(ReviewData) StageOutput
     }
 
     class StageRunner {
       <<file:application/stage_runner.py>>
-      +run_current()
-      +advance_current()
-      +prepare_agent()
+      +run_current() StageOutput
+      +advance_current() StageOutput
+      +prepare_agent() str
     }
 
     class RollRunner {
       <<file:application/roll.py>>
-      +start_from_draft()
-      +continue_children()
-      +halt_on_drift()
+      +start_from_draft() StageOutput
+      +continue_children() List~StageOutput~
+      +halt_on_drift() None
     }
 
     class StageRegistry {
       <<file:application/stage_registry.py>>
-      +get_current()
-      +get_next()
-      +register(stage)
+      +get_current() PlanningStage
+      +get_next(PlanningStage) PlanningStage
+      +register(PlanningStage) None
     }
 
     class ProjectionStore {
       <<OutboundPort: application/projections.py>>
-      +write_markdown()
-      +write_mermaid()
-      +check_sync()
+      +write_markdown(str, str) None
+      +write_mermaid(str, str) None
+      +check_sync(str) bool
     }
 
     class FilesystemProjectionStore {
       <<Adapter: infrastructure/projection_store.py>>
-      +port()
-      +write_markdown()
-      +write_mermaid()
-      +check_sync()
+      +port() ProjectionStore
+      +write_markdown(str, str) None
+      +write_mermaid(str, str) None
+      +check_sync(str) bool
     }
 
     class MarkdownRenderer {
       <<AdapterHelper: infrastructure/markdown_renderer.py>>
-      +render_markdown()
+      +render_markdown(StageOutput) str
     }
 
     class CopierRenderer {
       <<AdapterHelper: infrastructure/copier_renderer.py>>
-      +render_template()
+      +render_template(str, StageData) str
     }
 
     class SchemaPageProjection {
       <<file:application/schema_page.py>>
-      +paste_native_sources()
-      +render_schemas_md()
+      +paste_native_sources(List~str~) str
+      +render_schemas_md() str
     }
 
     class StageData {
       <<file:domain/stage_data.py>>
       +str id
       +str stable_identity
-      +dict values
+      +Mapping~str_to_Any~ values
     }
 
     class DerivedSlot {
@@ -218,33 +219,33 @@ classDiagram
     class StageOutput {
       <<file:domain/stage_data.py>>
       +str next_stage_id
-      +list data_objects
+      +List~StageData~ data_objects
     }
 
     class Enrichment {
       <<file:domain/enrichment.py>>
       +str slot_id
-      +dict values
+      +Mapping~str_to_Any~ values
     }
 
-    PlanningStage <|.. DraftStage
-    PlanningStage <|.. PlanStage
-    PlanningStage <|.. EpicsStage
+    PlanningStage <|.. DraftStage : implements
+    PlanningStage <|.. PlanStage : implements
+    PlanningStage <|.. EpicsStage : implements
 
-    StageRunner --> StageRegistry
-    StageRunner --> PlanningStage
-    StageRunner --> ProjectionStore
-    StageRunner --> StageData
-    StageRunner --> DerivedSlot
-    StageRunner --> StageOutput
-    StageRunner --> Enrichment
-    RollRunner --> DraftStage
-    RollRunner --> StageRunner
-    SchemaPageProjection --> ProjectionStore
-    EpicsStage --> SchemaPageProjection
-    FilesystemProjectionStore ..|> ProjectionStore
-    FilesystemProjectionStore --> MarkdownRenderer
-    FilesystemProjectionStore --> CopierRenderer
+    StageRunner "1" --> "1" StageRegistry : selects stage
+    StageRunner "1" --> "1" PlanningStage : runs
+    StageRunner "1" --> "1" ProjectionStore : writes projections
+    StageRunner "1" --> "1..*" StageData : reads input
+    StageRunner "1" --> "0..*" DerivedSlot : derives
+    StageRunner "1" --> "1" StageOutput : returns
+    StageRunner "1" --> "0..*" Enrichment : preserves
+    RollRunner "1" --> "1" DraftStage : starts from
+    RollRunner "1" --> "1" StageRunner : advances children
+    SchemaPageProjection "1" --> "1" ProjectionStore : publishes
+    EpicsStage "1" --> "1" SchemaPageProjection : renders schemas
+    FilesystemProjectionStore "1" ..|> "1" ProjectionStore : implements
+    FilesystemProjectionStore "1" --> "1" MarkdownRenderer : renders markdown
+    FilesystemProjectionStore "1" --> "1" CopierRenderer : renders templates
 ```
 
 ## Tree
@@ -254,21 +255,26 @@ classDiagram
 %%{init: {"theme": "base", "themeVariables": {"labelColor": "#172033", "lineColor": "#64748b"}}}%%
 treeView-beta
   "workspace_plan"
+    "__init__.py"
     "domain"
+      "__init__.py"
       "stage_data.py"
       "enrichment.py"
     "application"
+      "__init__.py"
       "projections.py"
       "roll.py"
       "schema_page.py"
       "stage_registry.py"
       "stage_runner.py"
       "stages"
+        "__init__.py"
         "base.py"
         "draft_stage.py"
         "plan_stage.py"
         "epics_stage.py"
     "infrastructure"
+      "__init__.py"
       "markdown_renderer.py"
       "copier_renderer.py"
       "projection_store.py"

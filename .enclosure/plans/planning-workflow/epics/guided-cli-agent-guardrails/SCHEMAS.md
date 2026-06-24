@@ -15,10 +15,10 @@ parameterless CLI command loop.
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#e0f2fe", "primaryTextColor": "#172033", "primaryBorderColor": "#0284c7", "lineColor": "#64748b", "tertiaryColor": "#f8fafc"}}}%%
 flowchart LR
     subgraph commands["Parameterless Commands"]
-      cmd_start["command: workspace plan start"]
-      cmd_next["command: workspace plan next"]
-      cmd_agent["command: workspace plan agent"]
-      cmd_roll["command: workspace plan roll"]
+      cmd_start(["command: workspace plan start"])
+      cmd_next(["command: workspace plan next"])
+      cmd_agent(["command: workspace plan agent"])
+      cmd_roll(["command: workspace plan roll"])
     end
 
     subgraph use_cases["Use Cases"]
@@ -29,9 +29,9 @@ flowchart LR
     end
 
     subgraph services["Services"]
-      app["application: PlanningApplication"]
-      guidance["service: AgentGuidance"]
-      next_actions["service: NextActionService"]
+      app["application: PlanningApplication\nowned by event-sourced-core"]
+      guidance["service: AgentGuidance\nfile: application/agent_guidance.py\nclass: AgentGuidance"]
+      next_actions["service: NextActionService\nfile: application/next_actions.py\nclass: NextActionService"]
     end
 
     subgraph ports["Application Ports"]
@@ -41,32 +41,36 @@ flowchart LR
     end
 
     subgraph implementations["External Implementations"]
-      stage_runner["implementation: StageRunner\nowned by projected-documents"]
-      roll_runner["implementation: RollRunner\nowned by projected-documents"]
-      gate["implementation: CheckStageGate\nowned by stage-gates-open-questions"]
+      stage_runner["implementation: StageRunner\nexternal: projected-documents/application/stage_runner.py\nclass: StageRunner"]
+      roll_runner["implementation: RollRunner\nexternal: projected-documents/application/roll.py\nclass: RollRunner"]
+      gate["implementation: CheckStageGate\nexternal: stage-gates-open-questions/application/use_cases/check_stage_gate.py\nclass: CheckStageGate"]
     end
 
     subgraph outputs["Outputs"]
+      allowed{"decision: command allowed?"}
       output["projection: allowed commands"]
+      blocked["halt: command blocked"]
     end
 
-    cmd_start --> uc_start
-    cmd_next --> uc_next
-    cmd_agent --> uc_agent
-    cmd_roll --> uc_roll
-    uc_start --> app
-    uc_next --> stage_runner_port
-    uc_next --> gate_port
-    uc_agent --> guidance
-    uc_roll --> roll_runner_port
-    guidance --> next_actions
-    stage_runner_port --> next_actions
-    roll_runner_port --> next_actions
-    gate_port --> next_actions
+    cmd_start -->|dispatches| uc_start
+    cmd_next -->|dispatches| uc_next
+    cmd_agent -->|dispatches| uc_agent
+    cmd_roll -->|dispatches| uc_roll
+    uc_start -->|creates plan through| app
+    uc_next -->|advances through| stage_runner_port
+    uc_next -->|checks gate through| gate_port
+    uc_agent -->|renders| guidance
+    uc_roll -->|refreshes through| roll_runner_port
+    guidance -->|constrains| next_actions
+    stage_runner_port -->|reports state to| next_actions
+    roll_runner_port -->|reports state to| next_actions
+    gate_port -->|reports gate to| next_actions
     stage_runner -. implements .-> stage_runner_port
     roll_runner -. implements .-> roll_runner_port
     gate -. implements .-> gate_port
-    next_actions --> output
+    next_actions -->|evaluates| allowed
+    allowed -->|allowed| output
+    allowed -->|blocked| blocked
 
     classDef command fill:#e0f2fe,stroke:#0284c7,color:#172033;
     classDef usecase fill:#dcfce7,stroke:#16a34a,color:#172033;
@@ -79,7 +83,7 @@ flowchart LR
     class app,guidance,next_actions service;
     class stage_runner_port,roll_runner_port,gate_port port;
     class stage_runner,roll_runner,gate external;
-    class output output;
+    class allowed,output,blocked output;
 ```
 
 ## UML
@@ -90,89 +94,89 @@ flowchart LR
 classDiagram
     class RunPlanStart {
       <<file:application/use_cases/run_plan_start.py>>
-      +execute()
+      +execute() CommandResult
     }
 
     class RunPlanNext {
       <<file:application/use_cases/run_plan_next.py>>
-      +execute()
+      +execute() CommandResult
     }
 
     class PrepareAgentGuidance {
       <<file:application/use_cases/prepare_agent_guidance.py>>
-      +execute()
+      +execute() AgentGuidance
     }
 
     class RunPlanRoll {
       <<file:application/use_cases/run_plan_roll.py>>
-      +execute()
+      +execute() CommandResult
     }
 
     class PlanCli {
       <<file:ui/cli.py>>
-      +start()
-      +next()
-      +agent()
-      +roll()
+      +start() int
+      +next() int
+      +agent() int
+      +roll() int
     }
 
     class NextActionService {
       <<file:application/next_actions.py>>
-      +allowed_commands()
-      +blocked_commands()
+      +allowed_commands() List~str~
+      +blocked_commands() List~str~
     }
 
     class AgentGuidance {
       <<file:application/agent_guidance.py>>
-      +render_context()
-      +requires_confirmation()
+      +render_context() str
+      +requires_confirmation() bool
     }
 
     class StageRunnerPort {
       <<OutboundPort: application/workflow_ports.py>>
-      +advance_current()
-      +prepare_agent()
+      +advance_current() StageOutput
+      +prepare_agent() str
     }
 
     class RollRunnerPort {
       <<OutboundPort: application/workflow_ports.py>>
-      +start_from_draft()
+      +start_from_draft() StageOutput
     }
 
     class StageGatePort {
       <<OutboundPort: application/workflow_ports.py>>
-      +check(plan_id)
+      +check(PlanId) StageGateDecision
     }
 
     class StageRunner {
       <<external:projected-documents/application/stage_runner.py>>
-      +advance_current()
+      +advance_current() StageOutput
     }
 
     class RollRunner {
       <<external:projected-documents/application/roll.py>>
-      +start_from_draft()
+      +start_from_draft() StageOutput
     }
 
     class CheckStageGate {
       <<external:stage-gates-open-questions/application/use_cases/check_stage_gate.py>>
-      +execute(plan_id)
+      +execute(PlanId) StageGateDecision
     }
 
-    PlanCli --> RunPlanStart
-    PlanCli --> RunPlanNext
-    PlanCli --> PrepareAgentGuidance
-    PlanCli --> RunPlanRoll
-    RunPlanStart --> NextActionService
-    RunPlanNext --> NextActionService
-    RunPlanNext --> StageRunnerPort
-    RunPlanNext --> StageGatePort
-    PrepareAgentGuidance --> AgentGuidance
-    RunPlanRoll --> RollRunnerPort
-    RunPlanRoll --> NextActionService
-    StageRunner ..|> StageRunnerPort
-    RollRunner ..|> RollRunnerPort
-    CheckStageGate ..|> StageGatePort
+    PlanCli "1" --> "1" RunPlanStart : dispatches start
+    PlanCli "1" --> "1" RunPlanNext : dispatches next
+    PlanCli "1" --> "1" PrepareAgentGuidance : dispatches agent
+    PlanCli "1" --> "1" RunPlanRoll : dispatches roll
+    RunPlanStart "1" --> "1" NextActionService : reports moves
+    RunPlanNext "1" --> "1" NextActionService : reports moves
+    RunPlanNext "1" --> "1" StageRunnerPort : advances stage
+    RunPlanNext "1" --> "1" StageGatePort : checks gate
+    PrepareAgentGuidance "1" --> "1" AgentGuidance : renders context
+    RunPlanRoll "1" --> "1" RollRunnerPort : refreshes projections
+    RunPlanRoll "1" --> "1" NextActionService : reports moves
+    StageRunner "1" ..|> "1" StageRunnerPort : implements
+    RollRunner "1" ..|> "1" RollRunnerPort : implements
+    CheckStageGate "1" ..|> "1" StageGatePort : implements
 ```
 
 ## Tree
@@ -182,16 +186,20 @@ classDiagram
 %%{init: {"theme": "base", "themeVariables": {"labelColor": "#172033", "lineColor": "#64748b"}}}%%
 treeView-beta
   "workspace_plan"
-    "ui"
-      "cli.py"
-      "output.py"
+    "__init__.py"
     "application"
+      "__init__.py"
       "workflow_ports.py"
       "next_actions.py"
       "agent_guidance.py"
       "use_cases"
+        "__init__.py"
         "run_plan_start.py"
         "run_plan_next.py"
         "prepare_agent_guidance.py"
         "run_plan_roll.py"
+    "ui"
+      "__init__.py"
+      "cli.py"
+      "output.py"
 ```
