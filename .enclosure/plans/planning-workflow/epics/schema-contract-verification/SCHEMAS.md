@@ -7,173 +7,132 @@
 - Native sources: [flows.mermaid](flows.mermaid), [uml.mermaid](uml.mermaid), [tree.mermaid](tree.mermaid)
 - Siblings: [USER_STORIES.md](USER_STORIES.md)
 
-These schemas are implementation contracts. `tree.mermaid` defines the expected files, `uml.mermaid` defines expected symbols and file ownership, and `flows.mermaid` defines the expected schema verification use cases.
+These schemas are implementation contracts. `tree.mermaid` defines the
+stage-owned schema interface files, `uml.mermaid` defines the
+`StageSchemaContract` symbols, and `flows.mermaid` defines how stages declare
+native Mermaid sources and render the `SCHEMAS.md` display projection.
+
+Schema ownership belongs to stages. Native Mermaid files remain the SSOT; later
+modwire comparison must consume those stage-owned native files.
 
 ## Flow
 
 ```mermaid
 %% contract: flow
-%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#e0f2fe", "primaryTextColor": "#172033", "primaryBorderColor": "#0284c7", "lineColor": "#64748b", "tertiaryColor": "#f8fafc"}}}%%
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#dbeafe", "primaryTextColor": "#172033", "primaryBorderColor": "#2563eb", "secondaryColor": "#e0f2fe", "secondaryBorderColor": "#0284c7", "tertiaryColor": "#f8fafc", "lineColor": "#2563eb"}}}%%
 flowchart LR
-    subgraph signals["Verification Signals"]
-      signal_parse(["signal: planned contracts available"])
-      signal_actual(["signal: implementation schema available"])
-      signal_compare(["signal: compare requested by stage loop"])
-      signal_report(["signal: drift report requested"])
+    subgraph stage_lane["Stage-Owned Schema Contract"]
+      stage["interface: StageSchemaContract\nfile: domain/stage.py\nclass: StageSchemaContract"]
+      sources["model: StageFileModel\nfile: domain/stage_data.py\nnative_schema_source flag"]
+      native["model: NativeSchemas\nfile: domain/stage_data.py"]
+      display["model: ProjectedArtifact\nSCHEMAS.md display projection"]
     end
 
-    subgraph use_cases["Use Cases"]
-      uc_parse["usecase: ParsePlannedContracts\nfile: application/use_cases/parse_planned_contracts.py\nclass: ParsePlannedContracts"]
-      uc_actual["usecase: DeriveActualSchemas\nfile: application/use_cases/derive_actual_schemas.py\nclass: DeriveActualSchemas"]
-      uc_compare["usecase: CompareSchemaContracts\nfile: application/use_cases/compare_schema_contracts.py\nclass: CompareSchemaContracts"]
-      uc_report["usecase: ReportContractDrift\nfile: application/use_cases/report_contract_drift.py\nclass: ReportContractDrift"]
-    end
-
-    subgraph models_ports["Models / Application Ports"]
-      expected["model: ExpectedSchema"]
-      modwire["port: ModwireSchemaProvider\nfile: application/modwire_schema_provider.py\nclass: ModwireSchemaProvider"]
-      actual["model: ActualSchema"]
-      drift["model: DriftReport"]
-    end
-
-    subgraph adapters["Infrastructure Adapters"]
-      modwire_adapter["adapter: ModwireSchemaProviderAdapter\nfile: infrastructure/modwire_schema_provider.py\nclass: ModwireSchemaProviderAdapter"]
+    subgraph concrete_stages["Concrete Stage Implementations"]
+      draft["stage: DraftStage\nfile: domain/stages/draft_stage.py"]
+      plan["stage: PlanStage\nfile: domain/stages/plan_stage.py"]
+      epics["stage: EpicsStage\nfile: domain/stages/epics_stage.py"]
     end
 
     subgraph outputs["Outputs"]
-      match{"decision: contracts match?"}
-      agent["output: AgentRepairInstruction"]
-      pass["output: contract verified"]
+      none["output: no native schema files"]
+      native_files["output: flows.mermaid / uml.mermaid / tree.mermaid"]
+      schemas_md["output: SCHEMAS.md generated from native Mermaid"]
     end
 
-    signal_parse -->|loads planned sources| uc_parse
-    signal_actual -->|requests actual structure| uc_actual
-    signal_compare -->|starts comparison| uc_compare
-    signal_report -->|requests guidance| uc_report
-    uc_parse -->|produces| expected
-    uc_actual -->|queries through| modwire
-    modwire -->|returns| actual
-    expected -->|left side| uc_compare
-    actual -->|right side| uc_compare
-    uc_compare -->|produces| drift
-    drift -->|evaluated by| match
-    match -->|no drift| pass
-    match -->|drift found| uc_report
-    uc_report -->|renders| agent
-    modwire_adapter -. implements .-> modwire
+    draft -. implements .-> stage
+    plan -. implements .-> stage
+    epics -. implements .-> stage
+    stage -->|schema_file_models| sources
+    draft -->|returns empty list| none
+    plan -->|returns empty list| none
+    epics -->|returns native sources| native_files
+    native_files -->|read as| native
+    epics -->|render_schema_display| display
+    display --> schemas_md
 
-    classDef signal fill:#e0f2fe,stroke:#0284c7,color:#172033;
-    classDef usecase fill:#dcfce7,stroke:#16a34a,color:#172033;
+    classDef stage fill:#dbeafe,stroke:#2563eb,color:#172033;
     classDef model fill:#fef9c3,stroke:#ca8a04,color:#172033;
-    classDef port fill:#f3e8ff,stroke:#9333ea,color:#172033;
-    classDef adapter fill:#dcfce7,stroke:#16a34a,color:#172033;
+    classDef impl fill:#dcfce7,stroke:#16a34a,color:#172033;
     classDef output fill:#f1f5f9,stroke:#64748b,color:#172033;
-    class signal_parse,signal_actual,signal_compare,signal_report signal;
-    class uc_parse,uc_actual,uc_compare,uc_report usecase;
-    class expected,actual,drift model;
-    class modwire port;
-    class modwire_adapter adapter;
-    class match,agent,pass output;
+    class stage stage;
+    class sources,native,display model;
+    class draft,plan,epics impl;
+    class none,native_files,schemas_md output;
 ```
 
 ## UML
 
 ```mermaid
 %% contract: symbols
-%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eef2ff", "primaryTextColor": "#172033", "primaryBorderColor": "#64748b", "lineColor": "#64748b"}}}%%
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#f5f3ff", "primaryTextColor": "#172033", "primaryBorderColor": "#7c3aed", "secondaryColor": "#ede9fe", "secondaryBorderColor": "#6d28d9", "tertiaryColor": "#faf5ff", "lineColor": "#7c3aed"}}}%%
 classDiagram
-    class ParsePlannedContracts {
-      <<file:application/use_cases/parse_planned_contracts.py>>
-      +execute(str) ExpectedSchema
+    class StageSchemaContract {
+      <<ABC: domain/stage.py>>
+      +schema_file_models(StageInput) List~StageFileModel~
+      +render_schema_display(StageInput, NativeSchemas) ProjectedArtifact
     }
 
-    class DeriveActualSchemas {
-      <<file:application/use_cases/derive_actual_schemas.py>>
-      +execute(SchemaScope) ActualSchema
+    class StageFileModel {
+      <<file: domain/stage_data.py>>
+      +str path
+      +str artifact_kind
+      +str model_kind
+      +bool native_schema_source
     }
 
-    class CompareSchemaContracts {
-      <<file:application/use_cases/compare_schema_contracts.py>>
-      +execute(ExpectedSchema, ActualSchema) DriftReport
+    class NativeSchemas {
+      <<file: domain/stage_data.py>>
+      +str flows_mermaid
+      +str uml_mermaid
+      +str tree_mermaid
     }
 
-    class ReportContractDrift {
-      <<file:application/use_cases/report_contract_drift.py>>
-      +execute(DriftReport) AgentRepairInstruction
+    class ProjectedArtifact {
+      <<file: domain/stage_data.py>>
+      +str path
+      +str content
+      +str artifact_kind
     }
 
-    class ContractParser {
-      <<file:application/contract_parser.py>>
-      +parse_tree(str) ExpectedSchema
-      +parse_uml(str) ExpectedSchema
-      +parse_use_cases(str) ExpectedSchema
+    class DraftStage {
+      <<file: domain/stages/draft_stage.py>>
+      +schema_file_models(StageInput) List~StageFileModel~
+      +render_schema_display(StageInput, NativeSchemas) ProjectedArtifact
     }
 
-    class ActualSchemaProvider {
-      <<file:application/actual_schema.py>>
-      +query_modwire(SchemaScope) ActualSchema
-      +normalize_symbols(ActualSchema) ActualSchema
+    class PlanStage {
+      <<file: domain/stages/plan_stage.py>>
+      +schema_file_models(StageInput) List~StageFileModel~
+      +render_schema_display(StageInput, NativeSchemas) ProjectedArtifact
     }
 
-    class ModwireSchemaProvider {
-      <<OutboundPort: application/modwire_schema_provider.py>>
-      +get_schema(SchemaScope) ActualSchema
+    class EpicsStage {
+      <<file: domain/stages/epics_stage.py>>
+      +schema_file_models(StageInput) List~StageFileModel~
+      +render_schema_display(StageInput, NativeSchemas) ProjectedArtifact
     }
 
-    class ModwireSchemaProviderAdapter {
-      <<Adapter: infrastructure/modwire_schema_provider.py>>
-      +port() ModwireSchemaProvider
-      +get_schema(SchemaScope) ActualSchema
-    }
-
-    class ContractComparator {
-      <<file:application/contract_compare.py>>
-      +compare_files(ExpectedSchema, ActualSchema) DriftReport
-      +compare_symbols(ExpectedSchema, ActualSchema) DriftReport
-      +compare_use_cases(ExpectedSchema, ActualSchema) DriftReport
-    }
-
-    class DriftReport {
-      <<file:application/drift_report.py>>
-      +list_missing() List~SchemaMismatch~
-      +list_extra() List~SchemaMismatch~
-      +list_mismatched() List~SchemaMismatch~
-      +render_agent_guidance() AgentRepairInstruction
-    }
-
-    ParsePlannedContracts "1" --> "1" ContractParser : parses planned contracts
-    DeriveActualSchemas "1" --> "1" ActualSchemaProvider : derives actual schema
-    CompareSchemaContracts "1" --> "1" ContractComparator : compares schemas
-    ReportContractDrift "1" --> "1" DriftReport : renders guidance
-    ContractParser "1" --> "1" ContractComparator : supplies expected schema
-    ActualSchemaProvider "1" --> "1" ModwireSchemaProvider : queries
-    ModwireSchemaProviderAdapter "1" ..|> "1" ModwireSchemaProvider : implements
-    ActualSchemaProvider "1" --> "1" ContractComparator : supplies actual schema
-    ContractComparator "1" --> "1" DriftReport : produces
+    StageSchemaContract <|-- DraftStage
+    StageSchemaContract <|-- PlanStage
+    StageSchemaContract <|-- EpicsStage
+    StageSchemaContract "1" --> "0..*" StageFileModel : declares native schema sources
+    StageSchemaContract "1" --> "1" NativeSchemas : receives native Mermaid
+    StageSchemaContract "1" --> "1" ProjectedArtifact : renders display projection
 ```
 
 ## Tree
 
 ```mermaid
 %% contract: files
-%%{init: {"theme": "base", "themeVariables": {"labelColor": "#172033", "lineColor": "#64748b"}}}%%
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ecfdf5", "primaryTextColor": "#064e3b", "primaryBorderColor": "#059669", "labelColor": "#064e3b", "lineColor": "#059669", "tertiaryColor": "#f0fdf4"}}}%%
 treeView-beta
-  "workspace_plan"
-    "__init__.py"
-    "application"
-      "__init__.py"
-      "contract_parser.py"
-      "actual_schema.py"
-      "modwire_schema_provider.py"
-      "contract_compare.py"
-      "drift_report.py"
-      "use_cases"
-        "__init__.py"
-        "parse_planned_contracts.py"
-        "derive_actual_schemas.py"
-        "compare_schema_contracts.py"
-        "report_contract_drift.py"
-    "infrastructure"
-      "__init__.py"
-      "modwire_schema_provider.py"
+  "features/workspace/plan"
+    "domain"
+      "stage.py"
+      "stage_data.py"
+      "stages"
+        "draft_stage.py"
+        "plan_stage.py"
+        "epics_stage.py"
 ```

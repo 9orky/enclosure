@@ -13,9 +13,10 @@ commands operate on a single unambiguous planning context.
 
 Acceptance criteria:
 
-- Starting a plan records a `PlanCreated` event.
+- Starting a plan records a `Plan.Created` aggregate event.
 - Starting a second active plan is rejected.
-- Status can identify the active plan without scanning projected files.
+- `workspace plan` status can identify the active plan without scanning
+  projected files.
 
 ## append-plan-events
 
@@ -24,7 +25,8 @@ event so that planning history is durable and inspectable.
 
 Acceptance criteria:
 
-- Draft updates, question changes, stage checks, and promotions append events.
+- Draft updates, question changes, stage changes, projection registrations, and
+  roll requests append nested `Plan` aggregate events.
 - Events are recorded through the `eventsourcing` application and persisted in
   SQLite.
 - Failed commands do not leave partial state.

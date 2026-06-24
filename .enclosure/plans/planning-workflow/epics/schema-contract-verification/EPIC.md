@@ -24,32 +24,37 @@ creates variants for this example.
 Intent: compare accepted Mermaid file, symbol, and flow contracts with actual
 implementation structure so agents can repair drift precisely.
 
-Planned outcome: the planner can parse planned contracts, derive actual schemas,
-compare them, and report missing, extra, or mismatched implementation targets.
+Planned outcome: stages declare their native Mermaid schema sources through a
+stage-owned interface, render `SCHEMAS.md` from those native sources, and leave
+modwire comparison to consume those stage-owned sources later.
 
 Accepted constraints:
 
-- `tree.mermaid` defines expected files.
-- `uml.mermaid` defines expected symbols and file annotations.
-- `flows.mermaid` defines parseable command, use-case, domain, and output flow.
-- Actual schemas come from filesystem and modwire-derived structure.
+- `tree.mermaid` defines the stage-owned schema interface files.
+- `uml.mermaid` defines `StageSchemaContract`, native schema source metadata,
+  and the concrete stage implementations that own schema declarations.
+- `flows.mermaid` defines the stage-owned schema source and display projection
+  flow.
+- Actual modwire comparison consumes stage-owned native Mermaid files later.
 
 ## Value
 
-This epic turns Mermaid schemas into enforceable implementation contracts. The
-planner can compare planned file, symbol, and flow contracts with actual
-implementation structure after an agent writes code.
+This epic anchors Mermaid schemas in the stage contract. The planner can tell
+which native Mermaid files a stage owns and can render the display-only
+`SCHEMAS.md` from those native sources without inventing schema ownership
+outside the stage.
 
 ## Outcome
 
-Enclosure can report whether implementation matches the planned `tree.mermaid`,
-`uml.mermaid`, and `flows.mermaid` contracts and can give the agent focused
-repair instructions when drift appears.
+Stages expose their schema source files as part of their interface. `EpicsStage`
+owns `flows.mermaid`, `uml.mermaid`, `tree.mermaid`, and the `SCHEMAS.md`
+display projection.
 
 ## Boundaries
 
-This epic does not own the plan event store or markdown projection renderer. It
-owns schema extraction, contract comparison, and drift reporting.
+This epic does not own the plan event store. It owns the stage-side schema
+declaration interface and the display projection method that pastes native
+Mermaid into `SCHEMAS.md`.
 
 ## Navigation
 
@@ -63,15 +68,15 @@ Next dependent epic: none.
 
 ## Contract Role
 
-`tree.mermaid` defines which verification files and modules this epic expects.
-`uml.mermaid` defines the contract classes and methods that perform comparison.
-`flows.mermaid` defines the parse, derive-actual, compare, and report use cases.
+`tree.mermaid` defines the stage-owned schema contract files. `uml.mermaid`
+defines the `StageSchemaContract` interface and concrete stage implementations.
+`flows.mermaid` defines how stages declare native Mermaid schema files and
+render `SCHEMAS.md` as a display projection.
 
 ## Acceptance Criteria
 
-- Planned `tree.mermaid` can be parsed into expected files.
-- Planned `uml.mermaid` can be parsed into expected symbols.
-- Actual implementation structure can be obtained from modwire.
-- Planned and actual schemas can be compared.
-- Drift reports identify missing, extra, and mismatched files or symbols.
-- Agent-facing repair instructions reference the exact contract mismatch.
+- Stages implement `StageSchemaContract`.
+- `EpicsStage` declares `flows.mermaid`, `uml.mermaid`, and `tree.mermaid` as
+  native schema sources.
+- `SCHEMAS.md` is rendered from native Mermaid source by the owning stage.
+- Later modwire comparison consumes stage-owned native Mermaid files.

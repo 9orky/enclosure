@@ -69,4 +69,6 @@ class PlanningApplication(Application[UUID]):
         raise ValueError("Only one active plan may exist")
 
 
-__all__ = ["PlanningApplication"]
+__all__ = [
+    "PlanningApplication",
+]

@@ -102,13 +102,13 @@ Acceptance criteria:
 
 - Command use cases do not import concrete stage classes.
 - Application use cases call only methods declared on the stage base class.
-- Projection writes go through an application-layer port implemented by
+- Projection writes go through a domain port implemented by
   infrastructure.
 - Stage-specific review decisions, slot derivation, output construction, and
   transition behavior stay in domain stage implementations.
 - Filesystem markdown/native Mermaid IO stays behind infrastructure adapters.
 - Optional dynamic stage discovery imports modules and selects non-abstract
-  `PlanningStage` subclasses through an application port; it does not hard-code
+  `PlanningStage` subclasses through a domain port; it does not hard-code
   concrete stage names in command or use-case code.
 
 ## roll-from-draft-through-children
@@ -134,6 +134,8 @@ Acceptance criteria:
 
 - `flows.mermaid`, `uml.mermaid`, and `tree.mermaid` remain native projection
   targets.
+- The owning concrete stage declares the file model for every projected native
+  Mermaid file and markdown file it emits.
 - `SCHEMAS.md` pastes those native files into the proper markdown sections
   during projection updates.
 - Edits to `SCHEMAS.md` generated sections are not treated as schema source

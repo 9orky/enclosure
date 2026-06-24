@@ -208,6 +208,7 @@ classDiagram
       +stage_id() str
       +input_type() type
       +output_type() type
+      +file_models(StageContext) List~StageFileModel~
       +projection_paths(StageContext) List~ArtifactRef~
       +derive_slots(StageContext) List~DerivedSlot~
       +scaffold(StageContext) List~ProjectedArtifact~
@@ -217,27 +218,39 @@ classDiagram
       +accept(StageContext, ReviewData) StageOutput
     }
 
+    class StageFileModel {
+      <<Value Object: application/stages/base.py>>
+      +str path
+      +str artifact_kind
+      +str model_kind
+      +bool native_schema_source
+    }
+
     class DraftStage {
       <<file:application/stages/draft_stage.py>>
       +stage_id() str
+      +file_models(StageContext) List~StageFileModel~
       +accept(StageContext, ReviewData) StageOutput
     }
 
     class PlanStage {
       <<file:application/stages/plan_stage.py>>
       +stage_id() str
+      +file_models(StageContext) List~StageFileModel~
       +accept(StageContext, ReviewData) StageOutput
     }
 
     class EpicStage {
       <<file:application/stages/epic_stage.py>>
       +stage_id() str
+      +file_models(StageContext) List~StageFileModel~
       +accept(StageContext, ReviewData) StageOutput
     }
 
     PlanningStage <|.. DraftStage : implements
     PlanningStage <|.. PlanStage : implements
     PlanningStage <|.. EpicStage : implements
+    PlanningStage "1" --> "1..*" StageFileModel : owns file modeling
 ```
 
 ## Dependency Order
