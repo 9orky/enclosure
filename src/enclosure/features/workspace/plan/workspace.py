@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import time
 
 from enclosure.shared.config import settings
 
@@ -20,6 +21,21 @@ class PlanStatusReport:
     version: int
     question_count: int
     projection_count: int
+
+
+@dataclass(frozen=True)
+class LivePlanReport:
+    project_root: Path
+    plan_root: Path
+    heartbeat_path: Path
+    current_plan_id: str
+    title: str
+    current_stage: str
+    state: str
+    agent_connected: bool
+    review_files: list[str]
+    questions: list[domain.OpenQuestion]
+    blocking_questions: list[domain.OpenQuestion]
 
 
 class WorkspacePlanModule:
@@ -75,7 +91,8 @@ class WorkspacePlanModule:
         registry = self._stage_registry()
         stage = registry.current_for(plan)
         projection = self._read_stage_projection(plan, stage)
-        blocking_questions = self._record_projection_questions(app, plan, projection)
+        questions = self._record_projection_questions(app, plan, projection)
+        blocking_questions = [question for question in questions if question.blocking]
         if blocking_questions:
             raise ValueError(
                 "Blocking open questions prevent stage advance: "
@@ -150,6 +167,95 @@ class WorkspacePlanModule:
             if plan.current_stage == domain.PlanState.COMPLETE.value:
                 break
         return plan
+
+    def start_or_resume_live(self, title: str) -> domain.Plan:
+        app = self._planning_application()
+        try:
+            return app.get_active_plan()
+        except LookupError:
+            return self.start(title)
+
+    def connect_agent(self) -> Path:
+        heartbeat_path = self._heartbeat_path()
+        heartbeat_path.parent.mkdir(parents=True, exist_ok=True)
+        heartbeat_path.write_text(str(time.time()), encoding="utf-8")
+        return heartbeat_path
+
+    def live_report(self) -> LivePlanReport:
+        app = self._planning_application()
+        plan = app.get_active_plan()
+        stage = self._stage_registry().current_for(plan)
+        projection = self._read_stage_projection(plan, stage)
+        self._record_projection_questions(app, plan, projection)
+        plan = app.get_plan(domain.PlanId(plan.id))
+        questions = list(plan.questions.values())
+        return LivePlanReport(
+            project_root=self._project_root,
+            plan_root=self._plan_root(plan),
+            heartbeat_path=self._heartbeat_path(),
+            current_plan_id=str(plan.id),
+            title=plan.title,
+            current_stage=plan.current_stage,
+            state=plan.state.value,
+            agent_connected=self._agent_connected(),
+            review_files=[artifact.path for artifact in projection.artifacts],
+            questions=questions,
+            blocking_questions=[
+                question for question in questions if question.blocking
+            ],
+        )
+
+    def ask_question(self, text: str, explanation: str) -> domain.OpenQuestion:
+        if not text.strip():
+            raise ValueError("Question text is required")
+        app = self._planning_application()
+        plan = app.get_active_plan()
+        stage = self._stage_registry().current_for(plan)
+        target_file = self._primary_stage_file(stage)
+        store = self._projection_store(plan)
+        content = store.read_text(target_file)
+        next_content = domain.append_open_question(content, text, explanation)
+        store.write_text(target_file, next_content)
+        projection = self._read_stage_projection(plan, stage)
+        questions = self._record_projection_questions(app, plan, projection)
+        matching = [
+            question
+            for question in questions
+            if question.text == text.strip()
+        ]
+        if not matching:
+            raise RuntimeError("Question was not recorded")
+        return matching[-1]
+
+    def answer_question(self, question_id: str, answer: str) -> domain.OpenQuestion:
+        if not answer.strip():
+            raise ValueError("Answer is required")
+        app = self._planning_application()
+        plan = app.get_active_plan()
+        stage = self._stage_registry().current_for(plan)
+        store = self._projection_store(plan)
+        for artifact in self._read_stage_projection(plan, stage).artifacts:
+            try:
+                next_content = domain.append_question_answer(
+                    stage.stage_id(),
+                    artifact.path,
+                    artifact.content,
+                    question_id,
+                    answer,
+                )
+            except ValueError:
+                continue
+            store.write_text(artifact.path, next_content)
+            projection = self._read_stage_projection(plan, stage)
+            questions = self._record_projection_questions(app, plan, projection)
+            matching = [
+                question
+                for question in questions
+                if question.id == question_id
+            ]
+            if matching:
+                return matching[-1]
+        raise ValueError(f"Question not found in current stage files: {question_id}")
 
     def status(self) -> PlanStatusReport:
         try:
@@ -230,7 +336,24 @@ class WorkspacePlanModule:
             )
         if questions:
             app.save(plan)
-        return [question for question in questions if question.blocking]
+        return questions
+
+    def _primary_stage_file(self, stage: domain.PlanningStage) -> str:
+        for file_model in stage.file_models(
+            domain.StageInput(stage_id=stage.stage_id(), data_objects=[])
+        ):
+            if "{" not in file_model.path:
+                return file_model.path
+        raise ValueError(f"Stage has no concrete review file: {stage.stage_id()}")
+
+    def _heartbeat_path(self) -> Path:
+        return self._database_path.parent / "plan-live" / "agent-heartbeat"
+
+    def _agent_connected(self) -> bool:
+        heartbeat_path = self._heartbeat_path()
+        if not heartbeat_path.is_file():
+            return False
+        return time.time() - heartbeat_path.stat().st_mtime < 10
 
     def _plan_root(self, plan: domain.Plan) -> Path:
         slug = "-".join(
@@ -243,6 +366,7 @@ class WorkspacePlanModule:
 
 
 __all__ = [
+    "LivePlanReport",
     "PlanStatusReport",
     "WorkspacePlanModule",
 ]

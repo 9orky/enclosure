@@ -4,7 +4,13 @@ from .events import DomainEvent
 from .enrichment import Enrichment
 from .plan import Plan, PlanId, PlanState, ProjectionRecord
 from .ports import ProjectionStore, StageCatalog
-from .questions import OpenQuestion, QuestionStatus, extract_open_questions
+from .questions import (
+    OpenQuestion,
+    QuestionStatus,
+    append_open_question,
+    append_question_answer,
+    extract_open_questions,
+)
 from .stage import PlanningStage, StageFileContract, StageSchemaContract
 from .stage_data import (
     AgentContext,
@@ -26,6 +32,8 @@ from .stages import DraftStage, EpicsStage, PlanStage
 
 __all__ = [
     "AgentContext",
+    "append_open_question",
+    "append_question_answer",
     "DerivedSlot",
     "DomainEvent",
     "DraftStage",

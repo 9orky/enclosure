@@ -14,6 +14,15 @@ class FilesystemProjectionStore:
     def read_text(self, path: str) -> str:
         return (self.root / path).read_text(encoding="utf-8")
 
+    def write_text(self, path: str, content: str) -> domain.ProjectionRecord:
+        return self.write_projection(
+            domain.ProjectedArtifact(
+                path=path,
+                content=content,
+                artifact_kind="markdown",
+            )
+        )
+
     def write_projection(
         self,
         artifact: domain.ProjectedArtifact,
