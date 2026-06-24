@@ -1,5 +1,20 @@
 # Planning Workflow Draft
 
+## Navigation
+
+- Stage specification: [STAGES.md](../STAGES.md)
+- Plan contract: [PLAN.md](PLAN.md)
+- Technical view: [UML.md](UML.md)
+
+| use_case_id | draft section | plan item | epic package |
+| --- | --- | --- | --- |
+| `hexagonal-foundation` | [Hexagonal Foundation](#hexagonal-foundation) | [hexagonal-foundation](PLAN.md#hexagonal-foundation) | [epics/hexagonal-foundation](epics/hexagonal-foundation/EPIC.md) |
+| `event-sourced-core` | [Event-Sourced Planning Core](#event-sourced-planning-core) | [event-sourced-core](PLAN.md#event-sourced-core) | [epics/event-sourced-core](epics/event-sourced-core/EPIC.md) |
+| `projected-documents` | [Projected Planning Documents](#projected-planning-documents) | [projected-documents](PLAN.md#projected-documents) | [epics/projected-documents](epics/projected-documents/EPIC.md) |
+| `stage-gates-open-questions` | [Stage Gates and Open Questions](#stage-gates-and-open-questions) | [stage-gates-open-questions](PLAN.md#stage-gates-open-questions) | [epics/stage-gates-open-questions](epics/stage-gates-open-questions/EPIC.md) |
+| `guided-cli-agent-guardrails` | [Guided CLI and Agent Guardrails](#guided-cli-and-agent-guardrails) | [guided-cli-agent-guardrails](PLAN.md#guided-cli-agent-guardrails) | [epics/guided-cli-agent-guardrails](epics/guided-cli-agent-guardrails/EPIC.md) |
+| `schema-contract-verification` | [Schema Contract Verification](#schema-contract-verification) | [schema-contract-verification](PLAN.md#schema-contract-verification) | [epics/schema-contract-verification](epics/schema-contract-verification/EPIC.md) |
+
 ## Abstract
 
 Build a local planning workflow that turns a user's rough intent into

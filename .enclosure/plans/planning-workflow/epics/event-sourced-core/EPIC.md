@@ -1,5 +1,12 @@
 # Event-Sourced Planning Core
 
+## Navigation
+
+- Draft source: [Event-Sourced Planning Core](../../DRAFT.md#event-sourced-planning-core)
+- Plan source: [event-sourced-core](../../PLAN.md#event-sourced-core)
+- Technical id contract: [UML.md](../../UML.md#slug-identity-contract)
+- Epic artifacts: [USER_STORIES.md](USER_STORIES.md), [SCHEMAS.md](SCHEMAS.md), [flows.mermaid](flows.mermaid), [uml.mermaid](uml.mermaid), [tree.mermaid](tree.mermaid)
+
 ## Source Chain
 
 ```text

@@ -1,5 +1,12 @@
 # Hexagonal Foundation
 
+## Navigation
+
+- Draft source: [Hexagonal Foundation](../../DRAFT.md#hexagonal-foundation)
+- Plan source: [hexagonal-foundation](../../PLAN.md#hexagonal-foundation)
+- Technical id contract: [UML.md](../../UML.md#slug-identity-contract)
+- Epic artifacts: [USER_STORIES.md](USER_STORIES.md), [SCHEMAS.md](SCHEMAS.md), [flows.mermaid](flows.mermaid), [uml.mermaid](uml.mermaid), [tree.mermaid](tree.mermaid)
+
 ## Source Chain
 
 ```text

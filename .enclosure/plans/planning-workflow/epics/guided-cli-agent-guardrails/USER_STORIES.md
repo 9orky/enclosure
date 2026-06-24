@@ -1,5 +1,11 @@
 # User Stories
 
+## Navigation
+
+- Epic: [Guided CLI and Agent Guardrails](EPIC.md)
+- Source chain: [DRAFT.md](../../DRAFT.md#guided-cli-and-agent-guardrails) -> [PLAN.md](../../PLAN.md#guided-cli-agent-guardrails) -> [UML.md](../../UML.md#slug-identity-contract)
+- Siblings: [SCHEMAS.md](SCHEMAS.md), [flows.mermaid](flows.mermaid), [uml.mermaid](uml.mermaid), [tree.mermaid](tree.mermaid)
+
 ## start-plan
 
 As a user, I want `workspace plan start` to create the active planning loop

@@ -1,5 +1,11 @@
 # User Stories
 
+## Navigation
+
+- Epic: [Schema Contract Verification](EPIC.md)
+- Source chain: [DRAFT.md](../../DRAFT.md#schema-contract-verification) -> [PLAN.md](../../PLAN.md#schema-contract-verification) -> [UML.md](../../UML.md#slug-identity-contract)
+- Siblings: [SCHEMAS.md](SCHEMAS.md), [flows.mermaid](flows.mermaid), [uml.mermaid](uml.mermaid), [tree.mermaid](tree.mermaid)
+
 ## parse-planned-contracts
 
 As the planner, I want to parse planned Mermaid files so that diagrams become

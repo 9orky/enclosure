@@ -1,5 +1,20 @@
 # Planning Workflow
 
+## Navigation
+
+- Stage specification: [STAGES.md](../STAGES.md)
+- Previous stage: [DRAFT.md](DRAFT.md)
+- Technical view: [UML.md](UML.md)
+
+| plan_item_id | source use case | plan section | epic package |
+| --- | --- | --- | --- |
+| `hexagonal-foundation` | [Hexagonal Foundation](DRAFT.md#hexagonal-foundation) | [hexagonal-foundation](#hexagonal-foundation) | [epics/hexagonal-foundation](epics/hexagonal-foundation/EPIC.md) |
+| `event-sourced-core` | [Event-Sourced Planning Core](DRAFT.md#event-sourced-planning-core) | [event-sourced-core](#event-sourced-core) | [epics/event-sourced-core](epics/event-sourced-core/EPIC.md) |
+| `projected-documents` | [Projected Planning Documents](DRAFT.md#projected-planning-documents) | [projected-documents](#projected-documents) | [epics/projected-documents](epics/projected-documents/EPIC.md) |
+| `stage-gates-open-questions` | [Stage Gates and Open Questions](DRAFT.md#stage-gates-and-open-questions) | [stage-gates-open-questions](#stage-gates-open-questions) | [epics/stage-gates-open-questions](epics/stage-gates-open-questions/EPIC.md) |
+| `guided-cli-agent-guardrails` | [Guided CLI and Agent Guardrails](DRAFT.md#guided-cli-and-agent-guardrails) | [guided-cli-agent-guardrails](#guided-cli-agent-guardrails) | [epics/guided-cli-agent-guardrails](epics/guided-cli-agent-guardrails/EPIC.md) |
+| `schema-contract-verification` | [Schema Contract Verification](DRAFT.md#schema-contract-verification) | [schema-contract-verification](#schema-contract-verification) | [epics/schema-contract-verification](epics/schema-contract-verification/EPIC.md) |
+
 ## Purpose
 
 Create a local event-sourced planning workflow that promotes a markdown draft

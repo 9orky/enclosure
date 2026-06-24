@@ -1,5 +1,11 @@
 # User Stories
 
+## Navigation
+
+- Epic: [Event-Sourced Planning Core](EPIC.md)
+- Source chain: [DRAFT.md](../../DRAFT.md#event-sourced-planning-core) -> [PLAN.md](../../PLAN.md#event-sourced-core) -> [UML.md](../../UML.md#slug-identity-contract)
+- Siblings: [SCHEMAS.md](SCHEMAS.md), [flows.mermaid](flows.mermaid), [uml.mermaid](uml.mermaid), [tree.mermaid](tree.mermaid)
+
 ## create-active-plan
 
 As a workspace user, I want to start one active plan so that all later planning

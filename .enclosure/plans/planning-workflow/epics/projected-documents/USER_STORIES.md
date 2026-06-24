@@ -1,5 +1,11 @@
 # User Stories
 
+## Navigation
+
+- Epic: [Projected Planning Documents](EPIC.md)
+- Source chain: [DRAFT.md](../../DRAFT.md#projected-planning-documents) -> [PLAN.md](../../PLAN.md#projected-documents) -> [UML.md](../../UML.md#slug-identity-contract)
+- Siblings: [SCHEMAS.md](SCHEMAS.md), [flows.mermaid](flows.mermaid), [uml.mermaid](uml.mermaid), [tree.mermaid](tree.mermaid)
+
 ## run-stage-loop
 
 As a user, I want each planning step to behave the same way so that I can review

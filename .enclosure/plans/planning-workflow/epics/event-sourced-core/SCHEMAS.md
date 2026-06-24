@@ -1,5 +1,12 @@
 # Event Sourced Core Schemas
 
+## Navigation
+
+- Epic: [Event-Sourced Planning Core](EPIC.md)
+- Source chain: [DRAFT.md](../../DRAFT.md#event-sourced-planning-core) -> [PLAN.md](../../PLAN.md#event-sourced-core) -> [UML.md](../../UML.md#slug-identity-contract)
+- Native sources: [flows.mermaid](flows.mermaid), [uml.mermaid](uml.mermaid), [tree.mermaid](tree.mermaid)
+- Siblings: [USER_STORIES.md](USER_STORIES.md)
+
 These schemas are implementation contracts. `tree.mermaid` defines the expected files, `uml.mermaid` defines expected symbols and file ownership, and `flows.mermaid` defines the expected event-sourced use cases.
 
 ## Flow

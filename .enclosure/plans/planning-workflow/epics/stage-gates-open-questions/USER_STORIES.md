@@ -1,5 +1,11 @@
 # User Stories
 
+## Navigation
+
+- Epic: [Stage Gates and Open Questions](EPIC.md)
+- Source chain: [DRAFT.md](../../DRAFT.md#stage-gates-and-open-questions) -> [PLAN.md](../../PLAN.md#stage-gates-open-questions) -> [UML.md](../../UML.md#slug-identity-contract)
+- Siblings: [SCHEMAS.md](SCHEMAS.md), [flows.mermaid](flows.mermaid), [uml.mermaid](uml.mermaid), [tree.mermaid](tree.mermaid)
+
 ## classify-open-questions
 
 As a planner, I want every open question classified so that uncertainty is

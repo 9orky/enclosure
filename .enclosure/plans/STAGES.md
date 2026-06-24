@@ -1,5 +1,12 @@
 # Draft Stage Proposition
 
+## Navigation
+
+- Worked draft example: [planning-workflow/DRAFT.md](planning-workflow/DRAFT.md)
+- Worked plan example: [planning-workflow/PLAN.md](planning-workflow/PLAN.md)
+- Worked technical example: [planning-workflow/UML.md](planning-workflow/UML.md)
+- Worked epic packages: [planning-workflow/epics/](planning-workflow/epics/)
+
 ## Starting
 
 - user types `enclosure workspace plan start "$title"`

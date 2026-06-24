@@ -1,5 +1,12 @@
 # Guided CLI and Agent Guardrails
 
+## Navigation
+
+- Draft source: [Guided CLI and Agent Guardrails](../../DRAFT.md#guided-cli-and-agent-guardrails)
+- Plan source: [guided-cli-agent-guardrails](../../PLAN.md#guided-cli-agent-guardrails)
+- Technical id contract: [UML.md](../../UML.md#slug-identity-contract)
+- Epic artifacts: [USER_STORIES.md](USER_STORIES.md), [SCHEMAS.md](SCHEMAS.md), [flows.mermaid](flows.mermaid), [uml.mermaid](uml.mermaid), [tree.mermaid](tree.mermaid)
+
 ## Source Chain
 
 ```text

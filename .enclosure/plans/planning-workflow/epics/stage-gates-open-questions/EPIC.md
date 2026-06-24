@@ -1,5 +1,12 @@
 # Stage Gates and Open Questions
 
+## Navigation
+
+- Draft source: [Stage Gates and Open Questions](../../DRAFT.md#stage-gates-and-open-questions)
+- Plan source: [stage-gates-open-questions](../../PLAN.md#stage-gates-open-questions)
+- Technical id contract: [UML.md](../../UML.md#slug-identity-contract)
+- Epic artifacts: [USER_STORIES.md](USER_STORIES.md), [SCHEMAS.md](SCHEMAS.md), [flows.mermaid](flows.mermaid), [uml.mermaid](uml.mermaid), [tree.mermaid](tree.mermaid)
+
 ## Source Chain
 
 ```text

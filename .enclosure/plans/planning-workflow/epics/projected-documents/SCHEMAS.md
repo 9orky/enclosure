@@ -1,5 +1,12 @@
 # Projected Documents Schemas
 
+## Navigation
+
+- Epic: [Projected Planning Documents](EPIC.md)
+- Source chain: [DRAFT.md](../../DRAFT.md#projected-planning-documents) -> [PLAN.md](../../PLAN.md#projected-documents) -> [UML.md](../../UML.md#slug-identity-contract)
+- Native sources: [flows.mermaid](flows.mermaid), [uml.mermaid](uml.mermaid), [tree.mermaid](tree.mermaid)
+- Siblings: [USER_STORIES.md](USER_STORIES.md)
+
 These schemas are implementation contracts shown as a display projection. The
 native sources are `flows.mermaid`, `uml.mermaid`, and `tree.mermaid`; during
 projection updates their content is pasted into the sections below.

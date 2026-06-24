@@ -1,5 +1,19 @@
 # Planning Workflow Technical View
 
+## Navigation
+
+- Stage specification: [STAGES.md](../STAGES.md)
+- Previous stages: [DRAFT.md](DRAFT.md), [PLAN.md](PLAN.md)
+
+| stable id | draft source | plan source | epic package |
+| --- | --- | --- | --- |
+| `hexagonal-foundation` | [draft](DRAFT.md#hexagonal-foundation) | [plan](PLAN.md#hexagonal-foundation) | [epic](epics/hexagonal-foundation/EPIC.md) |
+| `event-sourced-core` | [draft](DRAFT.md#event-sourced-planning-core) | [plan](PLAN.md#event-sourced-core) | [epic](epics/event-sourced-core/EPIC.md) |
+| `projected-documents` | [draft](DRAFT.md#projected-planning-documents) | [plan](PLAN.md#projected-documents) | [epic](epics/projected-documents/EPIC.md) |
+| `stage-gates-open-questions` | [draft](DRAFT.md#stage-gates-and-open-questions) | [plan](PLAN.md#stage-gates-open-questions) | [epic](epics/stage-gates-open-questions/EPIC.md) |
+| `guided-cli-agent-guardrails` | [draft](DRAFT.md#guided-cli-and-agent-guardrails) | [plan](PLAN.md#guided-cli-agent-guardrails) | [epic](epics/guided-cli-agent-guardrails/EPIC.md) |
+| `schema-contract-verification` | [draft](DRAFT.md#schema-contract-verification) | [plan](PLAN.md#schema-contract-verification) | [epic](epics/schema-contract-verification/EPIC.md) |
+
 ## Lifecycle
 
 ```mermaid

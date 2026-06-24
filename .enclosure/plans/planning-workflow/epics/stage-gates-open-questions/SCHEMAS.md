@@ -1,5 +1,12 @@
 # Stage Gates Open Questions Schemas
 
+## Navigation
+
+- Epic: [Stage Gates and Open Questions](EPIC.md)
+- Source chain: [DRAFT.md](../../DRAFT.md#stage-gates-and-open-questions) -> [PLAN.md](../../PLAN.md#stage-gates-open-questions) -> [UML.md](../../UML.md#slug-identity-contract)
+- Native sources: [flows.mermaid](flows.mermaid), [uml.mermaid](uml.mermaid), [tree.mermaid](tree.mermaid)
+- Siblings: [USER_STORIES.md](USER_STORIES.md)
+
 These schemas are implementation contracts. `tree.mermaid` defines the expected files, `uml.mermaid` defines expected symbols and file ownership, and `flows.mermaid` defines the expected question and gate use cases.
 
 ## Flow

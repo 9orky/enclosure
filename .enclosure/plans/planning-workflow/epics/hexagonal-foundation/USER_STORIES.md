@@ -1,5 +1,11 @@
 # User Stories
 
+## Navigation
+
+- Epic: [Hexagonal Foundation](EPIC.md)
+- Source chain: [DRAFT.md](../../DRAFT.md#hexagonal-foundation) -> [PLAN.md](../../PLAN.md#hexagonal-foundation) -> [UML.md](../../UML.md#slug-identity-contract)
+- Siblings: [SCHEMAS.md](SCHEMAS.md), [flows.mermaid](flows.mermaid), [uml.mermaid](uml.mermaid), [tree.mermaid](tree.mermaid)
+
 ## define-port-shape
 
 As a module author, I want a shared port interface shape so that planning ports

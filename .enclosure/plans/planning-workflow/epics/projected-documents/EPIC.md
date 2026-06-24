@@ -1,5 +1,12 @@
 # Projected Planning Documents
 
+## Navigation
+
+- Draft source: [Projected Planning Documents](../../DRAFT.md#projected-planning-documents)
+- Plan source: [projected-documents](../../PLAN.md#projected-documents)
+- Technical id contract: [UML.md](../../UML.md#slug-identity-contract)
+- Epic artifacts: [USER_STORIES.md](USER_STORIES.md), [SCHEMAS.md](SCHEMAS.md), [flows.mermaid](flows.mermaid), [uml.mermaid](uml.mermaid), [tree.mermaid](tree.mermaid)
+
 ## Source Chain
 
 ```text

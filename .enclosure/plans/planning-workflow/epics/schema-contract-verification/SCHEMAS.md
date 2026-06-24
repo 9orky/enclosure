@@ -1,5 +1,12 @@
 # Schema Contract Verification Schemas
 
+## Navigation
+
+- Epic: [Schema Contract Verification](EPIC.md)
+- Source chain: [DRAFT.md](../../DRAFT.md#schema-contract-verification) -> [PLAN.md](../../PLAN.md#schema-contract-verification) -> [UML.md](../../UML.md#slug-identity-contract)
+- Native sources: [flows.mermaid](flows.mermaid), [uml.mermaid](uml.mermaid), [tree.mermaid](tree.mermaid)
+- Siblings: [USER_STORIES.md](USER_STORIES.md)
+
 These schemas are implementation contracts. `tree.mermaid` defines the expected files, `uml.mermaid` defines expected symbols and file ownership, and `flows.mermaid` defines the expected schema verification use cases.
 
 ## Flow

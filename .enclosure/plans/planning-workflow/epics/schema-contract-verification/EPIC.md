@@ -1,5 +1,12 @@
 # Schema Contract Verification
 
+## Navigation
+
+- Draft source: [Schema Contract Verification](../../DRAFT.md#schema-contract-verification)
+- Plan source: [schema-contract-verification](../../PLAN.md#schema-contract-verification)
+- Technical id contract: [UML.md](../../UML.md#slug-identity-contract)
+- Epic artifacts: [USER_STORIES.md](USER_STORIES.md), [SCHEMAS.md](SCHEMAS.md), [flows.mermaid](flows.mermaid), [uml.mermaid](uml.mermaid), [tree.mermaid](tree.mermaid)
+
 ## Source Chain
 
 ```text
