@@ -1,29 +1,3 @@
----
-plan_id: planning-workflow
-epic_id: stage-gates-open-questions
-title: Stage Gates and Open Questions Schemas
-status: dry-run
-stage: epics
-source: event_store
-generated_from: eventsourcing projection
-sync_policy: projection
-managed_files:
-  - EPIC.md
-  - USER_STORIES.md
-  - SCHEMAS.md
-  - flows.mermaid
-  - uml.mermaid
-  - tree.mermaid
-native_sources:
-  flows: flows.mermaid
-  uml: uml.mermaid
-  tree: tree.mermaid
-contract_roles:
-  flows: flow contract
-  uml: symbol contract
-  tree: file contract
----
-
 # Stage Gates Open Questions Schemas
 
 These schemas are implementation contracts. `tree.mermaid` defines the expected files, `uml.mermaid` defines expected symbols and file ownership, and `flows.mermaid` defines the expected question and gate use cases.

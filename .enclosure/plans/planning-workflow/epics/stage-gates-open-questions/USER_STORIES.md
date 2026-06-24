@@ -1,31 +1,3 @@
----
-plan_id: planning-workflow
-epic_id: stage-gates-open-questions
-title: Stage Gates and Open Questions Stories
-status: dry-run
-stage: epics
-source: event_store
-generated_from: eventsourcing projection
-sync_policy: projection
-managed_files:
-  - EPIC.md
-  - USER_STORIES.md
-  - SCHEMAS.md
-  - flows.mermaid
-  - uml.mermaid
-  - tree.mermaid
-stories:
-  - id: classify-open-questions
-    title: Classify open questions
-    status: candidate
-  - id: enforce-stage-gates
-    title: Enforce stage gates
-    status: candidate
-  - id: require-user-unblocking
-    title: Require user confirmation to unblock
-    status: candidate
----
-
 # User Stories
 
 ## classify-open-questions

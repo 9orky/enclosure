@@ -1,32 +1,3 @@
----
-plan_id: planning-workflow
-epic_id: stage-gates-open-questions
-title: Stage Gates and Open Questions
-ordinal: 3
-status: dry-run
-readiness: blocked_by_dependency
-stage: epics
-source: event_store
-generated_from: eventsourcing projection
-sync_policy: projection
-managed_files:
-  - EPIC.md
-  - USER_STORIES.md
-  - SCHEMAS.md
-  - flows.mermaid
-  - uml.mermaid
-  - tree.mermaid
-depends_on:
-  - event-sourced-core
-blocks:
-  - guided-cli-agent-guardrails
-owns:
-  - Stage procedure
-  - Gate evaluation
-  - Open question model
-  - User-confirmed unblocking
----
-
 # Stage Gates and Open Questions
 
 ## Value

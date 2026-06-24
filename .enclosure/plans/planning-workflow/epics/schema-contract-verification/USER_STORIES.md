@@ -1,31 +1,3 @@
----
-plan_id: planning-workflow
-epic_id: schema-contract-verification
-title: Schema Contract Verification Stories
-status: dry-run
-stage: epics
-source: event_store
-generated_from: eventsourcing projection
-sync_policy: projection
-managed_files:
-  - EPIC.md
-  - USER_STORIES.md
-  - SCHEMAS.md
-  - flows.mermaid
-  - uml.mermaid
-  - tree.mermaid
-stories:
-  - id: parse-planned-contracts
-    title: Parse planned Mermaid contracts
-    status: candidate
-  - id: derive-actual-schemas
-    title: Derive actual schemas through modwire
-    status: candidate
-  - id: report-contract-drift
-    title: Report contract drift to agents
-    status: candidate
----
-
 # User Stories
 
 ## parse-planned-contracts

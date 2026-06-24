@@ -1,29 +1,3 @@
----
-plan_id: planning-workflow
-epic_id: guided-cli-agent-guardrails
-title: Guided CLI and Agent Guardrails Schemas
-status: dry-run
-stage: epics
-source: event_store
-generated_from: eventsourcing projection
-sync_policy: projection
-managed_files:
-  - EPIC.md
-  - USER_STORIES.md
-  - SCHEMAS.md
-  - flows.mermaid
-  - uml.mermaid
-  - tree.mermaid
-native_sources:
-  flows: flows.mermaid
-  uml: uml.mermaid
-  tree: tree.mermaid
-contract_roles:
-  flows: flow contract
-  uml: symbol contract
-  tree: file contract
----
-
 # Guided Cli Agent Guardrails Schemas
 
 These schemas are implementation contracts shown as a display projection. The

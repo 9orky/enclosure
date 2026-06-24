@@ -1,29 +1,3 @@
----
-plan_id: planning-workflow
-epic_id: projected-documents
-title: Projected Planning Documents Schemas
-status: dry-run
-stage: epics
-source: event_store
-generated_from: eventsourcing projection
-sync_policy: projection
-managed_files:
-  - EPIC.md
-  - USER_STORIES.md
-  - SCHEMAS.md
-  - flows.mermaid
-  - uml.mermaid
-  - tree.mermaid
-native_sources:
-  flows: flows.mermaid
-  uml: uml.mermaid
-  tree: tree.mermaid
-contract_roles:
-  flows: flow contract
-  uml: symbol contract
-  tree: file contract
----
-
 # Projected Documents Schemas
 
 These schemas are implementation contracts shown as a display projection. The
@@ -262,5 +236,5 @@ treeView-beta
     "infrastructure"
       "markdown_renderer.py"
       "copier_renderer.py"
-      "frontmatter_io.py"
+      "projection_store.py"
 ```

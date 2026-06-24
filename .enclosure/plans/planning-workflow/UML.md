@@ -1,14 +1,3 @@
----
-plan_id: planning-workflow
-title: Planning Workflow Technical View
-status: dry-run
-stage: plan-contract
-source: event_store
-generated_from: eventsourcing projection
-sync_policy: projection
-active: true
----
-
 # Planning Workflow Technical View
 
 ## Lifecycle
@@ -254,8 +243,8 @@ flowchart TB
     Store --> Notifications["Notification log\nordered event sequence"]
     Notifications --> Projectors["Projection runners\nmarkdown and diagram views"]
     Projectors --> Sync["Strict sync check\nmust pass before advance"]
-    Projectors --> Ports["Ports\nfilesystem, frontmatter, markdown, templates"]
-    Ports --> Adapters["Adapters\nCopier, pydantic, frontmatter, jinja2, markdown parser"]
+    Projectors --> Ports["Ports\nfilesystem, markdown, templates"]
+    Ports --> Adapters["Adapters\nCopier, pydantic, jinja2, markdown parser"]
 ```
 
 ## Library Boundary
@@ -266,8 +255,7 @@ flowchart LR
 
     Planner --> EventSourcing["eventsourcing\naggregates, application, SQLite store, projections"]
     Planner --> Copier["Copier\nprojection templates and updates"]
-    Planner --> Pydantic["Pydantic\nfrontmatter schemas"]
-    Planner --> Frontmatter["python-frontmatter\nmetadata/body split"]
+    Planner --> Pydantic["Pydantic\ntyped event and stage schemas"]
     Planner --> Jinja["Jinja2\nmarkdown rendering"]
     Planner --> Markdown["markdown-it-py\nsection parsing"]
     Planner --> Mermaid["Mermaid CLI\ndiagram validation"]

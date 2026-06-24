@@ -1,34 +1,3 @@
----
-plan_id: planning-workflow
-epic_id: guided-cli-agent-guardrails
-title: Guided CLI and Agent Guardrails Stories
-status: dry-run
-stage: epics
-source: event_store
-generated_from: eventsourcing projection
-sync_policy: projection
-managed_files:
-  - EPIC.md
-  - USER_STORIES.md
-  - SCHEMAS.md
-  - flows.mermaid
-  - uml.mermaid
-  - tree.mermaid
-stories:
-  - id: start-plan
-    title: Start the active plan
-    status: candidate
-  - id: guide-next-action
-    title: Guide the next valid action
-    status: candidate
-  - id: prepare-agent-context
-    title: Prepare constrained agent context
-    status: candidate
-  - id: roll-plan-chain
-    title: Roll the projected plan chain
-    status: candidate
----
-
 # User Stories
 
 ## start-plan

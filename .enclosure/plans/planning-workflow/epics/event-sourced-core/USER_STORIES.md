@@ -1,31 +1,3 @@
----
-plan_id: planning-workflow
-epic_id: event-sourced-core
-title: Event-Sourced Planning Core Stories
-status: dry-run
-stage: epics
-source: event_store
-generated_from: eventsourcing projection
-sync_policy: projection
-managed_files:
-  - EPIC.md
-  - USER_STORIES.md
-  - SCHEMAS.md
-  - flows.mermaid
-  - uml.mermaid
-  - tree.mermaid
-stories:
-  - id: create-active-plan
-    title: Create the active plan
-    status: candidate
-  - id: append-plan-events
-    title: Append planning events transactionally
-    status: candidate
-  - id: reconstruct-plan-state
-    title: Reconstruct plan state from event history
-    status: candidate
----
-
 # User Stories
 
 ## create-active-plan

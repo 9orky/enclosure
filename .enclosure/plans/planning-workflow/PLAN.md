@@ -1,14 +1,3 @@
----
-plan_id: planning-workflow
-title: Planning Workflow
-status: dry-run
-stage: plan-contract
-source: event_store
-generated_from: eventsourcing projection
-sync_policy: projection
-active: true
----
-
 # Planning Workflow
 
 ## Purpose
@@ -69,7 +58,7 @@ stage implementation.
 The first implementation should use the Python `eventsourcing` package with
 SQLite persistence for the planning core. Plan commands append domain events;
 queries reconstruct the current plan state; stage projections render markdown,
-frontmatter, diagrams, and epic packages.
+diagrams, and epic packages.
 
 ## Tooling Position
 
@@ -95,19 +84,18 @@ Post-epic automation is intentionally out of scope for the first contract.
 
 Only one plan should be active at a time. Active-plan ownership should be
 enforced by the event-sourced application. The filesystem can expose the active
-plan as projected metadata, but it should not be the locking mechanism.
+plan through projected files, but it should not be the locking mechanism.
 
-Structured data in frontmatter should be a projected machine-readable view, not
-the canonical database. Markdown projections may contain readable explanation
-and current-stage review surfaces. Generated structure, derived stable
-identities, section names, and ordering are owned by the planning module.
-Enrichment attached to derived stable identities must survive repeated
+Structured planning data belongs in events. Markdown projections may contain
+readable explanation and current-stage review surfaces. Generated structure,
+derived stable identities, section names, and ordering are owned by the planning
+module. Enrichment attached to derived stable identities must survive repeated
 scaffolding unless roll reports unresolved drift.
 
-Generated artifacts should declare their source and sync policy. Regeneration
-may rewrite generated structure, but it must preserve enrichment attached to
-derived stable identities or report unresolved drift. User input is durable only
-after it is accepted as current-stage output into the event store.
+Projection source and sync policy belong to the planner implementation.
+Regeneration may rewrite generated structure, but it must preserve enrichment
+attached to derived stable identities or report unresolved drift. User input is
+durable only after it is accepted as current-stage output into the event store.
 
 Native source files should own native formats as projections. For example,
 `flows.mermaid`, `uml.mermaid`, and `tree.mermaid` should remain the native

@@ -1,35 +1,3 @@
----
-plan_id: planning-workflow
-epic_id: event-sourced-core
-title: Event-Sourced Planning Core
-ordinal: 1
-status: dry-run
-readiness: next_doable
-stage: epics
-source: event_store
-generated_from: eventsourcing projection
-sync_policy: projection
-managed_files:
-  - EPIC.md
-  - USER_STORIES.md
-  - SCHEMAS.md
-  - flows.mermaid
-  - uml.mermaid
-  - tree.mermaid
-depends_on: []
-blocks:
-  - projected-documents
-  - guided-cli-agent-guardrails
-  - stage-gates-open-questions
-  - schema-contract-verification
-owns:
-  - Plan aggregate
-  - Planning application command/query boundary
-  - SQLite event persistence
-  - Domain events
-  - Reconstructed current state
----
-
 # Event-Sourced Planning Core
 
 ## Value

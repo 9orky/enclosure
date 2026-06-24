@@ -1,32 +1,3 @@
----
-plan_id: planning-workflow
-epic_id: schema-contract-verification
-title: Schema Contract Verification
-ordinal: 5
-status: dry-run
-readiness: blocked_by_dependency
-stage: epics
-source: event_store
-generated_from: eventsourcing projection
-sync_policy: projection
-managed_files:
-  - EPIC.md
-  - USER_STORIES.md
-  - SCHEMAS.md
-  - flows.mermaid
-  - uml.mermaid
-  - tree.mermaid
-depends_on:
-  - event-sourced-core
-  - projected-documents
-blocks: []
-owns:
-  - Planned Mermaid contract parsing
-  - Actual schema extraction through modwire
-  - Planned-versus-actual comparison
-  - Drift reports for agents
----
-
 # Schema Contract Verification
 
 ## Value

@@ -1,34 +1,3 @@
----
-plan_id: planning-workflow
-epic_id: guided-cli-agent-guardrails
-title: Guided CLI and Agent Guardrails
-ordinal: 4
-status: dry-run
-readiness: blocked_by_dependency
-stage: epics
-source: event_store
-generated_from: eventsourcing projection
-sync_policy: projection
-managed_files:
-  - EPIC.md
-  - USER_STORIES.md
-  - SCHEMAS.md
-  - flows.mermaid
-  - uml.mermaid
-  - tree.mermaid
-depends_on:
-  - event-sourced-core
-  - projected-documents
-  - stage-gates-open-questions
-blocks: []
-owns:
-  - workspace plan start
-  - workspace plan next
-  - workspace plan agent
-  - workspace plan roll
-  - allowed command guidance
----
-
 # Guided CLI and Agent Guardrails
 
 ## Value
