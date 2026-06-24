@@ -13,7 +13,9 @@ reconstruct the current plan state through the planning application.
 
 ## Navigation
 
-Previous epic: none.
+Previous dependency:
+
+- Hexagonal Foundation
 
 Next dependent epics:
 
@@ -32,6 +34,8 @@ event-sourced application use cases.
 
 This epic does not own markdown rendering, CLI interaction details, or epic
 projection formats. It owns the source of truth that those layers depend on.
+Its feature-specific ports follow the shared hexagonal shape, but the concrete
+planning port methods remain owned here.
 
 ## Acceptance Criteria
 

@@ -16,6 +16,7 @@ draft seed when the projected chain needs to be refreshed.
 
 Previous dependencies:
 
+- Hexagonal Foundation
 - Event-Sourced Planning Core
 - Projected Planning Documents
 - Stage Gates and Open Questions

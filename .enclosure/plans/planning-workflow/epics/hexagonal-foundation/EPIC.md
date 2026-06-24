@@ -1,0 +1,50 @@
+# Hexagonal Foundation
+
+## Value
+
+This epic gives the planning module a shared interface vocabulary before the
+event-sourced implementation starts. Ports, adapters, and application-facing
+interfaces should have a consistent shape without forcing every concrete
+implementation into a shared inheritance hierarchy.
+
+## Outcome
+
+`shared.hexagonal` defines the small set of protocol-style contracts and adapter
+metadata needed to keep feature modules aligned. Planning-specific ports remain
+owned by the planning module, but they follow the shared shape.
+
+## Navigation
+
+Previous epic: none.
+
+Next dependent epics:
+
+- Event-Sourced Planning Core
+- Projected Planning Documents
+- Stage Gates and Open Questions
+- Guided CLI and Agent Guardrails
+- Schema Contract Verification
+
+## Contract Role
+
+`tree.mermaid` defines the shared hexagonal files. `uml.mermaid` defines the
+protocol, port, adapter, and dependency-shape symbols. `flows.mermaid` defines
+how later feature-specific ports and adapters use the shared contracts.
+
+## Boundaries
+
+This epic does not own concrete planning ports such as `EventStore`,
+`ProjectionStore`, or `ModwireSchemaProvider`. It owns only the shared
+interface shape, adapter metadata, and checks that keep dependencies flowing
+through ports instead of deep imports.
+
+## Acceptance Criteria
+
+- `shared.hexagonal` exposes protocol-style interfaces for ports and adapters.
+- Concrete feature ports can opt into the shared port shape without inheriting
+  behavior they do not need.
+- Adapter declarations identify the port they implement.
+- Application code depends on ports, not adapter internals.
+- Domain code remains independent of application, infrastructure, and UI
+  contracts.
+- The shared package does not define planning-specific ports.

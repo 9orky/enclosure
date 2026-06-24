@@ -113,16 +113,18 @@ inside the three-stage contract.
 
 ## Epic Split
 
-The epics stage uses five epics:
+The epics stage uses six epics:
 
+- 0. Hexagonal Foundation
 - 1. Event-Sourced Planning Core
 - 2. Projected Planning Documents
 - 3. Stage Gates and Open Questions
 - 4. Guided CLI and Agent Guardrails
 - 5. Schema Contract Verification
 
-The next doable epic is Event-Sourced Planning Core because it has no
-dependencies and provides the event authority used by every other epic.
+The next doable epic is Hexagonal Foundation because it has no dependencies and
+provides the shared port and adapter shape used by the planning implementation
+epics.
 
 Each epic package owns a schema bundle:
 

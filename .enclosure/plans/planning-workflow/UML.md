@@ -333,12 +333,18 @@ classifications require user confirmation before a gate can advance.
 
 ```mermaid
 flowchart TD
-    Plan["Planning Workflow"] --> Core["Event-Sourced Planning Core"]
+    Plan["Planning Workflow"] --> Hex["Hexagonal Foundation"]
+    Plan --> Core["Event-Sourced Planning Core"]
     Plan --> Docs["Projected Planning Documents"]
     Plan --> CLI["Guided CLI and Agent Guardrails"]
     Plan --> Gates["Stage Gates and Open Questions"]
     Plan --> Contracts["Schema Contract Verification"]
 
+    Hex --> Core
+    Hex --> Docs
+    Hex --> Gates
+    Hex --> CLI
+    Hex --> Contracts
     Core --> Docs
     Core --> Gates
     Core --> CLI
@@ -352,7 +358,12 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    Core["1. Event-Sourced Core\nnext doable"] --> Docs["2. Projected Documents"]
+    Hex["0. Hexagonal Foundation\nnext doable"] --> Core["1. Event-Sourced Core"]
+    Hex --> Docs["2. Projected Documents"]
+    Hex --> Gates["3. Stage Gates"]
+    Hex --> CLI["4. Guided CLI"]
+    Hex --> Contracts["5. Schema Contract Verification"]
+    Core --> Docs
     Core --> Gates["3. Stage Gates"]
     Core --> CLI["4. Guided CLI"]
     Core --> Contracts["5. Schema Contract Verification"]

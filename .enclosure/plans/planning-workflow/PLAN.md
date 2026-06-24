@@ -142,8 +142,10 @@ own uncertainty.
 
 ## Epic Split
 
-The first implementation should be split into five epics:
+The first implementation should be split into six epics:
 
+- 0. Hexagonal Foundation: own the shared port, adapter, and dependency-shape
+  interfaces that keep the planning module's hexagonal structure consistent.
 - 1. Event-Sourced Planning Core: own the event-sourced aggregate, SQLite-backed
   application, event definitions, and reconstructed plan state.
 - 2. Projected Planning Documents: own deterministic stage projections,
@@ -160,17 +162,18 @@ The first implementation should be split into five epics:
 
 Next doable epic:
 
-- [Event-Sourced Planning Core](epics/event-sourced-core/EPIC.md)
+- [Hexagonal Foundation](epics/hexagonal-foundation/EPIC.md)
 
 Epic order:
 
 | Ordinal | Epic | Status | Depends On |
 | --- | --- | --- | --- |
-| 1 | [Event-Sourced Planning Core](epics/event-sourced-core/EPIC.md) | next doable | none |
-| 2 | [Projected Planning Documents](epics/projected-documents/EPIC.md) | blocked by dependency | event-sourced-core |
-| 3 | [Stage Gates and Open Questions](epics/stage-gates-open-questions/EPIC.md) | blocked by dependency | event-sourced-core |
-| 4 | [Guided CLI and Agent Guardrails](epics/guided-cli-agent-guardrails/EPIC.md) | blocked by dependency | event-sourced-core, projected-documents, stage-gates-open-questions |
-| 5 | [Schema Contract Verification](epics/schema-contract-verification/EPIC.md) | blocked by dependency | event-sourced-core, projected-documents |
+| 0 | [Hexagonal Foundation](epics/hexagonal-foundation/EPIC.md) | next doable | none |
+| 1 | [Event-Sourced Planning Core](epics/event-sourced-core/EPIC.md) | blocked by dependency | hexagonal-foundation |
+| 2 | [Projected Planning Documents](epics/projected-documents/EPIC.md) | blocked by dependency | hexagonal-foundation, event-sourced-core |
+| 3 | [Stage Gates and Open Questions](epics/stage-gates-open-questions/EPIC.md) | blocked by dependency | hexagonal-foundation, event-sourced-core |
+| 4 | [Guided CLI and Agent Guardrails](epics/guided-cli-agent-guardrails/EPIC.md) | blocked by dependency | hexagonal-foundation, event-sourced-core, projected-documents, stage-gates-open-questions |
+| 5 | [Schema Contract Verification](epics/schema-contract-verification/EPIC.md) | blocked by dependency | hexagonal-foundation, event-sourced-core, projected-documents |
 
 The order is a projection of epic dependencies, not a hand-maintained preference
 list. When an epic is completed, the next doable epic should be recalculated

@@ -23,8 +23,9 @@ type, cardinality, and variant keys.
 
 ## Navigation
 
-Previous dependency:
+Previous dependencies:
 
+- Hexagonal Foundation
 - Event-Sourced Planning Core
 
 Next dependent epic:
@@ -43,7 +44,8 @@ loop and the parameterless command entry points that drive it.
 
 This epic does not own the domain event model, CLI parsing, or stage gate
 policy. It owns how event-sourced facts become stage input data, projected
-markdown, native Mermaid files, `SCHEMAS.md`, and stage output data.
+markdown, native Mermaid files, `SCHEMAS.md`, and stage output data. Its stage
+and projection interfaces follow the shared hexagonal shape.
 
 ## Acceptance Criteria
 

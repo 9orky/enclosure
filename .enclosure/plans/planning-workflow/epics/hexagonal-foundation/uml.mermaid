@@ -1,0 +1,43 @@
+%% contract: symbols
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eef2ff", "primaryTextColor": "#172033", "primaryBorderColor": "#64748b", "lineColor": "#64748b"}}}%%
+classDiagram
+    class Port {
+      <<file:shared/hexagonal/ports.py>>
+      <<Protocol>>
+    }
+
+    class InboundPort {
+      <<file:shared/hexagonal/ports.py>>
+      <<Protocol>>
+    }
+
+    class OutboundPort {
+      <<file:shared/hexagonal/ports.py>>
+      <<Protocol>>
+    }
+
+    class Adapter {
+      <<file:shared/hexagonal/adapters.py>>
+      <<Protocol>>
+      +port()
+    }
+
+    class AdapterBinding {
+      <<file:shared/hexagonal/adapters.py>>
+      +str adapter_name
+      +str port_name
+      +str module_path
+    }
+
+    class HexagonalDependencyRule {
+      <<file:shared/hexagonal/dependencies.py>>
+      +allows(source_layer, target_layer)
+      +requires_port(source_layer, target_layer)
+    }
+
+    Port <|-- InboundPort
+    Port <|-- OutboundPort
+    Adapter --> Port
+    AdapterBinding --> Adapter
+    AdapterBinding --> Port
+    HexagonalDependencyRule --> Port

@@ -21,6 +21,7 @@ owns schema extraction, contract comparison, and drift reporting.
 
 Previous dependencies:
 
+- Hexagonal Foundation
 - Event-Sourced Planning Core
 - Projected Planning Documents
 

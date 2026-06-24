@@ -14,8 +14,9 @@ unblock their own uncertainty.
 
 ## Navigation
 
-Previous dependency:
+Previous dependencies:
 
+- Hexagonal Foundation
 - Event-Sourced Planning Core
 
 Next dependent epic:
