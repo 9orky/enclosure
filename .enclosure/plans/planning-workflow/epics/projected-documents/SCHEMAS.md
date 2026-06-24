@@ -42,6 +42,14 @@ flowchart LR
       roll["service: RollRunner"]
     end
 
+    subgraph projection_ports["Application Ports"]
+      projection_store["port: ProjectionStore\nfile: application/projections.py\nclass: ProjectionStore"]
+    end
+
+    subgraph projection_adapters["Infrastructure Adapters"]
+      filesystem_store["adapter: FilesystemProjectionStore\nfile: infrastructure/projection_store.py\nclass: FilesystemProjectionStore"]
+    end
+
     subgraph projections["Events / Projections"]
       events["event stream\ncanonical facts"]
       enrichment["accepted enrichment\nkeyed by derived slot id"]
@@ -59,6 +67,7 @@ flowchart LR
     active --> registry
     registry --> runner
     runner --> intake
+    runner --> projection_store
     intake --> slots
     slots --> scaffold
     scaffold --> files
@@ -82,14 +91,19 @@ flowchart LR
     roll --> runner
     roll --> intake
     runner --> drift
+    filesystem_store -. implements .-> projection_store
 
     classDef command fill:#e0f2fe,stroke:#0284c7,color:#172033;
     classDef loop fill:#dcfce7,stroke:#16a34a,color:#172033;
     classDef service fill:#fef9c3,stroke:#ca8a04,color:#172033;
+    classDef port fill:#f3e8ff,stroke:#9333ea,color:#172033;
+    classDef adapter fill:#dcfce7,stroke:#16a34a,color:#172033;
     classDef output fill:#f1f5f9,stroke:#64748b,color:#172033;
     class cmd_start,cmd_next,cmd_agent,cmd_roll command;
     class active,intake,slots,scaffold,agent_update,user_review,output loop;
     class iface,draft,plan,epics,registry,runner,roll service;
+    class projection_store port;
+    class filesystem_store adapter;
     class events,enrichment,files,native,schemas,guidance,drift output;
 ```
 
@@ -156,10 +170,28 @@ classDiagram
     }
 
     class ProjectionStore {
-      <<file:application/projections.py>>
+      <<OutboundPort: application/projections.py>>
       +write_markdown()
       +write_mermaid()
       +check_sync()
+    }
+
+    class FilesystemProjectionStore {
+      <<Adapter: infrastructure/projection_store.py>>
+      +port()
+      +write_markdown()
+      +write_mermaid()
+      +check_sync()
+    }
+
+    class MarkdownRenderer {
+      <<AdapterHelper: infrastructure/markdown_renderer.py>>
+      +render_markdown()
+    }
+
+    class CopierRenderer {
+      <<AdapterHelper: infrastructure/copier_renderer.py>>
+      +render_template()
     }
 
     class SchemaPageProjection {
@@ -210,6 +242,9 @@ classDiagram
     RollRunner --> StageRunner
     SchemaPageProjection --> ProjectionStore
     EpicsStage --> SchemaPageProjection
+    FilesystemProjectionStore ..|> ProjectionStore
+    FilesystemProjectionStore --> MarkdownRenderer
+    FilesystemProjectionStore --> CopierRenderer
 ```
 
 ## Tree

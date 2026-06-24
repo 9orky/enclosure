@@ -2,23 +2,19 @@
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eef2ff", "primaryTextColor": "#172033", "primaryBorderColor": "#64748b", "lineColor": "#64748b"}}}%%
 classDiagram
     class Port {
-      <<file:shared/hexagonal/ports.py>>
-      <<Protocol>>
+      <<Protocol: shared/hexagonal/ports.py>>
     }
 
     class InboundPort {
-      <<file:shared/hexagonal/ports.py>>
-      <<Protocol>>
+      <<Protocol: shared/hexagonal/ports.py>>
     }
 
     class OutboundPort {
-      <<file:shared/hexagonal/ports.py>>
-      <<Protocol>>
+      <<Protocol: shared/hexagonal/ports.py>>
     }
 
     class Adapter {
-      <<file:shared/hexagonal/adapters.py>>
-      <<Protocol>>
+      <<Protocol: shared/hexagonal/adapters.py>>
       +port()
     }
 

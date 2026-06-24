@@ -15,11 +15,15 @@ flowchart LR
       uc_report["usecase: ReportContractDrift\nfile: application/use_cases/report_contract_drift.py\nclass: ReportContractDrift"]
     end
 
-    subgraph models_ports["Models / Ports"]
+    subgraph models_ports["Models / Application Ports"]
       expected["model: ExpectedSchema"]
-      modwire["port: ModwireSchemaProvider"]
+      modwire["port: ModwireSchemaProvider\nfile: application/modwire_schema_provider.py\nclass: ModwireSchemaProvider"]
       actual["model: ActualSchema"]
       drift["model: DriftReport"]
+    end
+
+    subgraph adapters["Infrastructure Adapters"]
+      modwire_adapter["adapter: ModwireSchemaProviderAdapter\nfile: infrastructure/modwire_schema_provider.py\nclass: ModwireSchemaProviderAdapter"]
     end
 
     subgraph outputs["Outputs"]
@@ -38,14 +42,17 @@ flowchart LR
     uc_compare --> drift
     drift --> uc_report
     uc_report --> agent
+    modwire_adapter -. implements .-> modwire
 
     classDef signal fill:#e0f2fe,stroke:#0284c7,color:#172033;
     classDef usecase fill:#dcfce7,stroke:#16a34a,color:#172033;
     classDef model fill:#fef9c3,stroke:#ca8a04,color:#172033;
     classDef port fill:#f3e8ff,stroke:#9333ea,color:#172033;
+    classDef adapter fill:#dcfce7,stroke:#16a34a,color:#172033;
     classDef output fill:#f1f5f9,stroke:#64748b,color:#172033;
     class signal_parse,signal_actual,signal_compare,signal_report signal;
     class uc_parse,uc_actual,uc_compare,uc_report usecase;
     class expected,actual,drift model;
     class modwire port;
+    class modwire_adapter adapter;
     class agent output;

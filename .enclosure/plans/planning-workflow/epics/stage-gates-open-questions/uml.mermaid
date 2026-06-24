@@ -41,9 +41,32 @@ classDiagram
       +confirm_classification()
     }
 
-    AddOpenQuestion --> OpenQuestion
-    ClassifyOpenQuestion --> OpenQuestion
-    ConfirmQuestionClassification --> UserConfirmation
-    CheckStageGate --> StageGate
+    class QuestionCommandService {
+      <<file:application/question_commands.py>>
+      +add(question, explanation)
+      +classify(question_id, status)
+      +confirm(question_id)
+    }
+
+    class StageGatePolicy {
+      <<Protocol: application/gate_checks.py>>
+      +check(plan_id)
+      +blocking_questions(plan_id)
+    }
+
+    class DefaultStageGatePolicy {
+      <<file:application/gate_checks.py>>
+      +check(plan_id)
+      +blocking_questions(plan_id)
+    }
+
+    AddOpenQuestion --> QuestionCommandService
+    ClassifyOpenQuestion --> QuestionCommandService
+    ConfirmQuestionClassification --> QuestionCommandService
+    CheckStageGate --> StageGatePolicy
+    QuestionCommandService --> OpenQuestion
+    QuestionCommandService --> UserConfirmation
+    DefaultStageGatePolicy ..|> StageGatePolicy
+    DefaultStageGatePolicy --> StageGate
     StageGate --> OpenQuestion
     UserConfirmation --> OpenQuestion

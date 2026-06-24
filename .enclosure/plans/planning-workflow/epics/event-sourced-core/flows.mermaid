@@ -22,8 +22,12 @@ flowchart LR
       events["domain: DomainEvent"]
     end
 
-    subgraph ports["Ports"]
-      store["port: EventStore"]
+    subgraph ports["Application Ports"]
+      store["port: EventStore\nfile: application/ports.py\nclass: EventStore"]
+    end
+
+    subgraph adapters["Infrastructure Adapters"]
+      sqlite_store["adapter: SQLiteEventStore\nfile: infrastructure/event_store.py\nclass: SQLiteEventStore"]
     end
 
     cmd_start --> uc_start
@@ -35,14 +39,17 @@ flowchart LR
     app --> aggregate
     aggregate --> events
     app --> store
+    sqlite_store -. implements .-> store
 
     classDef command fill:#e0f2fe,stroke:#0284c7,color:#172033;
     classDef usecase fill:#dcfce7,stroke:#16a34a,color:#172033;
     classDef app fill:#fef9c3,stroke:#ca8a04,color:#172033;
     classDef domain fill:#ffedd5,stroke:#ea580c,color:#172033;
     classDef port fill:#f3e8ff,stroke:#9333ea,color:#172033;
+    classDef adapter fill:#dcfce7,stroke:#16a34a,color:#172033;
     class cmd_start,cmd_append,cmd_get command;
     class uc_start,uc_append,uc_get usecase;
     class app app;
     class aggregate,events domain;
     class store port;
+    class sqlite_store adapter;

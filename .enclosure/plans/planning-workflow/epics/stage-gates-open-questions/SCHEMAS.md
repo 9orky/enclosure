@@ -28,6 +28,12 @@ flowchart LR
       gate["domain: StageGate"]
     end
 
+    subgraph application_contracts["Application Contracts"]
+      question_commands["service: QuestionCommandService\nfile: application/question_commands.py\nclass: QuestionCommandService"]
+      gate_policy["interface: StageGatePolicy\nfile: application/gate_checks.py\nclass: StageGatePolicy"]
+      default_gate_policy["implementation: DefaultStageGatePolicy\nfile: application/gate_checks.py\nclass: DefaultStageGatePolicy"]
+    end
+
     subgraph outputs["Outputs"]
       decision["result: allow or block advance"]
     end
@@ -36,10 +42,14 @@ flowchart LR
     signal_classify --> uc_classify
     signal_confirm --> uc_confirm
     signal_check --> uc_gate
-    uc_add --> question
-    uc_classify --> question
-    uc_confirm --> confirmation
-    uc_gate --> gate
+    uc_add --> question_commands
+    uc_classify --> question_commands
+    uc_confirm --> question_commands
+    uc_gate --> gate_policy
+    question_commands --> question
+    question_commands --> confirmation
+    gate_policy --> gate
+    default_gate_policy -. implements .-> gate_policy
     question --> gate
     confirmation --> gate
     gate --> decision
@@ -47,10 +57,14 @@ flowchart LR
     classDef signal fill:#e0f2fe,stroke:#0284c7,color:#172033;
     classDef usecase fill:#dcfce7,stroke:#16a34a,color:#172033;
     classDef domain fill:#ffedd5,stroke:#ea580c,color:#172033;
+    classDef service fill:#fef9c3,stroke:#ca8a04,color:#172033;
+    classDef interface fill:#f3e8ff,stroke:#9333ea,color:#172033;
     classDef output fill:#f1f5f9,stroke:#64748b,color:#172033;
     class signal_add,signal_classify,signal_confirm,signal_check signal;
     class uc_add,uc_classify,uc_confirm,uc_gate usecase;
     class question,confirmation,gate domain;
+    class question_commands,default_gate_policy service;
+    class gate_policy interface;
     class decision output;
 ```
 
@@ -100,10 +114,33 @@ classDiagram
       +confirm_classification()
     }
 
-    AddOpenQuestion --> OpenQuestion
-    ClassifyOpenQuestion --> OpenQuestion
-    ConfirmQuestionClassification --> UserConfirmation
-    CheckStageGate --> StageGate
+    class QuestionCommandService {
+      <<file:application/question_commands.py>>
+      +add(question, explanation)
+      +classify(question_id, status)
+      +confirm(question_id)
+    }
+
+    class StageGatePolicy {
+      <<Protocol: application/gate_checks.py>>
+      +check(plan_id)
+      +blocking_questions(plan_id)
+    }
+
+    class DefaultStageGatePolicy {
+      <<file:application/gate_checks.py>>
+      +check(plan_id)
+      +blocking_questions(plan_id)
+    }
+
+    AddOpenQuestion --> QuestionCommandService
+    ClassifyOpenQuestion --> QuestionCommandService
+    ConfirmQuestionClassification --> QuestionCommandService
+    CheckStageGate --> StageGatePolicy
+    QuestionCommandService --> OpenQuestion
+    QuestionCommandService --> UserConfirmation
+    DefaultStageGatePolicy ..|> StageGatePolicy
+    DefaultStageGatePolicy --> StageGate
     StageGate --> OpenQuestion
     UserConfirmation --> OpenQuestion
 ```

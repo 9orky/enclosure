@@ -34,6 +34,17 @@ classDiagram
       +normalize_symbols()
     }
 
+    class ModwireSchemaProvider {
+      <<OutboundPort: application/modwire_schema_provider.py>>
+      +get_schema(scope)
+    }
+
+    class ModwireSchemaProviderAdapter {
+      <<Adapter: infrastructure/modwire_schema_provider.py>>
+      +port()
+      +get_schema(scope)
+    }
+
     class ContractComparator {
       <<file:application/contract_compare.py>>
       +compare_files()
@@ -54,5 +65,7 @@ classDiagram
     CompareSchemaContracts --> ContractComparator
     ReportContractDrift --> DriftReport
     ContractParser --> ContractComparator
+    ActualSchemaProvider --> ModwireSchemaProvider
+    ModwireSchemaProviderAdapter ..|> ModwireSchemaProvider
     ActualSchemaProvider --> ContractComparator
     ContractComparator --> DriftReport

@@ -41,6 +41,22 @@ classDiagram
       +requires_confirmation()
     }
 
+    class StageRunnerPort {
+      <<OutboundPort: application/workflow_ports.py>>
+      +advance_current()
+      +prepare_agent()
+    }
+
+    class RollRunnerPort {
+      <<OutboundPort: application/workflow_ports.py>>
+      +start_from_draft()
+    }
+
+    class StageGatePort {
+      <<OutboundPort: application/workflow_ports.py>>
+      +check(plan_id)
+    }
+
     class StageRunner {
       <<external:projected-documents/application/stage_runner.py>>
       +advance_current()
@@ -51,13 +67,22 @@ classDiagram
       +start_from_draft()
     }
 
+    class CheckStageGate {
+      <<external:stage-gates-open-questions/application/use_cases/check_stage_gate.py>>
+      +execute(plan_id)
+    }
+
     PlanCli --> RunPlanStart
     PlanCli --> RunPlanNext
     PlanCli --> PrepareAgentGuidance
     PlanCli --> RunPlanRoll
     RunPlanStart --> NextActionService
     RunPlanNext --> NextActionService
-    RunPlanNext --> StageRunner
+    RunPlanNext --> StageRunnerPort
+    RunPlanNext --> StageGatePort
     PrepareAgentGuidance --> AgentGuidance
-    RunPlanRoll --> RollRunner
+    RunPlanRoll --> RollRunnerPort
     RunPlanRoll --> NextActionService
+    StageRunner ..|> StageRunnerPort
+    RollRunner ..|> RollRunnerPort
+    CheckStageGate ..|> StageGatePort

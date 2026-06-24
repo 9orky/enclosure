@@ -34,10 +34,16 @@ flowchart LR
       next_actions["service: NextActionService"]
     end
 
-    subgraph external_services["External Services"]
-      stage_runner["external service: StageRunner"]
-      roll_runner["external service: RollRunner"]
-      gate["external usecase: CheckStageGate"]
+    subgraph ports["Application Ports"]
+      stage_runner_port["port: StageRunnerPort\nfile: application/workflow_ports.py\nclass: StageRunnerPort"]
+      roll_runner_port["port: RollRunnerPort\nfile: application/workflow_ports.py\nclass: RollRunnerPort"]
+      gate_port["port: StageGatePort\nfile: application/workflow_ports.py\nclass: StageGatePort"]
+    end
+
+    subgraph implementations["External Implementations"]
+      stage_runner["implementation: StageRunner\nowned by projected-documents"]
+      roll_runner["implementation: RollRunner\nowned by projected-documents"]
+      gate["implementation: CheckStageGate\nowned by stage-gates-open-questions"]
     end
 
     subgraph outputs["Outputs"]
@@ -49,23 +55,29 @@ flowchart LR
     cmd_agent --> uc_agent
     cmd_roll --> uc_roll
     uc_start --> app
-    uc_next --> stage_runner
-    uc_next --> gate
+    uc_next --> stage_runner_port
+    uc_next --> gate_port
     uc_agent --> guidance
-    uc_roll --> roll_runner
+    uc_roll --> roll_runner_port
     guidance --> next_actions
-    stage_runner --> next_actions
-    roll_runner --> next_actions
+    stage_runner_port --> next_actions
+    roll_runner_port --> next_actions
+    gate_port --> next_actions
+    stage_runner -. implements .-> stage_runner_port
+    roll_runner -. implements .-> roll_runner_port
+    gate -. implements .-> gate_port
     next_actions --> output
 
     classDef command fill:#e0f2fe,stroke:#0284c7,color:#172033;
     classDef usecase fill:#dcfce7,stroke:#16a34a,color:#172033;
     classDef service fill:#fef9c3,stroke:#ca8a04,color:#172033;
-    classDef external fill:#f3e8ff,stroke:#9333ea,color:#172033;
+    classDef port fill:#f3e8ff,stroke:#9333ea,color:#172033;
+    classDef external fill:#f1f5f9,stroke:#64748b,color:#172033;
     classDef output fill:#f1f5f9,stroke:#64748b,color:#172033;
     class cmd_start,cmd_next,cmd_agent,cmd_roll command;
     class uc_start,uc_next,uc_agent,uc_roll usecase;
     class app,guidance,next_actions service;
+    class stage_runner_port,roll_runner_port,gate_port port;
     class stage_runner,roll_runner,gate external;
     class output output;
 ```
@@ -116,6 +128,22 @@ classDiagram
       +requires_confirmation()
     }
 
+    class StageRunnerPort {
+      <<OutboundPort: application/workflow_ports.py>>
+      +advance_current()
+      +prepare_agent()
+    }
+
+    class RollRunnerPort {
+      <<OutboundPort: application/workflow_ports.py>>
+      +start_from_draft()
+    }
+
+    class StageGatePort {
+      <<OutboundPort: application/workflow_ports.py>>
+      +check(plan_id)
+    }
+
     class StageRunner {
       <<external:projected-documents/application/stage_runner.py>>
       +advance_current()
@@ -126,16 +154,25 @@ classDiagram
       +start_from_draft()
     }
 
+    class CheckStageGate {
+      <<external:stage-gates-open-questions/application/use_cases/check_stage_gate.py>>
+      +execute(plan_id)
+    }
+
     PlanCli --> RunPlanStart
     PlanCli --> RunPlanNext
     PlanCli --> PrepareAgentGuidance
     PlanCli --> RunPlanRoll
     RunPlanStart --> NextActionService
     RunPlanNext --> NextActionService
-    RunPlanNext --> StageRunner
+    RunPlanNext --> StageRunnerPort
+    RunPlanNext --> StageGatePort
     PrepareAgentGuidance --> AgentGuidance
-    RunPlanRoll --> RollRunner
+    RunPlanRoll --> RollRunnerPort
     RunPlanRoll --> NextActionService
+    StageRunner ..|> StageRunnerPort
+    RollRunner ..|> RollRunnerPort
+    CheckStageGate ..|> StageGatePort
 ```
 
 ## Tree
@@ -149,6 +186,7 @@ treeView-beta
       "cli.py"
       "output.py"
     "application"
+      "workflow_ports.py"
       "next_actions.py"
       "agent_guidance.py"
       "use_cases"

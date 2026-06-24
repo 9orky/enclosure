@@ -58,10 +58,28 @@ classDiagram
     }
 
     class ProjectionStore {
-      <<file:application/projections.py>>
+      <<OutboundPort: application/projections.py>>
       +write_markdown()
       +write_mermaid()
       +check_sync()
+    }
+
+    class FilesystemProjectionStore {
+      <<Adapter: infrastructure/projection_store.py>>
+      +port()
+      +write_markdown()
+      +write_mermaid()
+      +check_sync()
+    }
+
+    class MarkdownRenderer {
+      <<AdapterHelper: infrastructure/markdown_renderer.py>>
+      +render_markdown()
+    }
+
+    class CopierRenderer {
+      <<AdapterHelper: infrastructure/copier_renderer.py>>
+      +render_template()
     }
 
     class SchemaPageProjection {
@@ -112,3 +130,6 @@ classDiagram
     RollRunner --> StageRunner
     SchemaPageProjection --> ProjectionStore
     EpicsStage --> SchemaPageProjection
+    FilesystemProjectionStore ..|> ProjectionStore
+    FilesystemProjectionStore --> MarkdownRenderer
+    FilesystemProjectionStore --> CopierRenderer

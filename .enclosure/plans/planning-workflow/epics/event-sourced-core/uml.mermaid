@@ -23,6 +23,21 @@ classDiagram
       +get_plan()
     }
 
+    class EventStore {
+      <<OutboundPort: application/ports.py>>
+      +append(event)
+      +load(plan_id)
+      +iter_events(plan_id)
+    }
+
+    class SQLiteEventStore {
+      <<Adapter: infrastructure/event_store.py>>
+      +port()
+      +append(event)
+      +load(plan_id)
+      +iter_events(plan_id)
+    }
+
     class Plan {
       <<file:domain/plan.py>>
       +str id
@@ -43,4 +58,6 @@ classDiagram
     AppendPlanEvent --> PlanningApplication
     GetActivePlan --> PlanningApplication
     PlanningApplication --> Plan
+    PlanningApplication --> EventStore
+    SQLiteEventStore ..|> EventStore
     DomainEvent ..> Plan
