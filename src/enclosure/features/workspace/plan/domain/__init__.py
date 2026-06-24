@@ -9,7 +9,10 @@ from .questions import (
     QuestionStatus,
     append_open_question,
     append_question_answer,
+    answered_questions,
+    blocking_questions,
     extract_open_questions,
+    question_cycle_passed,
 )
 from .stage import PlanningStage, StageFileContract, StageSchemaContract
 from .stage_data import (
@@ -34,6 +37,8 @@ __all__ = [
     "AgentContext",
     "append_open_question",
     "append_question_answer",
+    "answered_questions",
+    "blocking_questions",
     "DerivedSlot",
     "DomainEvent",
     "DraftStage",
@@ -51,6 +56,7 @@ __all__ = [
     "ProjectedArtifact",
     "ProjectionRecord",
     "QuestionStatus",
+    "question_cycle_passed",
     "ReviewData",
     "StageCatalog",
     "StageData",

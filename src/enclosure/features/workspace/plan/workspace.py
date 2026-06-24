@@ -92,7 +92,7 @@ class WorkspacePlanModule:
         stage = registry.current_for(plan)
         projection = self._read_stage_projection(plan, stage)
         questions = self._record_projection_questions(app, plan, projection)
-        blocking_questions = [question for question in questions if question.blocking]
+        blocking_questions = domain.blocking_questions(questions)
         if blocking_questions:
             raise ValueError(
                 "Blocking open questions prevent stage advance: "
@@ -200,9 +200,7 @@ class WorkspacePlanModule:
             agent_connected=self._agent_connected(),
             review_files=[artifact.path for artifact in projection.artifacts],
             questions=questions,
-            blocking_questions=[
-                question for question in questions if question.blocking
-            ],
+            blocking_questions=domain.blocking_questions(questions),
         )
 
     def ask_question(self, text: str, explanation: str) -> domain.OpenQuestion:

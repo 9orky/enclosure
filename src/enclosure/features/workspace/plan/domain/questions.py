@@ -32,6 +32,24 @@ class OpenQuestion:
     revisit_stage: str
 
 
+def blocking_questions(questions: Sequence[OpenQuestion]) -> list[OpenQuestion]:
+    return [question for question in questions if question.blocking]
+
+
+def answered_questions(questions: Sequence[OpenQuestion]) -> list[OpenQuestion]:
+    return [
+        question
+        for question in questions
+        if question.status == QuestionStatus.RESOLVED
+    ]
+
+
+def question_cycle_passed(questions: Sequence[OpenQuestion]) -> bool:
+    if not questions:
+        return True
+    return bool(answered_questions(questions))
+
+
 def extract_open_questions(projection: QuestionProjection) -> list[OpenQuestion]:
     questions: list[OpenQuestion] = []
     for artifact in projection.artifacts:
@@ -222,7 +240,10 @@ def _answer_lines(answer: str) -> list[str]:
 __all__ = [
     "append_open_question",
     "append_question_answer",
+    "answered_questions",
+    "blocking_questions",
     "extract_open_questions",
     "OpenQuestion",
+    "question_cycle_passed",
     "QuestionStatus",
 ]

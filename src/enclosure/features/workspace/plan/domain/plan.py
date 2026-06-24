@@ -62,6 +62,7 @@ class Plan(Aggregate):
         self.projections: dict[str, ProjectionRecord] = {}
         self.stage_outputs: dict[str, dict[str, Any]] = {}
         self.roll_requests: tuple[str, ...] = ()
+        self.close_reason = ""
 
     class StageOutputAccepted(Aggregate.Event):
         stage: str
@@ -198,6 +199,23 @@ class Plan(Aggregate):
             type(self).RollRequested,
             reason=reason,
             requested_stage=requested_stage,
+        )
+
+    class Closed(Aggregate.Event):
+        reason: str
+        closed_by_command: str
+
+        def apply(self, aggregate: Plan) -> None:
+            aggregate.close_reason = self.reason
+            aggregate.current_stage = PlanState.COMPLETE.value
+            aggregate.state = PlanState.COMPLETE
+            aggregate.active = False
+
+    def close(self, reason: str, closed_by_command: str) -> None:
+        self.trigger_event(
+            type(self).Closed,
+            reason=reason,
+            closed_by_command=closed_by_command,
         )
 
 

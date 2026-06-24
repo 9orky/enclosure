@@ -167,6 +167,7 @@ def _connect(module: workspace.WorkspacePlanModule, once: bool) -> None:
 
 
 def _print_live_report(report: workspace.LivePlanReport) -> None:
+    _clear_live_screen()
     typer.echo("")
     typer.echo(f"Stage: {report.current_stage}")
     typer.echo(f"State: {report.state}")
@@ -207,6 +208,11 @@ def _read_live_command() -> str | None:
     if not readable:
         return None
     return sys.stdin.readline().strip()
+
+
+def _clear_live_screen() -> None:
+    if sys.stdout.isatty():
+        typer.echo("\033[2J\033[H", nl=False)
 
 
 def _read_stdin_text() -> str:
