@@ -106,6 +106,14 @@ def plan_command(
         typer.echo(f"State: {plan.state.value}")
         typer.echo(f"Version: {plan.version}")
         return
+    if action == "close":
+        plan = module.close(value or "Closed by user request.")
+        typer.echo(f"Closed plan {plan.id}.")
+        typer.echo(f"Stage: {plan.current_stage}")
+        typer.echo(f"State: {plan.state.value}")
+        typer.echo(f"Active: {'yes' if plan.active else 'no'}")
+        typer.echo(f"Version: {plan.version}")
+        return
     raise ValueError(f"Unknown plan action: {action}")
 
 

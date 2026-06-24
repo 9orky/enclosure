@@ -36,6 +36,8 @@ class PlanningApplication(Application[UUID]):
             if isinstance(event, domain.Plan.StageAdvanced):
                 if event.state == domain.PlanState.COMPLETE.value:
                     active_plan_id = None
+            if isinstance(event, domain.Plan.Closed):
+                active_plan_id = None
         if active_plan_id is None:
             raise LookupError("No active plan exists")
         return domain.PlanId(active_plan_id)

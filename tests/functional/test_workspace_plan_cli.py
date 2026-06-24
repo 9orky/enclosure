@@ -224,6 +224,34 @@ def test_plan_start_rejects_second_active_plan(tmp_path: Path) -> None:
     assert "Title: Second" not in status.stdout
 
 
+def test_plan_close_records_terminal_event_without_deleting_files(
+    tmp_path: Path,
+) -> None:
+    project_root = copy_fixture(tmp_path, "clean_architecture")
+
+    started = run_cli(project_root, "workspace", "plan", "start", "Closeable Plan")
+    closed = run_cli(
+        project_root,
+        "workspace",
+        "plan",
+        "close",
+        "Closing before projection purge.",
+    )
+    status = run_cli(project_root, "workspace", "plan")
+
+    draft_path = project_root / ".enclosure" / "plans" / "closeable-plan" / "DRAFT.md"
+
+    assert started.returncode == 0, started.stderr
+    assert closed.returncode == 0, closed.stderr
+    assert "Closed plan " in closed.stdout
+    assert "Stage: complete" in closed.stdout
+    assert "State: complete" in closed.stdout
+    assert "Active: no" in closed.stdout
+    assert status.returncode == 0, status.stderr
+    assert "Current plan: none" in status.stdout
+    assert draft_path.is_file()
+
+
 def test_plan_start_requires_title_without_writing(tmp_path: Path) -> None:
     project_root = copy_fixture(tmp_path, "clean_architecture")
 

@@ -168,6 +168,13 @@ class WorkspacePlanModule:
                 break
         return plan
 
+    def close(self, reason: str) -> domain.Plan:
+        app = self._planning_application()
+        plan = app.get_active_plan()
+        plan.close(reason.strip() or "Closed by workspace plan close", "workspace plan close")
+        app.save(plan)
+        return app.get_plan(domain.PlanId(plan.id))
+
     def start_or_resume_live(self, title: str) -> domain.Plan:
         app = self._planning_application()
         try:
