@@ -1,91 +1,111 @@
 %% contract: symbols
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eef2ff", "primaryTextColor": "#172033", "primaryBorderColor": "#64748b", "lineColor": "#64748b"}}}%%
 classDiagram
+    class Aggregate {
+      <<eventsourcing.domain.Aggregate>>
+      +trigger_event(type, **kwargs) None
+      +collect_events() List~AggregateEvent~
+    }
+
+    class AggregateCreated {
+      <<eventsourcing.domain.Aggregate.Created>>
+    }
+
+    class AggregateEvent {
+      <<eventsourcing.domain.Aggregate.Event>>
+      +mutate(Aggregate) Aggregate
+    }
+
+    class Application {
+      <<eventsourcing.application.Application>>
+      +repository Repository
+      +notification_log LocalNotificationLog
+      +save(Aggregate) List~Recording~
+    }
+
+    class Plan {
+      <<AggregateRoot: domain/plan.py>>
+      +str current_stage
+      +accept_stage_output(StageOutput) None
+      +record_projection(ProjectionRecord) None
+      +advance_stage(str, str) None
+      +request_roll(str) None
+    }
+
+    class PlanCreated {
+      <<Plan.Created : Aggregate.Created>>
+      +str title
+      +str current_stage
+      +int schema_version
+    }
+
+    class StageOutputAccepted {
+      <<Plan.StageOutputAccepted : Aggregate.Event>>
+      +str stage_id
+      +str next_stage_id
+      +List~StageData~ data_objects
+      +List~DerivedSlot~ derived_slots
+      +apply(Plan) None
+    }
+
+    class ProjectionRecorded {
+      <<Plan.ProjectionRecorded : Aggregate.Event>>
+      +str projection_id
+      +str path
+      +str stage_id
+      +str content_hash
+      +apply(Plan) None
+    }
+
+    class StageAdvanced {
+      <<Plan.StageAdvanced : Aggregate.Event>>
+      +str stage_id
+      +str reason
+      +apply(Plan) None
+    }
+
+    class RollRequested {
+      <<Plan.RollRequested : Aggregate.Event>>
+      +str reason
+      +apply(Plan) None
+    }
+
     class PlanningStage {
-      <<Interface: application/stages/base.py>>
+      <<ABC: domain/stage.py>>
       +stage_id() str
       +intake_type() type
       +output_type() type
-      +derive_slots(StageData) List~DerivedSlot~
-      +scaffold(StageData) StageOutput
-      +agent_context(StageData) str
-      +accept(ReviewData) StageOutput
+      +derive_slots(StageInput) List~DerivedSlot~
+      +scaffold(StageInput) StageProjection
+      +agent_context(StageInput) AgentContext
+      +parse_review(StageProjection) ReviewData
+      +validate_review(ReviewData) ValidationResult
+      +accept(ReviewData) StageResult
     }
 
     class DraftStage {
-      <<file:application/stages/draft_stage.py>>
-      +stage_id() str
-      +derive_slots(StageData) List~DerivedSlot~
-      +scaffold(StageData) StageOutput
-      +accept(ReviewData) StageOutput
+      <<file:domain/stages/draft_stage.py>>
     }
 
     class PlanStage {
-      <<file:application/stages/plan_stage.py>>
-      +stage_id() str
-      +derive_slots(StageData) List~DerivedSlot~
-      +scaffold(StageData) StageOutput
-      +accept(ReviewData) StageOutput
+      <<file:domain/stages/plan_stage.py>>
     }
 
     class EpicsStage {
-      <<file:application/stages/epics_stage.py>>
-      +stage_id() str
-      +derive_slots(StageData) List~DerivedSlot~
-      +scaffold(StageData) StageOutput
-      +accept(ReviewData) StageOutput
-    }
-
-    class StageRunner {
-      <<file:application/stage_runner.py>>
-      +run_current() StageOutput
-      +advance_current() StageOutput
-      +prepare_agent() str
-    }
-
-    class RollRunner {
-      <<file:application/roll.py>>
-      +start_from_draft() StageOutput
-      +continue_children() List~StageOutput~
-      +halt_on_drift() None
+      <<file:domain/stages/epics_stage.py>>
     }
 
     class StageRegistry {
-      <<file:application/stage_registry.py>>
-      +get_current() PlanningStage
-      +get_next(PlanningStage) PlanningStage
+      <<file:domain/stage_registry.py>>
+      +current_for(Plan) PlanningStage
+      +next_after(PlanningStage) PlanningStage
       +register(PlanningStage) None
     }
 
-    class ProjectionStore {
-      <<OutboundPort: application/projections.py>>
-      +write_markdown(str, str) None
-      +write_mermaid(str, str) None
-      +check_sync(str) bool
-    }
-
-    class FilesystemProjectionStore {
-      <<Adapter: infrastructure/projection_store.py>>
-      +port() ProjectionStore
-      +write_markdown(str, str) None
-      +write_mermaid(str, str) None
-      +check_sync(str) bool
-    }
-
-    class MarkdownRenderer {
-      <<AdapterHelper: infrastructure/markdown_renderer.py>>
-      +render_markdown(StageOutput) str
-    }
-
-    class CopierRenderer {
-      <<AdapterHelper: infrastructure/copier_renderer.py>>
-      +render_template(str, StageData) str
-    }
-
-    class SchemaPageProjection {
-      <<file:application/schema_page.py>>
-      +paste_native_sources(List~str~) str
-      +render_schemas_md() str
+    class StageInput {
+      <<file:domain/stage_data.py>>
+      +str stage_id
+      +List~StageData~ data_objects
     }
 
     class StageData {
@@ -105,8 +125,19 @@ classDiagram
 
     class StageOutput {
       <<file:domain/stage_data.py>>
+      +str stage_id
       +str next_stage_id
       +List~StageData~ data_objects
+      +List~DerivedSlot~ derived_slots
+    }
+
+    class StageResult {
+      <<file:domain/stage_data.py>>
+      +str status
+      +StageOutput output
+      +List~ProjectedArtifact~ artifacts
+      +List~OpenQuestion~ questions
+      +DriftReport drift
     }
 
     class Enrichment {
@@ -115,21 +146,94 @@ classDiagram
       +Mapping~str_to_Any~ values
     }
 
-    PlanningStage <|.. DraftStage : implements
-    PlanningStage <|.. PlanStage : implements
-    PlanningStage <|.. EpicsStage : implements
+    class PlanningApplication {
+      <<file:application/planning_application.py>>
+      +start_plan(str) Plan
+      +active_plan() Plan
+      +save(Plan) List~Recording~
+      +ordered_events() Iterable~DomainEvent~
+    }
 
-    StageRunner "1" --> "1" StageRegistry : selects stage
-    StageRunner "1" --> "1" PlanningStage : runs
-    StageRunner "1" --> "1" ProjectionStore : writes projections
-    StageRunner "1" --> "1..*" StageData : reads input
-    StageRunner "1" --> "0..*" DerivedSlot : derives
-    StageRunner "1" --> "1" StageOutput : returns
-    StageRunner "1" --> "0..*" Enrichment : preserves
-    RollRunner "1" --> "1" DraftStage : starts from
-    RollRunner "1" --> "1" StageRunner : advances children
-    SchemaPageProjection "1" --> "1" ProjectionStore : publishes
-    EpicsStage "1" --> "1" SchemaPageProjection : renders schemas
-    FilesystemProjectionStore "1" ..|> "1" ProjectionStore : implements
-    FilesystemProjectionStore "1" --> "1" MarkdownRenderer : renders markdown
-    FilesystemProjectionStore "1" --> "1" CopierRenderer : renders templates
+    class StartPlan {
+      <<file:application/use_cases/start_plan.py>>
+      +execute(str) Plan
+    }
+
+    class AdvanceStage {
+      <<file:application/use_cases/advance_stage.py>>
+      +execute() StageResult
+    }
+
+    class PrepareAgentContext {
+      <<file:application/use_cases/prepare_agent_context.py>>
+      +execute() AgentContext
+    }
+
+    class RollProjections {
+      <<file:application/use_cases/roll_projections.py>>
+      +execute() RollResult
+    }
+
+    class ProjectionStore {
+      <<Protocol: application/ports/projection_store.py>>
+      +read_text(str) str
+      +write_projection(ProjectedArtifact) ProjectionRecord
+      +content_hash(str) str
+    }
+
+    class StageCatalog {
+      <<Protocol: application/ports/stage_catalog.py>>
+      +load_stages() List~PlanningStage~
+    }
+
+    class SchemaPageProjection {
+      <<file:application/schema_page.py>>
+      +render_schemas_md(NativeSchemas) ProjectedArtifact
+    }
+
+    class FilesystemProjectionStore {
+      <<Adapter: infrastructure/projection_store.py>>
+      +read_text(str) str
+      +write_projection(ProjectedArtifact) ProjectionRecord
+      +content_hash(str) str
+    }
+
+    class FilesystemStageCatalog {
+      <<Adapter: infrastructure/stage_catalog.py>>
+      +load_stages() List~PlanningStage~
+    }
+
+    Aggregate <|-- Plan
+    Application <|-- PlanningApplication
+    AggregateCreated <|-- PlanCreated
+    AggregateEvent <|-- StageOutputAccepted
+    AggregateEvent <|-- ProjectionRecorded
+    AggregateEvent <|-- StageAdvanced
+    AggregateEvent <|-- RollRequested
+    Plan *-- PlanCreated : nested class
+    Plan *-- StageOutputAccepted : nested class
+    Plan *-- ProjectionRecorded : nested class
+    Plan *-- StageAdvanced : nested class
+    Plan *-- RollRequested : nested class
+
+    PlanningStage <|-- DraftStage
+    PlanningStage <|-- PlanStage
+    PlanningStage <|-- EpicsStage
+    ProjectionStore <|.. FilesystemProjectionStore
+    StageCatalog <|.. FilesystemStageCatalog
+
+    StageRegistry "1" --> "1..*" PlanningStage : stores domain stages
+    PlanningApplication "1" --> "1" Plan : repository reconstructs
+    StartPlan "1" --> "1" PlanningApplication : creates and saves
+    AdvanceStage "1" --> "1" PlanningApplication : loads and saves
+    AdvanceStage "1" --> "1" StageRegistry : selects domain stage
+    AdvanceStage "1" --> "1" PlanningStage : calls domain contract
+    AdvanceStage "1" --> "1" ProjectionStore : writes returned artifacts
+    AdvanceStage "1" --> "1" Plan : calls aggregate behavior
+    PrepareAgentContext "1" --> "1" PlanningStage : bounded context
+    RollProjections "1" --> "1" StageRegistry : walks stages
+    RollProjections "1" --> "1" ProjectionStore : refreshes artifacts
+    FilesystemStageCatalog "1" --> "1" StageRegistry : supplies stages
+    SchemaPageProjection "1" --> "1" ProjectionStore : writes display projection
+    Plan "1" --> "0..*" StageOutput : accepted output
+    Plan "1" --> "0..*" Enrichment : preserves by slot id

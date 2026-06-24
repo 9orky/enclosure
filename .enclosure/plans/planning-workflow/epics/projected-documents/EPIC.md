@@ -32,6 +32,15 @@ Accepted constraints:
 - `DRAFT.md`, `PLAN.md`, `UML.md`, and epic packages are projections.
 - Each stage owns its input type, output type, output cardinality, and slots.
 - `SCHEMAS.md` is display-only; native Mermaid files are schema sources.
+- Stage behavior is expressed through real Python base classes or interfaces,
+  not by convention-only class names.
+- Aggregate mutations are recorded by eventsourcing-native aggregate events;
+  plain dataclass command/change objects are not domain events.
+- The implementation follows the `eventsourcing` package boilerplate:
+  aggregate roots subclass `eventsourcing.domain.Aggregate`, creation events
+  subclass `Aggregate.Created`, mutation events subclass `Aggregate.Event`,
+  aggregate methods call `trigger_event(...)`, and the application persists the
+  aggregate with `Application.save(...)`.
 
 ## Value
 
@@ -46,13 +55,45 @@ Planning artifacts are scaffolded by the current stage from typed input data.
 The agent updates the scaffolded projection, the user approves or asks for more
 updates, and `next` accepts the current stage output as the seed for the next
 stage. Every stage follows the same data-in/data-out contract, so adding a stage
-means adding one class in one file that implements the stage interface.
+means adding one concrete stage class in one new stage file. Command handlers,
+application use cases, projection adapters, and existing stage files are
+unchanged.
 
 `roll` is forward-only. It starts from `DRAFT.md` seed objects, derives output
 slots through each child stage, refreshes generated structure, and preserves
 filled content by derived stable identity. The draft seed does not know the
 child projection shape; each stage implementation owns its own output object
 type, cardinality, and variant keys.
+
+The domain layer owns the planning workflow vocabulary. `PlanningStage`,
+`StageInput`, `StageOutput`, `DerivedSlot`, `ReviewData`, `ValidationResult`,
+`StageRegistry`, the core stage implementations, and the event-sourced `Plan`
+aggregate are domain concepts. Core stages such as draft, plan, and epics are
+not infrastructure just because they are pluggable; they are pure planning
+behavior unless they depend on filesystem, network, templates, or other
+technical adapters.
+
+The application layer owns use-case orchestration only. It loads and saves the
+event-sourced aggregate, asks the domain registry for the current stage, calls
+methods declared by the domain `PlanningStage` contract, and writes returned
+projection artifacts through application ports. Application code does not know
+whether a stage performs question-and-answer loops, advances directly, blocks
+on validation, or emits drift; that decision is returned by the domain stage
+result.
+
+The infrastructure layer owns technical details. Filesystem projection storage,
+content hashing, markdown/native Mermaid IO, and optional dynamic stage-module
+discovery implement application ports. Infrastructure may discover or load
+stage classes, but it must not own stage progression rules.
+
+The event-sourcing implementation is not a custom event bus. The planning
+aggregate exposes behavior methods such as `accept_stage_output(...)`,
+`record_projection(...)`, `advance_stage(...)`, and `request_roll(...)`. Each
+method triggers a nested aggregate event class, for example
+`Plan.StageOutputAccepted(Aggregate.Event)`, and the application saves the
+changed aggregate. Application command objects may exist to carry input into a
+use case, but they are not named events and they do not live in a domain
+`events.py` file.
 
 ## Navigation
 
@@ -69,25 +110,47 @@ Next dependent epic:
 ## Contract Role
 
 `tree.mermaid` defines projection and stage files. `uml.mermaid` defines the
-stage interface, concrete stage classes, stage runner, roll runner, projection
-store, and schema display projection. `flows.mermaid` defines the closed stage
-loop and the parameterless command entry points that drive it.
+domain stage base class, concrete domain stage subclasses, event-sourced
+aggregate, application use cases, application ports, infrastructure adapters,
+and schema display projection. `flows.mermaid` defines the closed stage loop
+and the parameterless command entry points that drive it.
 
 ## Boundaries
 
-This epic does not own the domain event model, CLI parsing, or stage gate
-policy. It owns how event-sourced facts become stage input data, projected
-markdown, native Mermaid files, `SCHEMAS.md`, and stage output data. Its stage
-and projection interfaces follow the shared hexagonal shape.
+This epic does not own CLI parsing or stage gate policy. It does not replace
+the event-sourced core event model; accepted stage output is persisted through
+eventsourcing-native aggregate events owned by the planning aggregate. It owns
+how event-sourced facts become stage input data, projected markdown, native
+Mermaid files, `SCHEMAS.md`, and stage output data. Its stage and projection
+interfaces follow the shared hexagonal shape.
 
 ## Acceptance Criteria
 
-- Every stage implements one shared interface and lives as one class in one
-  file.
+- `PlanningStage` is a real abstract base class or interface in the domain
+  layer; every concrete stage explicitly inherits it.
+- Every stage lives as one concrete class in one stage file.
+- Adding two new stages requires two new concrete stage files and no changes to
+  command handlers, application use cases, existing stages, or projection
+  adapters.
 - Every stage declares the data objects it accepts and the data objects it
   outputs.
 - Every stage derives output slots from upstream stable identity, stage id, and
   stage-owned variant keys.
+- The domain stage registry receives or resolves `PlanningStage` instances
+  without a switch statement or per-stage edit in command/use-case code.
+- Application use cases depend on domain stage contracts and application ports,
+  not on concrete stage classes.
+- Infrastructure implements filesystem projection and optional stage discovery
+  ports; it does not own stage behavior.
+- Accepted stage output is saved through eventsourcing aggregate events; there
+  is no `domain/events.py` file for plain dataclass event substitutes.
+- Domain event classes are nested on the aggregate or otherwise subclass the
+  exact eventsourcing aggregate-event base required by the aggregate.
+- Application use cases call aggregate behavior methods and then
+  `Application.save(plan)`; they do not directly append dictionaries, dataclass
+  changes, or projection records to persistence.
+- Replaying uses the eventsourcing repository and notification log, not a
+  custom event list.
 - `start`, `next`, `agent`, and `roll` work as parameterless subcommands from
   the caller's point of view.
 - `next` accepts the current reviewed projection and seeds the next stage from

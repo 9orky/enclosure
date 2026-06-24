@@ -41,12 +41,44 @@ workflow grows without changing the command loop.
 
 Acceptance criteria:
 
-- The shared stage interface declares intake, scaffold, agent context, accept,
+- The shared stage contract is a real abstract base class or interface, not a
+  naming convention.
+- Every concrete stage explicitly inherits the shared stage contract.
+- The shared stage contract declares intake, scaffold, agent context, accept,
   and output behavior.
 - Each concrete stage owns the input data it expects.
 - Each concrete stage owns the output data it passes to the next stage.
-- The stage registry can discover or register a new stage without command
-  changes.
+- The stage registry discovers concrete stage subclasses without command,
+  use-case, or adapter changes.
+- Adding two new stages means adding exactly two new stage files, plus tests and
+  docs for those stages.
+- Core concrete stages live in the domain layer unless they depend on external
+  IO or framework adapters.
+
+## persist-stage-output-as-events
+
+As a developer, I want accepted stage output persisted as true eventsourcing
+aggregate events so that the event stream remains the authority.
+
+Acceptance criteria:
+
+- Aggregate-changing events extend the eventsourcing aggregate event base used
+  by the planning aggregate.
+- Plain dataclass commands or change requests may exist only as application
+  input objects; they are not named or treated as domain events.
+- Stage acceptance records output object identity, derived slot identity,
+  projection paths, and next stage through aggregate events.
+- Reconstructing the active plan and current stage uses the event stream, not
+  projected markdown files.
+- The aggregate defines creation with `class Created(Aggregate.Created)`.
+- The aggregate defines stage mutations with nested `Aggregate.Event`
+  subclasses such as `StageOutputAccepted`, `ProjectionRecorded`, and
+  `StageAdvanced`.
+- Aggregate behavior methods call `trigger_event(...)`; application use cases
+  persist pending events with `Application.save(plan)`.
+- A `domain/events.py` file is not used for plain dataclass change objects; if
+  command DTOs are needed, they live in the application layer and are named as
+  commands or requests.
 
 ## keep-user-stage-agnostic
 
@@ -59,6 +91,25 @@ Acceptance criteria:
 - Command output explains what changed without requiring stage vocabulary.
 - `agent` receives enough bounded context to update the current projection.
 - `next` advances only from the current accepted stage output.
+
+## keep-application-layer-abstract
+
+As a developer, I want the application layer to orchestrate through ports and
+stage abstractions so that stage details do not leak into command or use-case
+logic.
+
+Acceptance criteria:
+
+- Command use cases do not import concrete stage classes.
+- Application use cases call only methods declared on the stage base class.
+- Projection writes go through an application-layer port implemented by
+  infrastructure.
+- Stage-specific review decisions, slot derivation, output construction, and
+  transition behavior stay in domain stage implementations.
+- Filesystem markdown/native Mermaid IO stays behind infrastructure adapters.
+- Optional dynamic stage discovery imports modules and selects non-abstract
+  `PlanningStage` subclasses through an application port; it does not hard-code
+  concrete stage names in command or use-case code.
 
 ## roll-from-draft-through-children
 
