@@ -14,6 +14,7 @@ read_strategy: progressive
 read_directly: true
 child_paths:
   - structure/INDEX.md
+  - planning/INDEX.md
   - architecture/INDEX.md
   - change/INDEX.md
   - execution/INDEX.md
@@ -47,6 +48,7 @@ child_paths:
 ## Branches
 
 - [structure/INDEX.md](structure/INDEX.md): classify a target as a module, feature module, or layer
+- [planning/INDEX.md](planning/INDEX.md): planning artifact and diagram contract rules
 - [architecture/INDEX.md](architecture/INDEX.md): ownership, boundary, and dependency direction
 - [change/INDEX.md](change/INDEX.md): rules for reshaping or replacing existing implementation
 - [execution/INDEX.md](execution/INDEX.md): execution artifacts
