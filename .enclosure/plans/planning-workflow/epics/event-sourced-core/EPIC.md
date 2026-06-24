@@ -29,7 +29,8 @@ events, and reconstruct the current plan state through the planning application.
 
 Accepted constraints:
 
-- SQLite-backed event persistence is the local authority.
+- SQLite-backed event persistence is the local authority through the
+  `eventsourcing` library's SQLite persistence module.
 - Only one active plan may exist.
 - Projectors consume events and do not treat markdown as the database.
 
@@ -59,16 +60,19 @@ Next dependent epics:
 
 ## Contract Role
 
-`tree.mermaid` defines the event core files. `uml.mermaid` defines the aggregate,
-application, event, and use-case symbols. `flows.mermaid` defines the
-event-sourced application use cases.
+`tree.mermaid` defines the event core files. `uml.mermaid` defines the
+`eventsourcing` aggregate, application, explicit event-class SSOT,
+persistence, and use-case symbols. `flows.mermaid` defines the event-sourced
+application use cases.
 
 ## Boundaries
 
 This epic does not own markdown rendering, CLI interaction details, or epic
 projection formats. It owns the source of truth that those layers depend on.
-Its feature-specific ports follow the shared hexagonal shape, but the concrete
-planning port methods remain owned here.
+Its feature-specific vocabulary follows the shared hexagonal shape where a
+module boundary needs a port, but event recording, reconstruction, optimistic
+concurrency, and ordered notifications are delegated to the `eventsourcing`
+library rather than reimplemented locally.
 
 ## Acceptance Criteria
 

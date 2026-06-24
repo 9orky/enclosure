@@ -1,34 +1,19 @@
 from __future__ import annotations
 
-from . import domain
+from dataclasses import dataclass
+from pathlib import Path
 
 
-class FilePlanMaterializer:
-    def materialize(
-        self,
-        document: domain.PlanDocument,
-        *,
-        force: bool,
-    ) -> domain.PlanWriteResult:
-        document.plans_root.mkdir(parents=True, exist_ok=True)
-        document.target_path.parent.mkdir(parents=True, exist_ok=True)
+@dataclass(frozen=True)
+class EventsourcingSQLitePersistence:
+    database_path: Path
 
-        if document.target_path.exists() and not force:
-            return domain.PlanWriteResult(document=document, preserved=True)
-
-        overwritten = document.target_path.exists()
-        document.target_path.write_text(document.content, encoding="utf-8")
-        return domain.PlanWriteResult(
-            document=document,
-            created=not overwritten,
-            overwritten=overwritten,
-        )
+    def environment(self) -> dict[str, str]:
+        self.database_path.parent.mkdir(parents=True, exist_ok=True)
+        return {
+            "PERSISTENCE_MODULE": "eventsourcing.sqlite",
+            "SQLITE_DBNAME": str(self.database_path),
+        }
 
 
-file_plan_materializer = FilePlanMaterializer()
-
-
-__all__ = [
-    "FilePlanMaterializer",
-    "file_plan_materializer",
-]
+__all__ = ["EventsourcingSQLitePersistence"]

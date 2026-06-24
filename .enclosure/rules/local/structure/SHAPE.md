@@ -37,9 +37,13 @@ function, method, argument, or line-count limits.
 - Cross-file imports bring in modules through package seams, not individual symbols.
 - Do not alias cross-file imports.
 - Join imports from the same parent into one statement.
+- Keep `__init__.py` files as export seams only. Do not put classes,
+  orchestration, policies, workspace lookup, persistence wiring, or other
+  executable module logic in them.
 
 ## Checks
 
 - `enclosure architecture shape` passes.
 - Imports are module-level, joined, and unaliased.
 - Optionality is modeled deliberately, not hidden in defaults or nullable properties.
+- Package `__init__.py` files only re-export symbols or modules.

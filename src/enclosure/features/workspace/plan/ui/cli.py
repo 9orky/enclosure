@@ -6,10 +6,10 @@ import typer
 
 from enclosure.shared import ui
 
-from .. import application
+from .. import workspace
 
 app = typer.Typer(
-    help="Create user-owned module planning documents in the enclosure workspace.",
+    help="Manage the active event-sourced planning workflow.",
     invoke_without_command=True,
 )
 
@@ -17,21 +17,8 @@ app = typer.Typer(
 @app.callback()
 @ui.command_error_boundary
 def plan_command(
-    name: Annotated[str | None, typer.Argument()],
-    show: Annotated[
-        bool,
-        typer.Option(
-            "--show",
-            help="Print the rendered plan scaffold without writing it.",
-        ),
-    ],
-    force: Annotated[
-        bool,
-        typer.Option(
-            "--force",
-            help="Overwrite an existing plan document.",
-        ),
-    ],
+    action: Annotated[str | None, typer.Argument()],
+    title: Annotated[str | None, typer.Argument()],
     llm: Annotated[
         bool,
         typer.Option("--llm", help="Print LLM-focused guidance for this command."),
@@ -51,42 +38,33 @@ def plan_command(
         ui.render_docs("docs.tmpl")
         return
 
-    if name is None:
-        report = application.current_plan_report()
+    module = workspace.WorkspacePlanModule.from_current_workspace()
+    if action is None:
+        report = module.status()
         ui.render(
             report,
             template_name="current.tmpl",
             context={"project_root": report.project_root},
         )
-        if not report.passed():
-            ui.exit_with_error()
         return
-
-    if show:
-        document = application.describe_plan_document(name)
+    if action == "start":
+        if title is None:
+            raise ValueError("Plan title is required: workspace plan start TITLE")
+        plan = module.start(title)
         ui.render(
-            document,
-            template_name="show.tmpl",
-            context={"project_root": document.project_root},
+            plan,
+            template_name="started.tmpl",
+            context={"project_root": module.status().project_root},
         )
         return
-
-    result = application.create_plan_document(name, force=force)
-    ui.render(
-        result,
-        template_name="result.tmpl",
-        context={"project_root": result.document.project_root},
-    )
-    if result.preserved:
-        ui.exit_with_error()
+    raise ValueError(f"Unknown plan action: {action}")
 
 
 ui.set_command_defaults(
     plan_command,
     {
-        "name": None,
-        "show": False,
-        "force": False,
+        "action": None,
+        "title": None,
         "llm": False,
         "docs": False,
     },

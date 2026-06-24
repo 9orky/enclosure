@@ -1,57 +1,71 @@
 %% contract: symbols
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eef2ff", "primaryTextColor": "#172033", "primaryBorderColor": "#64748b", "lineColor": "#64748b"}}}%%
 classDiagram
-    class StartPlan {
-      <<file:application/use_cases/start_plan.py>>
-      +execute() Plan
-    }
-
-    class AppendPlanEvent {
-      <<file:application/use_cases/append_plan_event.py>>
-      +execute(PlanId, DomainEvent) Plan
-    }
-
-    class GetActivePlan {
-      <<file:application/use_cases/get_active_plan.py>>
-      +execute() Plan
-    }
-
     class PlanningApplication {
-      <<file:application/planning_app.py>>
-      +create_plan() Plan
-      +append_event(PlanId, DomainEvent) Plan
+      <<Application: application.py>>
+      +create_plan(str) Plan
+      +apply_change(PlanId, PlanChange) Plan
       +get_plan(PlanId) Plan
+      +get_active_plan() Plan
+      +ordered_events() Iterable~DomainEvent~
     }
 
-    class EventStore {
-      <<OutboundPort: application/ports.py>>
-      +append(DomainEvent) None
-      +load(PlanId) List~DomainEvent~
-      +iter_events(PlanId) Iterable~DomainEvent~
-    }
-
-    class SQLiteEventStore {
-      <<Adapter: infrastructure/event_store.py>>
-      +port() EventStore
-      +append(DomainEvent) None
-      +load(PlanId) List~DomainEvent~
-      +iter_events(PlanId) Iterable~DomainEvent~
+    class EventsourcingApplication {
+      <<library: eventsourcing.application.Application>>
+      +save(Aggregate) None
+      +repository
+      +notification_log
     }
 
     class Plan {
-      <<file:domain/plan.py>>
-      +str id
+      <<Aggregate: domain/plan.py>>
+      +UUID id
       +str title
       +PlanState state
       +bool active
-      +advance(DomainEvent) Plan
+      +str current_stage
+      +change_stage(str) None
+      +update_draft(str) None
+      +change_question(str, str, str, str, bool, str) None
+      +register_projection(str, str) None
+      +request_roll(str) None
+    }
+
+    class EventsourcingAggregate {
+      <<library: eventsourcing.domain.Aggregate>>
+      +collect_events() list
+      +version
     }
 
     class DomainEvent {
-      <<file:domain/events.py>>
+      <<library: eventsourcing.domain.DomainEvent>>
       +UUID originator_id
       +int originator_version
       +datetime timestamp
+    }
+
+    class PlanCreated {
+      <<Event SSOT: domain/plan.py>>
+      +str title
+      +str current_stage
+      +str source_plan_item_id
+      +str source_use_case_id
+    }
+
+    class PlanStageChanged {
+      <<Event SSOT: domain/plan.py>>
+      +str stage
+      +str reason
+    }
+
+    class PlanQuestionChanged {
+      <<Event SSOT: domain/plan.py>>
+      +str question_id
+      +str text
+      +str explanation
+      +str status
+      +bool blocking
+      +str revisit_stage
     }
 
     class PlanState {
@@ -61,11 +75,29 @@ classDiagram
       +str COMPLETE$
     }
 
-    StartPlan "1" --> "1" PlanningApplication : invokes
-    AppendPlanEvent "1" --> "1" PlanningApplication : invokes
-    GetActivePlan "1" --> "1" PlanningApplication : invokes
-    PlanningApplication "1" --> "1" Plan : reconstructs
-    PlanningApplication "1" --> "1" EventStore : persists events
-    SQLiteEventStore "1" ..|> "1" EventStore : implements
+    class PlanChange {
+      <<file:domain/events.py>>
+      +apply(Plan) None
+    }
+
+    class EventsourcingSQLitePersistence {
+      <<file:infrastructure.py>>
+      +environment() dict
+    }
+
+    class EventsourcingSQLite {
+      <<library: eventsourcing.sqlite>>
+    }
+
+    PlanningApplication --|> EventsourcingApplication : extends
+    PlanningApplication "1" --> "1" Plan : saves and reconstructs
+    PlanningApplication "1" --> "*" DomainEvent : reads notification log
+    Plan --|> EventsourcingAggregate : extends
     Plan "1" --> "1" PlanState : has state
+    PlanCreated --|> DomainEvent : extends
+    PlanStageChanged --|> DomainEvent : extends
+    PlanQuestionChanged --|> DomainEvent : extends
+    PlanChange "1" --> "1" Plan : invokes event method
     DomainEvent "*" ..> "1" Plan : mutates
+    EventsourcingSQLitePersistence "1" --> "1" EventsourcingSQLite : selects module
+    EventsourcingSQLitePersistence "1" --> "1" PlanningApplication : configures

@@ -1,23 +1,7 @@
-# Workspace Plan Docs
+# Workspace Plan
 
-Use `enclosure plan` to inspect the current plan folder. Use `enclosure plan <name>` to create a user-owned planning document in `.enclosure/plans/<name>/`.
+`workspace plan` reports the active plan reconstructed from the event stream.
 
-## When To Use It
-
-- Before creating a new module.
-- Before changing a module boundary or public seam.
-- Before asking an agent to implement a feature that needs architecture decisions.
-
-## How To Respond
-
-- Keep exactly one current plan folder in `.enclosure/plans/`.
-- Fill in the plan before implementation begins.
-- Keep plan files inside `.enclosure/plans/<name>/`.
-- Use `--show` to preview the scaffold without writing.
-- Use `--force` only when replacing an existing draft intentionally.
-
-## Related Commands
-
-- `enclosure workspace recipe --docs`
-- `enclosure workspace sync --docs`
-- `enclosure architecture health --docs`
+`workspace plan start TITLE` creates the single active plan. Events are recorded
+by the `eventsourcing` application and persisted through `eventsourcing.sqlite`
+in `.enclosure/.cache/plans.sqlite`.

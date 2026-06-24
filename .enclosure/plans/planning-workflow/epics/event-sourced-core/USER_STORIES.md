@@ -25,7 +25,8 @@ event so that planning history is durable and inspectable.
 Acceptance criteria:
 
 - Draft updates, question changes, stage checks, and promotions append events.
-- Events are persisted in SQLite.
+- Events are recorded through the `eventsourcing` application and persisted in
+  SQLite.
 - Failed commands do not leave partial state.
 
 ## reconstruct-plan-state
@@ -39,3 +40,5 @@ Acceptance criteria:
 - Reconstructed state includes current stage, active flag, questions, and known
   projections.
 - Projectors do not read projected markdown as the authority.
+- Downstream consumers can read ordered events from the `eventsourcing`
+  notification log.
