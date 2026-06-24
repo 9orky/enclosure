@@ -1,11 +1,11 @@
-%% contract: use_cases
+%% contract: flow
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#e0f2fe", "primaryTextColor": "#172033", "primaryBorderColor": "#0284c7", "lineColor": "#64748b", "tertiaryColor": "#f8fafc"}}}%%
 flowchart LR
-    subgraph commands["Commands"]
-      cmd_parse["command: workspace plan contracts parse"]
-      cmd_actual["command: workspace plan contracts actual"]
-      cmd_compare["command: workspace plan contracts check"]
-      cmd_report["command: workspace plan contracts report"]
+    subgraph signals["Verification Signals"]
+      signal_parse["signal: planned contracts available"]
+      signal_actual["signal: implementation schema available"]
+      signal_compare["signal: compare requested by stage loop"]
+      signal_report["signal: drift report requested"]
     end
 
     subgraph use_cases["Use Cases"]
@@ -26,10 +26,10 @@ flowchart LR
       agent["output: AgentRepairInstruction"]
     end
 
-    cmd_parse --> uc_parse
-    cmd_actual --> uc_actual
-    cmd_compare --> uc_compare
-    cmd_report --> uc_report
+    signal_parse --> uc_parse
+    signal_actual --> uc_actual
+    signal_compare --> uc_compare
+    signal_report --> uc_report
     uc_parse --> expected
     uc_actual --> modwire
     modwire --> actual
@@ -39,12 +39,12 @@ flowchart LR
     drift --> uc_report
     uc_report --> agent
 
-    classDef command fill:#e0f2fe,stroke:#0284c7,color:#172033;
+    classDef signal fill:#e0f2fe,stroke:#0284c7,color:#172033;
     classDef usecase fill:#dcfce7,stroke:#16a34a,color:#172033;
     classDef model fill:#fef9c3,stroke:#ca8a04,color:#172033;
     classDef port fill:#f3e8ff,stroke:#9333ea,color:#172033;
     classDef output fill:#f1f5f9,stroke:#64748b,color:#172033;
-    class cmd_parse,cmd_actual,cmd_compare,cmd_report command;
+    class signal_parse,signal_actual,signal_compare,signal_report signal;
     class uc_parse,uc_actual,uc_compare,uc_report usecase;
     class expected,actual,drift model;
     class modwire port;

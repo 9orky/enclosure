@@ -19,33 +19,39 @@ native_sources:
   uml: uml.mermaid
   tree: tree.mermaid
 contract_roles:
-  flows: use-case contract
+  flows: flow contract
   uml: symbol contract
   tree: file contract
 ---
 
 # Guided Cli Agent Guardrails Schemas
 
-These schemas are implementation contracts. `tree.mermaid` defines the expected files, `uml.mermaid` defines expected symbols and file ownership, and `flows.mermaid` defines the expected CLI and agent-guidance use cases.
+These schemas are implementation contracts shown as a display projection. The
+native sources are `flows.mermaid`, `uml.mermaid`, and `tree.mermaid`; during
+projection updates their content is pasted into the sections below.
+
+`tree.mermaid` defines the expected files, `uml.mermaid` defines expected
+symbols and file ownership, and `flows.mermaid` defines the expected
+parameterless CLI command loop.
 
 ## Flow
 
 ```mermaid
-%% contract: use_cases
+%% contract: flow
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#e0f2fe", "primaryTextColor": "#172033", "primaryBorderColor": "#0284c7", "lineColor": "#64748b", "tertiaryColor": "#f8fafc"}}}%%
 flowchart LR
-    subgraph commands["Commands"]
-      cmd_status["command: workspace plan status"]
+    subgraph commands["Parameterless Commands"]
+      cmd_start["command: workspace plan start"]
       cmd_next["command: workspace plan next"]
       cmd_agent["command: workspace plan agent"]
-      cmd_allowed["internal: render allowed actions"]
+      cmd_roll["command: workspace plan roll"]
     end
 
     subgraph use_cases["Use Cases"]
-      uc_status["usecase: ShowPlanStatus\nfile: application/use_cases/show_plan_status.py\nclass: ShowPlanStatus"]
+      uc_start["usecase: RunPlanStart\nfile: application/use_cases/run_plan_start.py\nclass: RunPlanStart"]
       uc_next["usecase: RunPlanNext\nfile: application/use_cases/run_plan_next.py\nclass: RunPlanNext"]
       uc_agent["usecase: PrepareAgentGuidance\nfile: application/use_cases/prepare_agent_guidance.py\nclass: PrepareAgentGuidance"]
-      uc_allowed["usecase: RenderAllowedActions\nfile: application/use_cases/render_allowed_actions.py\nclass: RenderAllowedActions"]
+      uc_roll["usecase: RunPlanRoll\nfile: application/use_cases/run_plan_roll.py\nclass: RunPlanRoll"]
     end
 
     subgraph services["Services"]
@@ -54,8 +60,9 @@ flowchart LR
       next_actions["service: NextActionService"]
     end
 
-    subgraph external_use_cases["External Use Cases"]
-      importer["external usecase: ImportInputBlocks"]
+    subgraph external_services["External Services"]
+      stage_runner["external service: StageRunner"]
+      roll_runner["external service: RollRunner"]
       gate["external usecase: CheckStageGate"]
     end
 
@@ -63,16 +70,18 @@ flowchart LR
       output["projection: allowed commands"]
     end
 
-    cmd_status --> uc_status
+    cmd_start --> uc_start
     cmd_next --> uc_next
     cmd_agent --> uc_agent
-    cmd_allowed --> uc_allowed
-    uc_status --> app
-    uc_next --> importer
+    cmd_roll --> uc_roll
+    uc_start --> app
+    uc_next --> stage_runner
     uc_next --> gate
     uc_agent --> guidance
-    uc_allowed --> next_actions
+    uc_roll --> roll_runner
     guidance --> next_actions
+    stage_runner --> next_actions
+    roll_runner --> next_actions
     next_actions --> output
 
     classDef command fill:#e0f2fe,stroke:#0284c7,color:#172033;
@@ -80,10 +89,10 @@ flowchart LR
     classDef service fill:#fef9c3,stroke:#ca8a04,color:#172033;
     classDef external fill:#f3e8ff,stroke:#9333ea,color:#172033;
     classDef output fill:#f1f5f9,stroke:#64748b,color:#172033;
-    class cmd_status,cmd_next,cmd_agent,cmd_allowed command;
-    class uc_status,uc_next,uc_agent,uc_allowed usecase;
+    class cmd_start,cmd_next,cmd_agent,cmd_roll command;
+    class uc_start,uc_next,uc_agent,uc_roll usecase;
     class app,guidance,next_actions service;
-    class importer,gate external;
+    class stage_runner,roll_runner,gate external;
     class output output;
 ```
 
@@ -93,8 +102,8 @@ flowchart LR
 %% contract: symbols
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eef2ff", "primaryTextColor": "#172033", "primaryBorderColor": "#64748b", "lineColor": "#64748b"}}}%%
 classDiagram
-    class ShowPlanStatus {
-      <<file:application/use_cases/show_plan_status.py>>
+    class RunPlanStart {
+      <<file:application/use_cases/run_plan_start.py>>
       +execute()
     }
 
@@ -108,17 +117,17 @@ classDiagram
       +execute()
     }
 
-    class RenderAllowedActions {
-      <<file:application/use_cases/render_allowed_actions.py>>
-      +execute(plan_state)
+    class RunPlanRoll {
+      <<file:application/use_cases/run_plan_roll.py>>
+      +execute()
     }
 
     class PlanCli {
       <<file:ui/cli.py>>
-      +status()
       +start()
       +next()
       +agent()
+      +roll()
     }
 
     class NextActionService {
@@ -133,13 +142,26 @@ classDiagram
       +requires_confirmation()
     }
 
-    PlanCli --> ShowPlanStatus
+    class StageRunner {
+      <<external:projected-documents/application/stage_runner.py>>
+      +advance_current()
+    }
+
+    class RollRunner {
+      <<external:projected-documents/application/roll.py>>
+      +start_from_draft()
+    }
+
+    PlanCli --> RunPlanStart
     PlanCli --> RunPlanNext
     PlanCli --> PrepareAgentGuidance
-    ShowPlanStatus --> NextActionService
+    PlanCli --> RunPlanRoll
+    RunPlanStart --> NextActionService
     RunPlanNext --> NextActionService
+    RunPlanNext --> StageRunner
     PrepareAgentGuidance --> AgentGuidance
-    RenderAllowedActions --> NextActionService
+    RunPlanRoll --> RollRunner
+    RunPlanRoll --> NextActionService
 ```
 
 ## Tree
@@ -156,8 +178,8 @@ treeView-beta
       "next_actions.py"
       "agent_guidance.py"
       "use_cases"
-        "show_plan_status.py"
+        "run_plan_start.py"
         "run_plan_next.py"
         "prepare_agent_guidance.py"
-        "render_allowed_actions.py"
+        "run_plan_roll.py"
 ```

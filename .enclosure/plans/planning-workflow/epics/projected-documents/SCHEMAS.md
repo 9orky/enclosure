@@ -19,83 +19,97 @@ native_sources:
   uml: uml.mermaid
   tree: tree.mermaid
 contract_roles:
-  flows: use-case contract
+  flows: flow contract
   uml: symbol contract
   tree: file contract
 ---
 
 # Projected Documents Schemas
 
-These schemas are implementation contracts. `tree.mermaid` defines the expected files, `uml.mermaid` defines expected symbols and file ownership, and `flows.mermaid` defines the expected projection, scaffolding, roll-update, and import use cases.
+These schemas are implementation contracts shown as a display projection. The
+native sources are `flows.mermaid`, `uml.mermaid`, and `tree.mermaid`; during
+projection updates their content is pasted into the sections below.
+
+`tree.mermaid` defines the expected files, `uml.mermaid` defines expected
+symbols and file ownership, and `flows.mermaid` defines the closed stage loop
+that turns input data into projected documents and next-stage output data.
 
 ## Flow
 
 ```mermaid
-%% contract: use_cases
+%% contract: flow
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#e0f2fe", "primaryTextColor": "#172033", "primaryBorderColor": "#0284c7", "lineColor": "#64748b", "tertiaryColor": "#f8fafc"}}}%%
 flowchart LR
-    subgraph commands["Commands / Events"]
-      event_seeded["event: PlanSeededFromDraft"]
-      event_changed["event: PlanChanged"]
+    subgraph commands["Parameterless Commands"]
+      cmd_start["command: workspace plan start"]
       cmd_next["command: workspace plan next"]
-      cmd_check["command: workspace plan check"]
-      event_schema["event: SchemaBundleChanged"]
-      event_halted["event: RollUpdateHalted"]
+      cmd_agent["command: workspace plan agent"]
+      cmd_roll["command: workspace plan roll"]
     end
 
-    subgraph use_cases["Use Cases"]
-      uc_render["usecase: RenderPlanProjection\nfile: application/use_cases/render_plan_projection.py\nclass: RenderPlanProjection"]
-      uc_scaffold_plan["usecase: ScaffoldPlanContract\nfile: application/use_cases/scaffold_plan_contract.py\nclass: ScaffoldPlanContract"]
-      uc_scaffold_epic["usecase: ScaffoldEpicPackage\nfile: application/use_cases/scaffold_epic_package.py\nclass: ScaffoldEpicPackage"]
-      uc_roll["usecase: RollUpdateProjection\nfile: application/use_cases/roll_update_projection.py\nclass: RollUpdateProjection"]
-      uc_import["usecase: ImportInputBlocks\nfile: application/use_cases/import_input_blocks.py\nclass: ImportInputBlocks"]
-      uc_sync["usecase: CheckProjectionSync\nfile: application/use_cases/check_projection_sync.py\nclass: CheckProjectionSync"]
-      uc_schema["usecase: RenderSchemaBundle\nfile: application/use_cases/render_schema_bundle.py\nclass: RenderSchemaBundle"]
+    subgraph loop["Closed Stage Loop"]
+      active["current stage\nselected from event state"]
+      intake["input data objects\nfrom prior stage or DRAFT seed"]
+      scaffold["stage scaffold\nproject docs for review"]
+      agent_update["agent update\nbounded by stage data"]
+      user_review["user review\napprove or request update"]
+      output["output data objects\nseed next stage"]
     end
 
-    subgraph services["Services"]
-      renderer["service: ProjectionRenderer"]
-      scaffolder["service: ProjectionScaffolder"]
-      rollup["service: RollUpdateReporter"]
-      importer["service: InputBlockImporter"]
-      checker["service: SyncChecker"]
+    subgraph stages["Stage Contract"]
+      iface["interface: PlanningStage\nfile: application/stages/base.py\nclass: PlanningStage"]
+      draft["stage: DraftStage\nfile: application/stages/draft_stage.py\nclass: DraftStage"]
+      plan["stage: PlanStage\nfile: application/stages/plan_stage.py\nclass: PlanStage"]
+      epics["stage: EpicsStage\nfile: application/stages/epics_stage.py\nclass: EpicsStage"]
+      registry["service: StageRegistry"]
+      runner["service: StageRunner"]
+      roll["service: RollRunner"]
     end
 
-    subgraph outputs["Events / Gates / Projections"]
-      files["projection: markdown and mermaid files"]
-      events["event: DraftInputBlockImported"]
-      gate["gate: strict sync"]
-      halted["halt: unresolved roll update"]
+    subgraph projections["Events / Projections"]
+      events["event stream\ncanonical facts"]
+      files["projection files\nDRAFT / PLAN / UML / epics"]
+      native["native Mermaid projections\nflows / uml / tree"]
+      schemas["SCHEMAS.md\npasted display projection"]
+      guidance["agent guidance\ncurrent stage only"]
+      drift["halt: unresolved drift"]
     end
 
-    event_seeded --> uc_scaffold_plan
-    event_changed --> uc_render
-    cmd_next --> uc_roll
-    cmd_next --> uc_import
-    cmd_check --> uc_sync
-    event_halted --> halted
-    event_schema --> uc_schema
-    uc_scaffold_plan --> scaffolder
-    uc_scaffold_epic --> scaffolder
-    uc_roll --> rollup
-    uc_render --> renderer
-    uc_import --> importer
-    uc_sync --> checker
-    uc_schema --> renderer
-    scaffolder --> files
-    rollup --> halted
-    renderer --> files
-    importer --> events
-    checker --> gate
+    cmd_start --> active
+    cmd_next --> active
+    cmd_agent --> active
+    cmd_roll --> roll
+    active --> registry
+    registry --> runner
+    runner --> intake
+    intake --> scaffold
+    scaffold --> files
+    scaffold --> native
+    native --> schemas
+    files --> agent_update
+    agent_update --> user_review
+    user_review --> output
+    output --> events
+    events --> active
+    cmd_agent --> guidance
+    draft -. implements .-> iface
+    plan -. implements .-> iface
+    epics -. implements .-> iface
+    draft --> registry
+    plan --> registry
+    epics --> registry
+    roll --> draft
+    roll --> runner
+    runner --> drift
 
     classDef command fill:#e0f2fe,stroke:#0284c7,color:#172033;
-    classDef usecase fill:#dcfce7,stroke:#16a34a,color:#172033;
+    classDef loop fill:#dcfce7,stroke:#16a34a,color:#172033;
     classDef service fill:#fef9c3,stroke:#ca8a04,color:#172033;
     classDef output fill:#f1f5f9,stroke:#64748b,color:#172033;
-    class event_seeded,event_changed,cmd_next,cmd_check,event_schema,event_halted command;
-    class uc_render,uc_scaffold_plan,uc_scaffold_epic,uc_roll,uc_import,uc_sync,uc_schema usecase;
-    class renderer,scaffolder,rollup,importer,checker service;
-    class files,events,gate,halted output;
+    class cmd_start,cmd_next,cmd_agent,cmd_roll command;
+    class active,intake,scaffold,agent_update,user_review,output loop;
+    class iface,draft,plan,epics,registry,runner,roll service;
+    class events,files,native,schemas,guidance,drift output;
 ```
 
 ## UML
@@ -104,85 +118,96 @@ flowchart LR
 %% contract: symbols
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eef2ff", "primaryTextColor": "#172033", "primaryBorderColor": "#64748b", "lineColor": "#64748b"}}}%%
 classDiagram
-    class RenderPlanProjection {
-      <<file:application/use_cases/render_plan_projection.py>>
-      +execute(plan_id)
+    class PlanningStage {
+      <<file:application/stages/base.py>>
+      +stage_id()
+      +intake_type()
+      +output_type()
+      +scaffold(input_data)
+      +agent_context(input_data)
+      +accept(review_data)
     }
 
-    class ScaffoldPlanContract {
-      <<file:application/use_cases/scaffold_plan_contract.py>>
-      +execute(plan_id)
+    class DraftStage {
+      <<file:application/stages/draft_stage.py>>
+      +stage_id()
+      +scaffold(draft_seed)
+      +accept(review_data)
     }
 
-    class ScaffoldEpicPackage {
-      <<file:application/use_cases/scaffold_epic_package.py>>
-      +execute(epic_id)
+    class PlanStage {
+      <<file:application/stages/plan_stage.py>>
+      +stage_id()
+      +scaffold(plan_facts)
+      +accept(review_data)
     }
 
-    class RollUpdateProjection {
-      <<file:application/use_cases/roll_update_projection.py>>
-      +execute(plan_id)
+    class EpicsStage {
+      <<file:application/stages/epics_stage.py>>
+      +stage_id()
+      +scaffold(epic_facts)
+      +accept(review_data)
     }
 
-    class ImportInputBlocks {
-      <<file:application/use_cases/import_input_blocks.py>>
-      +execute(plan_id)
+    class StageRunner {
+      <<file:application/stage_runner.py>>
+      +run_current()
+      +advance_current()
+      +prepare_agent()
     }
 
-    class CheckProjectionSync {
-      <<file:application/use_cases/check_projection_sync.py>>
-      +execute(plan_id)
+    class RollRunner {
+      <<file:application/roll.py>>
+      +start_from_draft()
+      +continue_children()
+      +halt_on_drift()
     }
 
-    class RenderSchemaBundle {
-      <<file:application/use_cases/render_schema_bundle.py>>
-      +execute(epic_id)
+    class StageRegistry {
+      <<file:application/stage_registry.py>>
+      +get_current()
+      +get_next()
+      +register(stage)
     }
 
-    class ProjectionRenderer {
+    class ProjectionStore {
       <<file:application/projections.py>>
-      +render_plan()
-      +render_epic()
-      +render_schemas()
+      +write_markdown()
+      +write_mermaid()
+      +check_sync()
     }
 
-    class ProjectionScaffolder {
-      <<file:application/scaffolding.py>>
-      +scaffold_plan_contract()
-      +scaffold_epic_package()
-      +preserve_enrichment()
+    class SchemaPageProjection {
+      <<file:application/schema_page.py>>
+      +paste_native_sources()
+      +render_schemas_md()
     }
 
-    class RollUpdateReporter {
-      <<file:application/roll_updates.py>>
-      +detect_unresolved_changes()
-      +report_halt()
+    class StageData {
+      <<file:domain/stage_data.py>>
+      +str id
+      +dict values
     }
 
-    class InputBlockImporter {
-      <<file:application/input_blocks.py>>
-      +extract_answers()
-      +import_answers()
+    class StageOutput {
+      <<file:domain/stage_data.py>>
+      +str next_stage_id
+      +list data_objects
     }
 
-    class SyncChecker {
-      <<file:application/sync.py>>
-      +check_projection()
-      +assert_clean()
-    }
+    PlanningStage <|.. DraftStage
+    PlanningStage <|.. PlanStage
+    PlanningStage <|.. EpicsStage
 
-    RenderPlanProjection --> ProjectionRenderer
-    ScaffoldPlanContract --> ProjectionScaffolder
-    ScaffoldEpicPackage --> ProjectionScaffolder
-    RollUpdateProjection --> RollUpdateReporter
-    RollUpdateProjection --> ProjectionScaffolder
-    RenderSchemaBundle --> ProjectionRenderer
-    ImportInputBlocks --> InputBlockImporter
-    CheckProjectionSync --> SyncChecker
-    ProjectionRenderer --> SyncChecker
-    ProjectionScaffolder --> SyncChecker
-    RollUpdateReporter --> SyncChecker
-    InputBlockImporter --> SyncChecker
+    StageRunner --> StageRegistry
+    StageRunner --> PlanningStage
+    StageRunner --> ProjectionStore
+    StageRunner --> StageData
+    StageRunner --> StageOutput
+    RollRunner --> DraftStage
+    RollRunner --> StageRunner
+    SchemaPageProjection --> ProjectionStore
+    EpicsStage --> SchemaPageProjection
 ```
 
 ## Tree
@@ -192,20 +217,19 @@ classDiagram
 %%{init: {"theme": "base", "themeVariables": {"labelColor": "#172033", "lineColor": "#64748b"}}}%%
 treeView-beta
   "workspace_plan"
+    "domain"
+      "stage_data.py"
     "application"
       "projections.py"
-      "scaffolding.py"
-      "roll_updates.py"
-      "input_blocks.py"
-      "sync.py"
-      "use_cases"
-        "render_plan_projection.py"
-        "scaffold_plan_contract.py"
-        "scaffold_epic_package.py"
-        "roll_update_projection.py"
-        "import_input_blocks.py"
-        "check_projection_sync.py"
-        "render_schema_bundle.py"
+      "roll.py"
+      "schema_page.py"
+      "stage_registry.py"
+      "stage_runner.py"
+      "stages"
+        "base.py"
+        "draft_stage.py"
+        "plan_stage.py"
+        "epics_stage.py"
     "infrastructure"
       "markdown_renderer.py"
       "copier_renderer.py"

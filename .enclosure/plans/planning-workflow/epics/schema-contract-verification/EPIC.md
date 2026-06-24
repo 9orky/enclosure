@@ -32,7 +32,7 @@ owns:
 ## Value
 
 This epic turns Mermaid schemas into enforceable implementation contracts. The
-planner can compare planned file, symbol, and use-case contracts with actual
+planner can compare planned file, symbol, and flow contracts with actual
 implementation structure after an agent writes code.
 
 ## Outcome

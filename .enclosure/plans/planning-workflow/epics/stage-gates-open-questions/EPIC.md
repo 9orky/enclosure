@@ -37,8 +37,8 @@ by stage gates.
 
 ## Outcome
 
-Every stage has a consistent enter, edit, import, check, gate, advance, and
-project procedure. Questions can block progress, and agents cannot silently
+Every stage uses the same scaffold, agent update, user review, gate, and `next`
+acceptance loop. Questions can block progress, and agents cannot silently
 unblock their own uncertainty.
 
 ## Navigation
@@ -55,7 +55,8 @@ Next dependent epic:
 
 `tree.mermaid` defines gate and question files. `uml.mermaid` defines open
 question, stage gate, user-confirmation, and use-case symbols. `flows.mermaid`
-defines the add-question, classify, confirm, and check-gate use cases.
+defines the question, classification, confirmation, and gate-check signals used
+inside the stage loop.
 
 ## Boundaries
 

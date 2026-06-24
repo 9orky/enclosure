@@ -20,9 +20,14 @@ key_decisions:
   - Limit the first predictable workflow to three stages: draft seed, plan contract, and epics.
   - Start from a valid DRAFT.md, then scaffold PLAN.md and UML.md with stable named sections.
   - PLAN.md and UML.md should scaffold epic packages with stable IDs and predictable file names.
+  - Users should not need to know internal stage names or step identifiers.
+  - The public command surface should be start, next, agent, and roll, without caller-provided params.
+  - Every stage should receive typed input data and emit typed output data for the next stage.
+  - A stage should be addable as one class in one file implementing the shared stage interface.
   - Repeated scaffolding may add missing IDs and sections, but must preserve existing enrichment.
+  - Roll starts from the DRAFT seed and continues across child stages through the same loop.
   - Roll updates must halt advancement when required projected updates remain unresolved.
-  - Every workflow state should have an enter, edit, check, gate, and advance procedure.
+  - Every workflow state should scaffold, accept agent updates, receive user approval or update requests, and seed the next stage through next.
   - Open questions must be classified before a plan can cross a stage boundary.
   - Blocking open questions should prevent promotion to the next state.
   - Agents may add questions and suggest classifications, but only users can approve non-blocking classifications.
@@ -32,9 +37,9 @@ key_decisions:
   - Use libraries for event persistence, parsing, validation, rendering, formatting, and diagram checks.
   - Epic schema bundles should use SCHEMAS.md plus native flows.mermaid, uml.mermaid, and tree.mermaid files.
   - Mermaid schema files are implementation contracts, not documentation-only diagrams.
-  - flows.mermaid should define application use cases with names that map one use case to one class and one file.
+  - flows.mermaid should define implementation targets with names that map one stage or use case to one class and one file.
   - uml.mermaid classes should use file annotations to declare the relative implementation file for each symbol.
-  - flows.mermaid should be swimlaned with commands/events, use cases, services/domain/ports, and outputs.
+  - flows.mermaid should be swimlaned with commands, closed loop, implementation targets, services/domain/ports, and outputs.
   - tree.mermaid should use the shared Mermaid palette through TreeView theme variables.
   - Planned schema contracts should be compared with implementation schemas derived from modwire after coding.
 question_statuses:
@@ -127,7 +132,7 @@ open_questions:
   - question: How should direct manual edits to projected markdown be imported back into the event stream?
     status: answered
     explanation: Users may naturally edit markdown files, but the event store must remain authoritative without silently losing those edits.
-    decision: Only marked input blocks in projected markdown are imported into events. Edits outside those blocks are not authoritative and may be overwritten by projection sync.
+    decision: Only accepted stage review output is recorded as events. Edits outside the current stage review surface are not authoritative and may be overwritten by projection sync.
 ---
 
 # Planning Workflow Draft
@@ -146,9 +151,9 @@ owns generated structure, stable IDs, ordering, and section names. Human or
 agent enrichment attached to those stable IDs should be preserved across
 repeated scaffolding unless a roll update reports a conflict or drift.
 
-User-editable areas must be explicit marked input blocks. `workspace plan next`
-imports those blocks into events, then strict sync requires regenerated
-projections to match the event state.
+User-editable areas must be explicit stage review surfaces. `workspace plan
+next` accepts the current reviewed stage output into events, then strict sync
+requires regenerated projections to match the event state.
 
 ## Current Intent
 
@@ -158,9 +163,9 @@ agent sessions, and provide a clean promotion flow from draft seed to plan
 contract to epic packages.
 
 The authoritative planning model should be event sourced. Plan creation, draft
-updates, question classification, stage-gate checks, promotions, roll updates,
-and epic splits should be recorded as durable events in a local SQLite-backed
-event store.
+updates, stage output acceptance, question classification, stage-gate checks,
+promotions, roll updates, and epic splits should be recorded as durable events
+in a local SQLite-backed event store.
 
 Markdown documents, frontmatter, diagrams, and epic packages should be generated
 or synchronized projections of that event stream. This avoids making locks and
@@ -183,12 +188,13 @@ create or discover the authoritative plan aggregate first, then project
 `DRAFT.md`, `PLAN.md`, and schema display documents from recorded events.
 
 The corrected workflow starts when the first valid `DRAFT.md` is accepted as a
-seed. That seed deterministically creates the next stage: `PLAN.md` and
-`UML.md`, using stable section names and IDs derived from draft facts. Later
-roll updates may repeat this scaffolding from an updated draft, but only
-generated identifiers and missing structural sections may change automatically.
-Existing descriptions, rationale, tags, and other enrichment are preserved by
-stable ID or reported as unresolved drift.
+seed. That seed deterministically creates the next data set and projected
+documents. Later stages use the same loop: the stage receives input objects,
+scaffolds projections, the agent updates them, the user approves or asks for
+changes, and `next` records output objects that seed the following stage. Later
+roll updates start from the updated draft seed and continue through child stages
+with the same contract. Existing descriptions, rationale, tags, and other
+enrichment are preserved by stable ID or reported as unresolved drift.
 
 The existing promoted artifacts should be kept because they represent later
 stage projections. They should declare event-store lineage and be refreshed when
@@ -220,7 +226,9 @@ core direction:
 - markdown files are projections;
 - Copier used as projection support, not as a recipe replacement;
 - libraries used at boundaries instead of hand-rolled persistence, parsing, or rendering logic;
-- every state uses an explicit enter/edit/check/gate/advance procedure;
+- every state uses the same scaffold/agent/user/accept loop;
+- the only public subcommands are start, next, agent, and roll;
+- stages are data-in/data-out classes behind the command loop;
 - open questions are classified before stage transitions.
 
 Current gate status: ready to split into epics. There are no blocking questions
@@ -243,26 +251,28 @@ Each epic package owns a schema bundle:
 
 - `tree.mermaid` is the file contract: which files are expected to exist and be edited.
 - `uml.mermaid` is the symbol contract: which classes, properties, methods, and relations belong to those files.
-- `flows.mermaid` is the use-case contract: which application use cases exist, how commands enter them, and which ports or domain objects they call.
+- `flows.mermaid` is the flow contract: which commands enter the workflow, which stages or use cases exist, and which ports or domain objects they call.
 - `SCHEMAS.md` as the projected display page that embeds the native sources.
 
-Use-case nodes in `flows.mermaid` should follow a parseable naming convention:
+Implementation nodes in `flows.mermaid` should follow a parseable naming
+convention. For stage-driven planning, a stage is one class in one file:
 
 ```text
-usecase: ImportInputBlocks
-file: application/use_cases/import_input_blocks.py
-class: ImportInputBlocks
+stage: PlanStage
+file: application/stages/plan_stage.py
+class: PlanStage
 ```
 
-This lets the flow contract generate or verify one use case per file and one use
-case class per file.
+This lets the flow contract generate or verify one stage per file and one stage
+class per file.
 
 `uml.mermaid` should tag every implementation symbol with its relative file:
 
 ```text
-class ImportInputBlocks {
-  <<file:application/use_cases/import_input_blocks.py>>
-  +execute(plan_id)
+class PlanStage {
+  <<file:application/stages/plan_stage.py>>
+  +scaffold(plan_facts)
+  +accept(review_data)
 }
 ```
 

@@ -29,22 +29,23 @@ stateDiagram-v2
 
 ```mermaid
 flowchart LR
-    Enter["Enter\ncreate or reconstruct aggregate"] --> Edit["Edit\ncommands append events"]
-    Edit --> Roll["Roll update\nimport marked blocks and detect drift"]
-    Roll --> Scaffold["Scaffold\nstable IDs, sections, files"]
-    Scaffold --> Check["Check\nschema, lineage, strict sync, required fields"]
-    Check --> Gate["Gate\nclassify open questions"]
-    Gate --> Advance["Advance\nappend transition event"]
-    Advance --> Project["Project\nrender markdown and native files"]
+    Current["Current stage\nselected from events"] --> Intake["Intake\nstage input data objects"]
+    Intake --> Scaffold["Scaffold\nproject docs for review"]
+    Scaffold --> Agent["Agent\nupdate current projection"]
+    Agent --> Review["User review\napprove or request update"]
+    Review --> Gate["Gate\nclassify open questions"]
+    Gate --> Accept["Next\naccept stage output"]
+    Accept --> Project["Project\nrender markdown and native files"]
+    Project --> Current
     Gate --> Blocked["Blocked\nremaining blocking questions"]
-    Check --> Halted["Halted\nunresolved roll updates"]
+    Review --> Halted["Halted\nunresolved roll drift"]
 ```
 
 ## Artifact Projection
 
 ```mermaid
 flowchart TD
-    Commands["workspace plan commands"] --> App["Planning application\neventsourcing.Application"]
+    Commands["workspace plan\nstart / next / agent / roll"] --> App["Planning application\neventsourcing.Application"]
     App --> Store["SQLite event store\n.enclosure/.cache/plans.sqlite"]
     Store --> Aggregate["Plan aggregate\nreconstructed from events"]
 
@@ -91,7 +92,7 @@ flowchart LR
     Events --> Projectors["Projectors\nderived artifacts"]
 
     Frontmatter["Frontmatter\nprojected machine-readable view"] --> Drift["Strict sync checks\nprojection vs event state"]
-    Markdown["Markdown file\nscaffolded projection"] --> Input["Marked input blocks\nimported as events"]
+    Markdown["Markdown file\nscaffolded projection"] --> Input["Stage review output\naccepted as events"]
     Input --> Events
     Markdown --> Drift
     Native["Native sources\nflows.mermaid, uml.mermaid, tree.mermaid"] --> Embeds["Markdown embeds\nSCHEMAS.md generated sections"]
@@ -99,7 +100,7 @@ flowchart LR
     Projectors --> Generated["Generated structure\nsafe to rewrite"]
     Markdown --> Enrichment["Enrichment by stable ID\npreserved across scaffolds"]
     Markdown --> Disposable["Unkeyed edits\nnot authoritative"]
-    Drift --> Halt["Unresolved roll update\nhalts advancement"]
+    Drift --> Halt["Unresolved roll drift\nhalts advancement"]
 ```
 
 ## Object Model Sketch
@@ -107,13 +108,10 @@ flowchart LR
 ```mermaid
 classDiagram
     class PlanningApplication {
-      +create_plan()
-      +seed_from_draft()
-      +roll_update()
-      +scaffold_plan_contract()
-      +scaffold_epics()
-      +classify_question()
-      +advance_plan()
+      +start()
+      +next()
+      +agent()
+      +roll()
       +get_plan()
     }
 
@@ -122,11 +120,40 @@ classDiagram
       +str title
       +PlanState state
       +bool active
-      +seed_from_draft()
-      +roll_update()
-      +scaffold_next_stage()
-      +advance()
+      +current_stage()
+      +accept_stage_output()
       +classify_question()
+    }
+
+    class PlanningStage {
+      +stage_id()
+      +intake_type()
+      +output_type()
+      +scaffold(input_data)
+      +agent_context(input_data)
+      +accept(review_data)
+    }
+
+    class StageRunner {
+      +run_current()
+      +advance_current()
+      +prepare_agent()
+    }
+
+    class RollRunner {
+      +start_from_draft()
+      +continue_children()
+      +halt_on_drift()
+    }
+
+    class StageData {
+      +str id
+      +dict values
+    }
+
+    class StageOutput {
+      +str next_stage_id
+      +list data_objects
     }
 
     class Epic {
@@ -169,37 +196,23 @@ classDiagram
       +project(event, context)
     }
 
-    class Scaffolder {
-      +scaffold_draft_seed()
-      +scaffold_plan_contract()
-      +scaffold_epics()
-    }
-
-    class RollUpdate {
-      +import_marked_blocks()
-      +preserve_enrichment()
-      +report_unresolved_changes()
-    }
-
-    class InputBlockImporter {
-      +extract_answers(path)
-      +import_answers()
-    }
-
     class Validator {
       +validate(candidate)
     }
 
     PlanningApplication --> Plan
+    PlanningApplication --> StageRunner
+    PlanningApplication --> RollRunner
     Plan "1" --> "*" Epic
     Epic "1" --> "*" UserStory
     Plan "1" --> "*" OpenQuestion
     Plan "1" --> "*" ArtifactRef
+    StageRunner --> PlanningStage
+    StageRunner --> StageData
+    StageRunner --> StageOutput
+    RollRunner --> StageRunner
     DomainEvent ..> Plan
     Projector ..> ArtifactRef
-    Scaffolder ..> Plan
-    RollUpdate ..> PlanningApplication
-    InputBlockImporter ..> PlanningApplication
     Validator ..> Plan
     Validator ..> Epic
     Validator ..> UserStory
@@ -209,11 +222,13 @@ classDiagram
 
 ```mermaid
 flowchart TB
-    CLI["CLI command\nworkspace plan ..."] --> Command["Command object"]
+    CLI["CLI command\nstart / next / agent / roll"] --> Command["Command object"]
     Command --> App["PlanningApplication\neventsourcing.Application"]
     App --> Aggregate["Plan aggregate\nstate and transition rules"]
-    Aggregate --> Scaffold["Scaffold policy\nstable IDs and generated sections"]
-    Aggregate --> Roll["Roll update policy\npreserve enrichment or halt"]
+    App --> Runner["Stage runner\ndata in and data out"]
+    Runner --> Stage["Current stage\none class in one file"]
+    Stage --> Scaffold["Scaffold policy\nstable IDs and generated sections"]
+    App --> Roll["Roll runner\nDRAFT seed through children"]
     Aggregate --> Gates["Stage gates\nopen question classification"]
     Gates --> Confirm["User confirmation\nrequired to unblock"]
     Aggregate --> Specs["Specifications\npolicy and validation"]
@@ -254,11 +269,11 @@ sequenceDiagram
     participant Proj as Markdown Projections
 
     User->>CLI: workspace plan next
-    CLI->>App: roll_update(plan_id)
+    CLI->>App: next()
     App->>Plan: reconstruct from events
-    Plan->>Plan: import input and scaffold next stage
-    Plan->>Plan: enforce roll update and gate
-    Plan-->>App: new domain events or unresolved update report
+    App->>Plan: get current stage
+    App->>Plan: accept current stage output
+    Plan-->>App: stage output events or blocker report
     App->>DB: append event atomically
     DB-->>Proj: notification log
     Proj->>Proj: render DRAFT.md / PLAN.md / UML.md / epics
@@ -273,6 +288,7 @@ DraftUpdated
 DraftInputBlockImported
 RollUpdateRequested
 RollUpdateHalted
+StageOutputAccepted
 PlanContractScaffolded
 OpenQuestionAdded
 OpenQuestionClassified
@@ -294,10 +310,10 @@ core workflow should not become a single large planner object that knows every
 artifact shape.
 
 The event store is the authority. Files are deterministic scaffolded
-projections. Direct file edits are durable only when they occur inside marked
-input blocks and are imported as events. Generated structure may be rewritten,
-but enrichment attached to stable IDs must be preserved or reported as
-unresolved drift. Unresolved roll updates halt advancement.
+projections. Stage review output is durable only when `next` accepts it into the
+event stream. Generated structure may be rewritten, but enrichment attached to
+stable IDs must be preserved or reported as unresolved drift. Unresolved roll
+updates halt advancement.
 
 Agents may add questions and set blocking classifications. Non-blocking
 classifications require user confirmation before a gate can advance.
@@ -346,22 +362,23 @@ flowchart TD
     Agent --> Implement
 ```
 
-## Flow-to-Use-Case Contract
+## Flow-to-Implementation Contract
 
 ```mermaid
 flowchart TD
-    Command["command node"] --> UseCase["usecase: Name\nfile: application/use_cases/name.py\nclass: Name"]
-    UseCase --> Domain["domain object or port"]
-    UseCase --> Event["domain event or projection"]
+    Command["command node"] --> Stage["stage: Name\nfile: application/stages/name.py\nclass: Name"]
+    Stage --> Domain["domain object or port"]
+    Stage --> Event["domain event or projection"]
 ```
 
 ## UML File Annotation Contract
 
 ```mermaid
 classDiagram
-    class ImportInputBlocks {
-      <<file:application/use_cases/import_input_blocks.py>>
-      +execute(plan_id)
+    class PlanStage {
+      <<file:application/stages/plan_stage.py>>
+      +scaffold(plan_facts)
+      +accept(review_data)
     }
 ```
 
@@ -369,19 +386,19 @@ classDiagram
 
 ```mermaid
 flowchart LR
-    subgraph commands["Commands / Events"]
+    subgraph commands["Parameterless Commands"]
       Command["command: workspace plan next"]
     end
 
-    subgraph use_cases["Use Cases"]
-      UseCase["usecase: ImportInputBlocks\nfile: application/use_cases/import_input_blocks.py\nclass: ImportInputBlocks"]
+    subgraph stages["Stages"]
+      Stage["stage: PlanStage\nfile: application/stages/plan_stage.py\nclass: PlanStage"]
     end
 
     subgraph ports["Ports / Domain"]
       Port["port: EventStore"]
     end
 
-    Command --> UseCase --> Port
+    Command --> Stage --> Port
 ```
 
 Libraries should handle event persistence, parsing, validation, rendering,

@@ -19,7 +19,7 @@ native_sources:
   uml: uml.mermaid
   tree: tree.mermaid
 contract_roles:
-  flows: use-case contract
+  flows: flow contract
   uml: symbol contract
   tree: file contract
 ---
@@ -37,7 +37,7 @@ flowchart LR
     subgraph commands["Commands / Queries"]
       cmd_start["command: workspace plan start"]
       cmd_append["command: internal append event"]
-      cmd_get["query: workspace plan status"]
+      cmd_get["query: internal active plan state"]
     end
 
     subgraph use_cases["Use Cases"]
@@ -89,7 +89,7 @@ flowchart LR
 classDiagram
     class StartPlan {
       <<file:application/use_cases/start_plan.py>>
-      +execute(name, idea)
+      +execute()
     }
 
     class AppendPlanEvent {

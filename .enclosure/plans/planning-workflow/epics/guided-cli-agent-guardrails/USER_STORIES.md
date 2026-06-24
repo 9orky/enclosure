@@ -15,11 +15,8 @@ managed_files:
   - uml.mermaid
   - tree.mermaid
 stories:
-  - id: show-plan-status
-    title: Show active plan status
-    status: candidate
   - id: start-plan
-    title: Start the first active plan
+    title: Start the active plan
     status: candidate
   - id: guide-next-action
     title: Guide the next valid action
@@ -27,40 +24,34 @@ stories:
   - id: prepare-agent-context
     title: Prepare constrained agent context
     status: candidate
+  - id: roll-plan-chain
+    title: Roll the projected plan chain
+    status: candidate
 ---
 
 # User Stories
 
-## show-plan-status
-
-As a user, I want a single status command so that I know where the active plan is
-and what blocks it.
-
-Acceptance criteria:
-
-- Status shows active plan name and stage.
-- Status shows strict sync result.
-- Status lists blocking and deferred questions.
-
 ## start-plan
 
-As a user, I want to start a plan with a name so that the planner creates the
-event-backed plan and first draft projection.
+As a user, I want `workspace plan start` to create the active planning loop
+without parameters so that I do not need to choose internal identifiers.
 
 Acceptance criteria:
 
 - Start rejects a second active plan.
 - Start creates the plan folder projection.
-- Start creates marked input blocks for first answers.
+- Start creates the first stage review surface.
+- Start derives any required name or identifier from the draft seed or plan
+  context.
 
 ## guide-next-action
 
-As a user, I want `workspace plan next` to import answers and tell me the next
-valid moves so that I do not guess the workflow.
+As a user, I want `workspace plan next` to accept the current reviewed stage and
+tell me the next valid move so that I do not guess the workflow.
 
 Acceptance criteria:
 
-- Next imports marked input blocks.
+- Next records the current stage output as events.
 - Next runs strict sync and gate checks.
 - Next prints allowed commands and reasons for blocked commands.
 
@@ -74,3 +65,14 @@ Acceptance criteria:
 - Agent context lists allowed commands.
 - Agent context lists forbidden actions.
 - Agent context says when user confirmation is required.
+
+## roll-plan-chain
+
+As a user, I want `workspace plan roll` to refresh projected children from the
+draft seed so that the plan chain can update consistently after draft changes.
+
+Acceptance criteria:
+
+- Roll requires no command parameters.
+- Roll starts from `DRAFT.md` and continues across child stages.
+- Roll reports unresolved drift instead of overwriting reviewed enrichment.

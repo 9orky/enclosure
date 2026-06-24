@@ -58,9 +58,14 @@ projects it into a three-stage planning contract:
 - Stage 3, epics: epic folders contain projected epic-level intent, current
   story placeholders, and Mermaid schema contracts.
 
+Users should not need to know these stage names while operating the workflow.
+Commands derive the active plan and current stage from event state. Each stage
+receives a list of typed data objects, scaffolds reviewable projections, accepts
+agent and user updates, and emits the data objects that seed the next stage.
+
 The first implementation should use the Python `eventsourcing` package with
 SQLite persistence for the planning core. Plan commands append domain events;
-queries reconstruct the current plan state; projections render markdown,
+queries reconstruct the current plan state; stage projections render markdown,
 frontmatter, diagrams, and epic packages.
 
 ## Tooling Position
@@ -91,14 +96,15 @@ plan as projected metadata, but it should not be the locking mechanism.
 
 Structured data in frontmatter should be a projected machine-readable view, not
 the canonical database. Markdown projections may contain readable explanation
-and marked input blocks. Generated structure, stable IDs, section names, and
-ordering are owned by the planning module. Enrichment attached to stable IDs
-must survive repeated scaffolding unless a roll update reports unresolved drift.
+and current-stage review surfaces. Generated structure, stable IDs, section
+names, and ordering are owned by the planning module. Enrichment attached to
+stable IDs must survive repeated scaffolding unless a roll update reports
+unresolved drift.
 
 Generated artifacts should declare their source and sync policy. Regeneration
 may rewrite generated structure, but it must preserve enrichment attached to
 stable IDs or report unresolved drift. User input is durable only after it is
-captured in marked input blocks and imported into the event store.
+accepted as current-stage output into the event store.
 
 Native source files should own native formats as projections. For example,
 `flows.mermaid`, `uml.mermaid`, and `tree.mermaid` should remain the native
@@ -107,10 +113,15 @@ contracts, not documentation-only diagrams. The fact that each contract exists,
 belongs to an epic, and was approved at a particular stage belongs to the event
 stream.
 
-Every workflow state should have the same basic operating rhythm: enter the
-state, edit through commands, roll updates into events, check the reconstructed
-state and projections, resolve the gate, then advance. This makes planning
-predictable across draft seed, plan contract, and epics.
+Every workflow state should have the same basic closed loop: scaffold the
+current stage from its input data, let the agent update the projection, let the
+user approve or request changes, then accept the stage output with `next`. This
+keeps the workflow predictable without exposing internal stage names to users.
+
+The public command surface should be only `start`, `next`, `agent`, and `roll`,
+with no command parameters required by the caller. `roll` is special because it
+starts from the `DRAFT.md` seed and continues across child stages through the
+same stage contract.
 
 Projection sync should be strict. The workflow cannot advance while projected
 files are out of sync with the event store.
@@ -133,13 +144,13 @@ The first implementation should be split into five epics:
 
 - 1. Event-Sourced Planning Core: own the event-sourced aggregate, SQLite-backed
   application, event definitions, and reconstructed plan state.
-- 2. Projected Planning Documents: own deterministic scaffolded projections,
-  marked input blocks, enrichment preservation, projection sync, and document
-  rendering.
+- 2. Projected Planning Documents: own deterministic stage projections,
+  stage intake/output data, enrichment preservation, `SCHEMAS.md` display
+  projection, roll continuity, and document rendering.
 - 3. Stage Gates and Open Questions: own stage procedures, gate evaluation,
   question classification, and user-confirmed unblocking.
-- 4. Guided CLI and Agent Guardrails: own the `workspace plan` command loop,
-  status/next/agent guidance, and safe command boundaries.
+- 4. Guided CLI and Agent Guardrails: own the parameterless `workspace plan`
+  command loop, start/next/agent/roll guidance, and safe command boundaries.
 - 5. Schema Contract Verification: own comparison between planned Mermaid
   contracts and actual implementation schemas derived from modwire.
 
@@ -178,43 +189,47 @@ tree.mermaid
 ```
 
 `SCHEMAS.md` is only a display projection. The native Mermaid files are the
-sources. `flows.mermaid` should use a flowchart for the primary use-case
-contract because flowchart nodes are easier to parse into use-case targets.
+sources, and projection updates paste their content into the proper
+`SCHEMAS.md` sections. `flows.mermaid` should use a flowchart for the primary
+flow contract because flowchart nodes are easier to parse into implementation
+targets.
 `uml.mermaid` should use class diagrams. `tree.mermaid` should use Mermaid
 TreeView syntax. Sequence diagrams can be added later as secondary views, but
-they should not replace the parseable use-case contract.
+they should not replace the parseable flow contract.
 
 The native Mermaid files are also contracts:
 
 - `tree.mermaid` defines the expected files for the epic.
 - `uml.mermaid` defines the expected symbols, relationships, properties, and
   methods.
-- `flows.mermaid` defines the expected application use cases, their command
-  entry points, and the domain or port calls they orchestrate.
+- `flows.mermaid` defines the expected command entry points, stage loop,
+  implementation targets, and domain or port calls they orchestrate.
 
 After implementation, Enclosure should derive actual schemas from the filesystem
 and modwire, compare them with the planned contracts, and report drift back to
 the agent.
 
-Use-case nodes in `flows.mermaid` should be named so they can be transformed
-into implementation targets:
+Implementation nodes in `flows.mermaid` should be named so they can be
+transformed into implementation targets. For a stage-driven workflow, a stage is
+one class in one file implementing the shared stage interface:
 
 ```text
-usecase: ImportInputBlocks
-file: application/use_cases/import_input_blocks.py
-class: ImportInputBlocks
+stage: PlanStage
+file: application/stages/plan_stage.py
+class: PlanStage
 ```
 
-The intended implementation rule is one use case per file and one use case class
-per file. That closes the application-layer gap: agents no longer invent the use
-case layout from scratch.
+The intended stage implementation rule is one stage per file and one stage class
+per file. That closes the application-layer gap: agents no longer invent the
+stage layout from scratch.
 
 Every implementation class in `uml.mermaid` should carry a file annotation:
 
 ```text
-class ImportInputBlocks {
-  <<file:application/use_cases/import_input_blocks.py>>
-  +execute(plan_id)
+class PlanStage {
+  <<file:application/stages/plan_stage.py>>
+  +scaffold(plan_facts)
+  +accept(review_data)
 }
 ```
 
@@ -223,10 +238,10 @@ can be compared against this tag to detect misplaced or missing implementations.
 
 `flows.mermaid` should use swimlane-style subgraphs:
 
-- commands, queries, and events;
-- use cases;
-- services, domain objects, and ports;
-- outputs such as projections, events, gates, and reports.
+- parameterless commands;
+- the closed stage loop;
+- stage classes, services, domain objects, and ports;
+- outputs such as projections, events, guidance, gates, and reports.
 
 `tree.mermaid` should use the shared Mermaid palette through TreeView theme
 variables. TreeView has a smaller styling surface than flowcharts, so palette
@@ -245,11 +260,14 @@ the complete process.
 - A valid `DRAFT.md` can seed the event-sourced plan.
 - Draft facts deterministically scaffold `PLAN.md` and `UML.md`.
 - `PLAN.md` and `UML.md` deterministically scaffold epic packages.
+- Users can run the loop with only `start`, `next`, `agent`, and `roll`.
+- New stages can be added as one class in one file implementing the stage
+  interface.
 - Repeated scaffolding preserves enrichment attached to stable IDs.
 - Mermaid contracts can be compared with actual implementation structure.
 - Drift between projected files and event-sourced state can be detected and
   repaired or imported.
-- User answers can be typed into marked input blocks and imported as events.
+- User review output can be accepted as stage output events.
 - Stage advancement is blocked when projections are not strictly synchronized.
 - Roll updates halt advancement when required updates remain unresolved.
 - New artifact types can be added without rewriting the whole planner.

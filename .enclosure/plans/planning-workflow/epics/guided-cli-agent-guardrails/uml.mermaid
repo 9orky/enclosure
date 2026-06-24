@@ -1,8 +1,8 @@
 %% contract: symbols
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eef2ff", "primaryTextColor": "#172033", "primaryBorderColor": "#64748b", "lineColor": "#64748b"}}}%%
 classDiagram
-    class ShowPlanStatus {
-      <<file:application/use_cases/show_plan_status.py>>
+    class RunPlanStart {
+      <<file:application/use_cases/run_plan_start.py>>
       +execute()
     }
 
@@ -16,17 +16,17 @@ classDiagram
       +execute()
     }
 
-    class RenderAllowedActions {
-      <<file:application/use_cases/render_allowed_actions.py>>
-      +execute(plan_state)
+    class RunPlanRoll {
+      <<file:application/use_cases/run_plan_roll.py>>
+      +execute()
     }
 
     class PlanCli {
       <<file:ui/cli.py>>
-      +status()
       +start()
       +next()
       +agent()
+      +roll()
     }
 
     class NextActionService {
@@ -41,10 +41,23 @@ classDiagram
       +requires_confirmation()
     }
 
-    PlanCli --> ShowPlanStatus
+    class StageRunner {
+      <<external:projected-documents/application/stage_runner.py>>
+      +advance_current()
+    }
+
+    class RollRunner {
+      <<external:projected-documents/application/roll.py>>
+      +start_from_draft()
+    }
+
+    PlanCli --> RunPlanStart
     PlanCli --> RunPlanNext
     PlanCli --> PrepareAgentGuidance
-    ShowPlanStatus --> NextActionService
+    PlanCli --> RunPlanRoll
+    RunPlanStart --> NextActionService
     RunPlanNext --> NextActionService
+    RunPlanNext --> StageRunner
     PrepareAgentGuidance --> AgentGuidance
-    RenderAllowedActions --> NextActionService
+    RunPlanRoll --> RollRunner
+    RunPlanRoll --> NextActionService

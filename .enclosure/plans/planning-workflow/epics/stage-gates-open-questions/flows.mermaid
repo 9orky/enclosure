@@ -1,11 +1,11 @@
-%% contract: use_cases
+%% contract: flow
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#e0f2fe", "primaryTextColor": "#172033", "primaryBorderColor": "#0284c7", "lineColor": "#64748b", "tertiaryColor": "#f8fafc"}}}%%
 flowchart LR
-    subgraph commands["Commands"]
-      cmd_add["command: workspace plan question add"]
-      cmd_classify["command: workspace plan question classify"]
-      cmd_confirm["command: workspace plan question confirm"]
-      cmd_check["command: workspace plan check"]
+    subgraph signals["Stage Loop Signals"]
+      signal_add["signal: agent or user raised question"]
+      signal_classify["signal: classification proposed"]
+      signal_confirm["signal: user confirmed unblock"]
+      signal_check["signal: next requested gate check"]
     end
 
     subgraph use_cases["Use Cases"]
@@ -25,10 +25,10 @@ flowchart LR
       decision["result: allow or block advance"]
     end
 
-    cmd_add --> uc_add
-    cmd_classify --> uc_classify
-    cmd_confirm --> uc_confirm
-    cmd_check --> uc_gate
+    signal_add --> uc_add
+    signal_classify --> uc_classify
+    signal_confirm --> uc_confirm
+    signal_check --> uc_gate
     uc_add --> question
     uc_classify --> question
     uc_confirm --> confirmation
@@ -37,11 +37,11 @@ flowchart LR
     confirmation --> gate
     gate --> decision
 
-    classDef command fill:#e0f2fe,stroke:#0284c7,color:#172033;
+    classDef signal fill:#e0f2fe,stroke:#0284c7,color:#172033;
     classDef usecase fill:#dcfce7,stroke:#16a34a,color:#172033;
     classDef domain fill:#ffedd5,stroke:#ea580c,color:#172033;
     classDef output fill:#f1f5f9,stroke:#64748b,color:#172033;
-    class cmd_add,cmd_classify,cmd_confirm,cmd_check command;
+    class signal_add,signal_classify,signal_confirm,signal_check signal;
     class uc_add,uc_classify,uc_confirm,uc_gate usecase;
     class question,confirmation,gate domain;
     class decision output;

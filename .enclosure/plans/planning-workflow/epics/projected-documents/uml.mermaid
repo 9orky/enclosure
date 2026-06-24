@@ -1,82 +1,93 @@
 %% contract: symbols
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#eef2ff", "primaryTextColor": "#172033", "primaryBorderColor": "#64748b", "lineColor": "#64748b"}}}%%
 classDiagram
-    class RenderPlanProjection {
-      <<file:application/use_cases/render_plan_projection.py>>
-      +execute(plan_id)
+    class PlanningStage {
+      <<file:application/stages/base.py>>
+      +stage_id()
+      +intake_type()
+      +output_type()
+      +scaffold(input_data)
+      +agent_context(input_data)
+      +accept(review_data)
     }
 
-    class ScaffoldPlanContract {
-      <<file:application/use_cases/scaffold_plan_contract.py>>
-      +execute(plan_id)
+    class DraftStage {
+      <<file:application/stages/draft_stage.py>>
+      +stage_id()
+      +scaffold(draft_seed)
+      +accept(review_data)
     }
 
-    class ScaffoldEpicPackage {
-      <<file:application/use_cases/scaffold_epic_package.py>>
-      +execute(epic_id)
+    class PlanStage {
+      <<file:application/stages/plan_stage.py>>
+      +stage_id()
+      +scaffold(plan_facts)
+      +accept(review_data)
     }
 
-    class RollUpdateProjection {
-      <<file:application/use_cases/roll_update_projection.py>>
-      +execute(plan_id)
+    class EpicsStage {
+      <<file:application/stages/epics_stage.py>>
+      +stage_id()
+      +scaffold(epic_facts)
+      +accept(review_data)
     }
 
-    class ImportInputBlocks {
-      <<file:application/use_cases/import_input_blocks.py>>
-      +execute(plan_id)
+    class StageRunner {
+      <<file:application/stage_runner.py>>
+      +run_current()
+      +advance_current()
+      +prepare_agent()
     }
 
-    class CheckProjectionSync {
-      <<file:application/use_cases/check_projection_sync.py>>
-      +execute(plan_id)
+    class RollRunner {
+      <<file:application/roll.py>>
+      +start_from_draft()
+      +continue_children()
+      +halt_on_drift()
     }
 
-    class RenderSchemaBundle {
-      <<file:application/use_cases/render_schema_bundle.py>>
-      +execute(epic_id)
+    class StageRegistry {
+      <<file:application/stage_registry.py>>
+      +get_current()
+      +get_next()
+      +register(stage)
     }
 
-    class ProjectionRenderer {
+    class ProjectionStore {
       <<file:application/projections.py>>
-      +render_plan()
-      +render_epic()
-      +render_schemas()
+      +write_markdown()
+      +write_mermaid()
+      +check_sync()
     }
 
-    class ProjectionScaffolder {
-      <<file:application/scaffolding.py>>
-      +scaffold_plan_contract()
-      +scaffold_epic_package()
-      +preserve_enrichment()
+    class SchemaPageProjection {
+      <<file:application/schema_page.py>>
+      +paste_native_sources()
+      +render_schemas_md()
     }
 
-    class RollUpdateReporter {
-      <<file:application/roll_updates.py>>
-      +detect_unresolved_changes()
-      +report_halt()
+    class StageData {
+      <<file:domain/stage_data.py>>
+      +str id
+      +dict values
     }
 
-    class InputBlockImporter {
-      <<file:application/input_blocks.py>>
-      +extract_answers()
-      +import_answers()
+    class StageOutput {
+      <<file:domain/stage_data.py>>
+      +str next_stage_id
+      +list data_objects
     }
 
-    class SyncChecker {
-      <<file:application/sync.py>>
-      +check_projection()
-      +assert_clean()
-    }
+    PlanningStage <|.. DraftStage
+    PlanningStage <|.. PlanStage
+    PlanningStage <|.. EpicsStage
 
-    RenderPlanProjection --> ProjectionRenderer
-    ScaffoldPlanContract --> ProjectionScaffolder
-    ScaffoldEpicPackage --> ProjectionScaffolder
-    RollUpdateProjection --> RollUpdateReporter
-    RollUpdateProjection --> ProjectionScaffolder
-    RenderSchemaBundle --> ProjectionRenderer
-    ImportInputBlocks --> InputBlockImporter
-    CheckProjectionSync --> SyncChecker
-    ProjectionRenderer --> SyncChecker
-    ProjectionScaffolder --> SyncChecker
-    RollUpdateReporter --> SyncChecker
-    InputBlockImporter --> SyncChecker
+    StageRunner --> StageRegistry
+    StageRunner --> PlanningStage
+    StageRunner --> ProjectionStore
+    StageRunner --> StageData
+    StageRunner --> StageOutput
+    RollRunner --> DraftStage
+    RollRunner --> StageRunner
+    SchemaPageProjection --> ProjectionStore
+    EpicsStage --> SchemaPageProjection

@@ -15,77 +15,86 @@ managed_files:
   - uml.mermaid
   - tree.mermaid
 stories:
-  - id: render-plan-documents
-    title: Render planning documents from events
+  - id: run-stage-loop
+    title: Run the closed stage loop
     status: candidate
-  - id: preserve-enrichment-during-scaffold
-    title: Preserve enrichment during repeated scaffolding
+  - id: add-stage-class
+    title: Add stages as one class in one file
     status: candidate
-  - id: halt-unresolved-roll-update
-    title: Halt unresolved roll updates
+  - id: keep-user-stage-agnostic
+    title: Keep stage internals out of user workflow
     status: candidate
-  - id: import-input-blocks
-    title: Import marked input blocks
+  - id: roll-from-draft-through-children
+    title: Roll from draft through child stages
     status: candidate
-  - id: enforce-strict-sync
-    title: Enforce strict projection sync
+  - id: project-schema-page
+    title: Project SCHEMAS.md from native Mermaid files
     status: candidate
 ---
 
 # User Stories
 
-## render-plan-documents
+## run-stage-loop
 
-As a user, I want planning documents rendered from event state so that files are
-readable views of the authoritative plan.
-
-Acceptance criteria:
-
-- The planner renders draft seed, plan contract, UML contract, and epic package
-  documents.
-- Projected files declare source and sync policy.
-- Projection rendering is deterministic.
-
-## preserve-enrichment-during-scaffold
-
-As a user, I want repeated scaffolding to preserve descriptions and tags already
-attached to stable IDs so that roll updates can safely refresh structure.
+As a user, I want each planning step to behave the same way so that I can review
+projected files, ask the agent for updates, and accept the result with `next`.
 
 Acceptance criteria:
 
-- Generated IDs, slugs, ordering, and section names can be refreshed.
-- Existing enrichment attached to stable IDs is preserved.
-- Removed or renamed IDs create a drift report instead of silent overwrite.
+- The current stage receives typed input data and scaffolds projected files.
+- The agent updates only the current stage projection and context.
+- User acceptance records stage output data that seeds the next stage.
+- The same loop works for draft, plan, and epic projections.
 
-## halt-unresolved-roll-update
+## add-stage-class
 
-As the planner, I want unresolved roll updates to halt advancement so that
-agents cannot advance from mismatched planning documents.
-
-Acceptance criteria:
-
-- Roll update reports required changes it cannot reconcile automatically.
-- Advancement fails while required roll updates are unresolved.
-- Resolving the drift and regenerating projections restores advancement.
-
-## import-input-blocks
-
-As a user, I want to type answers inside marked input blocks so that VS Code
-remains a natural planning surface.
+As a developer, I want to add a stage by adding one class in one file so that the
+workflow grows without changing the command loop.
 
 Acceptance criteria:
 
-- `workspace plan next` imports marked blocks.
-- Imports append events.
-- Edits outside marked blocks are ignored or reported as drift.
+- The shared stage interface declares intake, scaffold, agent context, accept,
+  and output behavior.
+- Each concrete stage owns the input data it expects.
+- Each concrete stage owns the output data it passes to the next stage.
+- The stage registry can discover or register a new stage without command
+  changes.
 
-## enforce-strict-sync
+## keep-user-stage-agnostic
 
-As the planner, I want to block advancement when projections are stale so that
-agents and users do not make decisions from mismatched files.
+As a user, I want parameterless commands so that I do not need to know internal
+stage names or step identifiers.
 
 Acceptance criteria:
 
-- Status reports projection sync state.
-- Advancement fails if projections do not match event state.
-- Regeneration restores projection sync.
+- `start`, `next`, `agent`, and `roll` derive the active plan and current stage.
+- Command output explains what changed without requiring stage vocabulary.
+- `agent` receives enough bounded context to update the current projection.
+- `next` advances only from the current accepted stage output.
+
+## roll-from-draft-through-children
+
+As a user, I want `roll` to refresh the whole planning chain from `DRAFT.md` so
+that child projections can be updated consistently.
+
+Acceptance criteria:
+
+- `roll` starts from the draft seed.
+- `roll` continues through child stages using the same stage interface.
+- Roll output preserves enrichment attached to stable IDs.
+- Unresolved conflicts halt with a report instead of overwriting reviewed
+  enrichment.
+
+## project-schema-page
+
+As a developer, I want `SCHEMAS.md` generated from native Mermaid files so that
+schema diagrams have one native source of truth.
+
+Acceptance criteria:
+
+- `flows.mermaid`, `uml.mermaid`, and `tree.mermaid` remain native projection
+  targets.
+- `SCHEMAS.md` pastes those native files into the proper markdown sections
+  during projection updates.
+- Edits to `SCHEMAS.md` generated sections are not treated as schema source
+  edits.
