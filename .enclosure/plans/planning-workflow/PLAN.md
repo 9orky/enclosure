@@ -2,294 +2,307 @@
 
 ## Purpose
 
-Enclosure keeps implementation structure tight and consistent, but planning still
-depends too much on chat context, file state, and agent improvisation. This plan
-introduces a local event-sourced planning workflow that records planning facts as
-durable events and projects them into readable markdown artifacts.
+Create a local event-sourced planning workflow that promotes a markdown draft
+into a plan contract and then into implementation-ready epic packages.
 
-The goal is to make planning explicit, inspectable, repeatable, and enforceable
-without making markdown files carry transaction and locking responsibilities.
-The first predictable contract intentionally stops at the epics stage.
-
-## Business Value
-
-This workflow should help Enclosure users move from an initial idea to
-implementation-ready epics with less ambiguity. It creates one visible planning
-path, keeps decision records close to the codebase, and gives agents a stable
-source of truth instead of reconstructing intent from conversation history.
-
-The stable source of truth should be a local SQLite-backed event-sourced
-planning subsystem. The documents remain valuable because they are readable,
-reviewable, and familiar, but canonical facts should be recorded as events and
-projected back into files.
-
-Expected value:
-
-- Reduce confusion caused by multiple competing plans.
-- Preserve planning context across agent sessions.
-- Give users editable planning documents without making files the authority.
-- Create a clean promotion path from draft seed to plan contract to epic
-  packages.
-- Make drift between projected files and event-sourced facts detectable.
-- Preserve a transactional history of planning decisions and stage transitions.
-- Improve repeatability by generating consistent plan artifacts and epic
-  packages from typed events and projections.
-
-## Scope
-
-The workflow starts with a single active event-sourced plan aggregate and
-projects it into a three-stage planning contract:
-
-- Stage 1, draft seed: the first valid `DRAFT.md` records initial user and
-  agent intent.
-- Stage 2, plan contract: `PLAN.md` explains business purpose and value, while
-  `UML.md` records the technical contract.
-- Stage 3, epics: epic folders contain projected epic-level intent, current
-  story placeholders, and Mermaid schema contracts.
-
-Users should not need to know these stage names while operating the workflow.
-Commands derive the active plan and current stage from event state. Each stage
-receives a list of typed data objects, scaffolds reviewable projections, accepts
-agent and user updates, and emits the data objects that seed the next stage.
-The upstream data does not describe what the next projection will look like.
-Projection shape, output object type, and output cardinality are owned by the
-stage implementation.
-
-The first implementation should use the Python `eventsourcing` package with
-SQLite persistence for the planning core. Plan commands append domain events;
-queries reconstruct the current plan state; stage projections render markdown,
-diagrams, and epic packages.
-
-## Tooling Position
-
-`eventsourcing` should own the application/event-store mechanics. Copier should
-be considered a projection renderer for markdown artifact templates, not the
-planning authority.
-
-Recipes should remain Enclosure-native because they carry architecture-specific
-meaning: archetypes, ladders, slots, target semantics, and module shape
-vocabulary. Copier can be evaluated as a rendering/update backend for planning
-documents first, then considered later as an implementation detail behind
-selected recipes if that proves useful.
-
-## Non-Goals
-
-This plan does not define the full implementation of the planning module yet.
-It also does not attempt to replace issue trackers, sprint planning, or external
-project management systems. The first useful version should stay local,
-markdown-readable, and aligned with Enclosure's existing filesystem workflow.
-Post-epic automation is intentionally out of scope for the first contract.
-
-## Operating Principles
-
-Only one plan should be active at a time. Active-plan ownership should be
-enforced by the event-sourced application. The filesystem can expose the active
-plan through projected files, but it should not be the locking mechanism.
-
-Structured planning data belongs in events. Markdown projections may contain
-readable explanation and current-stage review surfaces. Generated structure,
-derived stable identities, section names, and ordering are owned by the planning
-module. Enrichment attached to derived stable identities must survive repeated
-scaffolding unless roll reports unresolved drift.
-
-Projection source and sync policy belong to the planner implementation.
-Regeneration may rewrite generated structure, but it must preserve enrichment
-attached to derived stable identities or report unresolved drift. User input is
-durable only after it is accepted as current-stage output into the event store.
-
-Native source files should own native formats as projections. For example,
-`flows.mermaid`, `uml.mermaid`, and `tree.mermaid` should remain the native
-Mermaid sources consumed by `SCHEMAS.md`. These Mermaid files are implementation
-contracts, not documentation-only diagrams. The fact that each contract exists,
-belongs to an epic, and was approved at a particular stage belongs to the event
-stream.
-
-Every workflow state should have the same basic closed loop: scaffold the
-current stage from its input data, let the agent update the projection, let the
-user approve or request changes, then accept the stage output with `next`. This
-keeps the workflow predictable without exposing internal stage names to users.
-
-The public command surface should be only `start`, `next`, `agent`, and `roll`,
-with no command parameters required by the caller. `roll` is special because it
-starts from the `DRAFT.md` seed and continues across child stages through the
-same stage contract.
-
-Roll is a forward-only recomputation from seed to tree. `DRAFT.md` owns only the
-seed data objects. A downstream stage derives deterministic output slots from
-the stable identity of its input objects plus its own stage and variant rules.
-For example, five seed objects may produce five plan objects, or five declared
-variants, because that cardinality is known by the stage implementation. During
-roll, generated fields are refreshed, missing derived slots are created, and
-accepted enrichment is preserved by derived stable identity. Removed or renamed
-upstream identities orphan downstream enrichment unless an explicit alias or
-drift resolution reconnects it. Downstream projection shape is never pushed back
-into `DRAFT.md`.
-
-Projection sync should be strict. The workflow cannot advance while projected
-files are out of sync with the event store.
-
-Open questions should be treated as stage-gate inputs. The workflow should not
-force premature certainty, but it should prevent silent uncertainty. Before a
-plan crosses a stage boundary, every open question must be classified as
-answered, deferred, accepted risk, obsolete, or blocking. Blocking questions stop
-promotion. Every open question should also explain why it was asked and what
-confusion or uncertainty caused it.
-
-Agents may add questions and may mark questions as blocking. They may propose
-non-blocking classifications, but users must confirm anything that unblocks a
-stage gate. This keeps the agent useful without letting it silently approve its
-own uncertainty.
-
-## Epic Split
-
-The first implementation should be split into six epics:
-
-- 0. Hexagonal Foundation: own the shared port, adapter, and dependency-shape
-  interfaces that keep the planning module's hexagonal structure consistent.
-- 1. Event-Sourced Planning Core: own the event-sourced aggregate, SQLite-backed
-  application, event definitions, and reconstructed plan state.
-- 2. Projected Planning Documents: own deterministic stage projections,
-  stage intake/output data, enrichment preservation, `SCHEMAS.md` display
-  projection, roll continuity, and document rendering.
-- 3. Stage Gates and Open Questions: own stage procedures, gate evaluation,
-  question classification, and user-confirmed unblocking.
-- 4. Guided CLI and Agent Guardrails: own the parameterless `workspace plan`
-  command loop, start/next/agent/roll guidance, and safe command boundaries.
-- 5. Schema Contract Verification: own comparison between planned Mermaid
-  contracts and actual implementation schemas derived from modwire.
-
-## Epic Navigation
-
-Next doable epic:
-
-- [Hexagonal Foundation](epics/hexagonal-foundation/EPIC.md)
-
-Epic order:
-
-| Ordinal | Epic | Status | Depends On |
-| --- | --- | --- | --- |
-| 0 | [Hexagonal Foundation](epics/hexagonal-foundation/EPIC.md) | next doable | none |
-| 1 | [Event-Sourced Planning Core](epics/event-sourced-core/EPIC.md) | blocked by dependency | hexagonal-foundation |
-| 2 | [Projected Planning Documents](epics/projected-documents/EPIC.md) | blocked by dependency | hexagonal-foundation, event-sourced-core |
-| 3 | [Stage Gates and Open Questions](epics/stage-gates-open-questions/EPIC.md) | blocked by dependency | hexagonal-foundation, event-sourced-core |
-| 4 | [Guided CLI and Agent Guardrails](epics/guided-cli-agent-guardrails/EPIC.md) | blocked by dependency | hexagonal-foundation, event-sourced-core, projected-documents, stage-gates-open-questions |
-| 5 | [Schema Contract Verification](epics/schema-contract-verification/EPIC.md) | blocked by dependency | hexagonal-foundation, event-sourced-core, projected-documents |
-
-The order is a projection of epic dependencies, not a hand-maintained preference
-list. When an epic is completed, the next doable epic should be recalculated
-from dependency status.
-
-## Epic Package Shape
-
-Each epic folder should be internally navigable and carry its own development
-schema bundle:
+The example projection chain is:
 
 ```text
-EPIC.md
-USER_STORIES.md
-SCHEMAS.md
-flows.mermaid
-uml.mermaid
-tree.mermaid
+DRAFT.md -> PLAN.md + UML.md -> epics/<epic>/*
 ```
 
-`SCHEMAS.md` is only a display projection. The native Mermaid files are the
-sources, and projection updates paste their content into the proper
-`SCHEMAS.md` sections. `flows.mermaid` should use a flowchart for the primary
-flow contract because flowchart nodes are easier to parse into implementation
-targets.
-`uml.mermaid` should use class diagrams. `tree.mermaid` should use Mermaid
-TreeView syntax. Sequence diagrams can be added later as secondary views, but
-they should not replace the parseable flow contract.
+The six plan items below are derived from the six draft use cases in
+`DRAFT.md`. Their ids intentionally reuse the draft slugs so the example proves
+the closed loop.
 
-The native Mermaid files are also contracts:
+## Value
 
-- `tree.mermaid` defines the expected files for the epic.
-- `uml.mermaid` defines the expected symbols, relationships, properties, and
-  methods.
-- `flows.mermaid` defines the expected command entry points, stage loop,
-  implementation targets, and domain or port calls they orchestrate.
+The workflow gives users one visible path from rough intent to epic packages,
+preserves planning context across agent sessions, makes uncertainty explicit,
+and gives agents stable contracts instead of making them infer intent from chat
+history.
 
-After implementation, Enclosure should derive actual schemas from the filesystem
-and modwire, compare them with the planned contracts, and report drift back to
-the agent.
+## Id Map
 
-Implementation nodes in `flows.mermaid` should be named so they can be
-transformed into implementation targets. For a stage-driven workflow, a stage is
-one class in one file implementing the shared stage interface:
+| draft use case id | plan item id | epic id |
+| --- | --- | --- |
+| `hexagonal-foundation` | `hexagonal-foundation` | `hexagonal-foundation` |
+| `event-sourced-core` | `event-sourced-core` | `event-sourced-core` |
+| `projected-documents` | `projected-documents` | `projected-documents` |
+| `stage-gates-open-questions` | `stage-gates-open-questions` | `stage-gates-open-questions` |
+| `guided-cli-agent-guardrails` | `guided-cli-agent-guardrails` | `guided-cli-agent-guardrails` |
+| `schema-contract-verification` | `schema-contract-verification` | `schema-contract-verification` |
 
-```text
-stage: PlanStage
-file: application/stages/plan_stage.py
-class: PlanStage
-```
+The stage split rule for this example is one plan item per draft use case and
+one epic package per accepted plan item.
 
-The intended stage implementation rule is one stage per file and one stage class
-per file. That closes the application-layer gap: agents no longer invent the
-stage layout from scratch.
+## Use Cases
 
-Every implementation class in `uml.mermaid` should carry a file annotation:
+### hexagonal-foundation
 
-```text
-class PlanStage {
-  <<file:application/stages/plan_stage.py>>
-  +scaffold(plan_facts)
-  +accept(review_data)
-}
-```
+#### Name
 
-The annotation is the symbol-to-file contract. Modwire-derived actual symbols
-can be compared against this tag to detect misplaced or missing implementations.
+Hexagonal Foundation
 
-`flows.mermaid` should use swimlane-style subgraphs:
+#### Source Use Case
 
-- parameterless commands;
-- the closed stage loop;
-- stage classes, services, domain objects, and ports;
-- outputs such as projections, events, guidance, gates, and reports.
+`hexagonal-foundation`
 
-`tree.mermaid` should use the shared Mermaid palette through TreeView theme
-variables. TreeView has a smaller styling surface than flowcharts, so palette
-normalization is diagram-level rather than per-node.
+#### Intent
 
-An epic is the terminal artifact of the first predictable planning contract. It
-is an independently completable implementation slice with its own contracts,
-current story placeholders, and verification path. It does not need to be
-independently deployable as a standalone product. The full plan still describes
-the complete process.
+Define shared port, adapter, and dependency-shape vocabulary before the planning
+module starts adding concrete event stores, projection stores, schema providers,
+or CLI adapters.
 
-## Success Criteria
+#### Accepted Constraints
 
-- A user can create one active plan through the workspace CLI.
-- Planning commands are recorded as durable events in SQLite.
-- A valid `DRAFT.md` can seed the event-sourced plan.
-- Draft facts deterministically scaffold `PLAN.md` and `UML.md`.
-- `PLAN.md` and `UML.md` deterministically scaffold epic packages.
-- Users can run the loop with only `start`, `next`, `agent`, and `roll`.
-- New stages can be added as one class in one file implementing the stage
-  interface.
-- Roll always recomputes forward from seed data to projected tree.
-- Stage output slots are derived deterministically from upstream stable
-  identities and stage-owned variant rules.
-- Repeated scaffolding preserves enrichment attached to derived stable
-  identities.
-- Mermaid contracts can be compared with actual implementation structure.
-- Drift between projected files and event-sourced state can be detected and
-  repaired or imported.
-- User review output can be accepted as stage output events.
-- Stage advancement is blocked when projections are not strictly synchronized.
-- Roll halts advancement when required drift remains unresolved.
-- New artifact types can be added without rewriting the whole planner.
-- Open questions cannot be silently carried across stage boundaries.
-- Agents cannot silently unblock questions they introduced or reclassified.
+- Shared contracts do not contain planning-specific behavior.
+- Domain code remains independent of application, infrastructure, and UI.
+- Concrete planning ports remain owned by the planning module.
+
+#### Planned Outcome
+
+`shared.hexagonal` exposes protocol-style contracts and adapter metadata that
+the planning module can use without collapsing concrete planning behavior into
+shared code.
+
+#### Acceptance Notes
+
+- Later planning ports can opt into the shared shape.
+- Adapter declarations identify the port they implement.
+- Dependency rules remain visible in schema contracts.
+
+### event-sourced-core
+
+#### Name
+
+Event-Sourced Planning Core
+
+#### Source Use Case
+
+`event-sourced-core`
+
+#### Intent
+
+Create the authoritative planning model so plan creation, stage transitions,
+question changes, projection registration, and roll requests are stored as
+events and reconstructed into current state.
+
+#### Accepted Constraints
+
+- SQLite-backed event persistence is the local authority.
+- Only one active plan may exist.
+- Projectors consume events and do not treat markdown as the database.
+
+#### Planned Outcome
+
+The workspace can create one active plan, append durable events, and reconstruct
+the current plan state through the planning application.
+
+#### Acceptance Notes
+
+- Starting a plan records durable state.
+- Failed commands do not leave partial event state.
+- Downstream projectors can consume ordered planning events.
+
+### projected-documents
+
+#### Name
+
+Projected Planning Documents
+
+#### Source Use Case
+
+`projected-documents`
+
+#### Intent
+
+Render event-sourced planning facts into deterministic markdown and native
+schema files while preserving reviewed enrichment by stable identity.
+
+#### Accepted Constraints
+
+- `DRAFT.md`, `PLAN.md`, `UML.md`, and epic packages are projections.
+- Each stage owns its input type, output type, output cardinality, and slots.
+- `SCHEMAS.md` is display-only; native Mermaid files are schema sources.
+
+#### Planned Outcome
+
+The planner can scaffold, parse, validate, accept, and rerender stage
+projections without losing enrichment attached to derived stable identities.
+
+#### Acceptance Notes
+
+- Every stage implements the same stage interface.
+- Roll recomputes forward from the draft seed.
+- Drift is reported instead of silently overwritten.
+
+### stage-gates-open-questions
+
+#### Name
+
+Stage Gates and Open Questions
+
+#### Source Use Case
+
+`stage-gates-open-questions`
+
+#### Intent
+
+Make uncertainty explicit so stages cannot advance while blocking questions
+remain unresolved or while agent-suggested unblocking lacks user confirmation.
+
+#### Accepted Constraints
+
+- Every question needs an explanation.
+- Blocking questions stop advancement.
+- Agent-suggested non-blocking classifications require user confirmation.
+- Deferred questions need a revisit stage.
+
+#### Planned Outcome
+
+Every stage can add, classify, confirm, and evaluate Open Questions before
+accepting stage output.
+
+#### Acceptance Notes
+
+- Gate checks report blocking question ids.
+- User confirmation is recorded as an event.
+- Agents can create uncertainty but cannot silently unblock it.
+
+### guided-cli-agent-guardrails
+
+#### Name
+
+Guided CLI and Agent Guardrails
+
+#### Source Use Case
+
+`guided-cli-agent-guardrails`
+
+#### Intent
+
+Expose the planning workflow through a small command loop that derives the
+active plan and current stage from events, then tells users and agents which
+actions are valid.
+
+#### Accepted Constraints
+
+- Public commands are `start`, `next`, `agent`, and `roll`.
+- Commands derive active plan and current stage from event state.
+- Agent guidance must not grant arbitrary mutation permissions.
+
+#### Planned Outcome
+
+Users can start, advance, ask for bounded agent guidance, and roll projections
+without knowing internal stage names or manually passing plan identifiers.
+
+#### Acceptance Notes
+
+- `next` reports allowed moves and blocking reasons.
+- `agent` returns bounded current-stage context.
+- `roll` refreshes projected children forward from the draft seed.
+
+### schema-contract-verification
+
+#### Name
+
+Schema Contract Verification
+
+#### Source Use Case
+
+`schema-contract-verification`
+
+#### Intent
+
+Compare accepted Mermaid file, symbol, and flow contracts with actual
+implementation structure so agents can repair drift precisely.
+
+#### Accepted Constraints
+
+- `tree.mermaid` defines expected files.
+- `uml.mermaid` defines expected symbols and file annotations.
+- `flows.mermaid` defines parseable command, use-case, domain, and output flow.
+- Actual schemas come from filesystem and modwire-derived structure.
+
+#### Planned Outcome
+
+The planner can parse planned contracts, derive actual schemas, compare them,
+and report missing, extra, or mismatched implementation targets.
+
+#### Acceptance Notes
+
+- Drift reports name exact files and symbols.
+- Repair instructions point agents back to the accepted schema contracts.
+- Planned native Mermaid files remain the source for verification.
+
+## Plan Decisions
+
+### decision-reuse-slug-through-stage-chain
+
+#### Decision
+
+Use the draft use case slug as the plan item id and epic id unless a stage split
+rule explicitly creates variants.
+
+#### Rationale
+
+Stable ids make the example projection chain inspectable and allow roll to
+preserve enrichment by derived identity.
+
+### decision-epic-packages-are-terminal
+
+#### Decision
+
+The first predictable planning contract stops at accepted epic packages.
+
+#### Rationale
+
+Epic packages are the first artifact that contains narrative, stories, native
+schema contracts, and a verification path.
+
+### decision-native-mermaid-files-own-schema-source
+
+#### Decision
+
+`flows.mermaid`, `uml.mermaid`, and `tree.mermaid` are the schema sources.
+`SCHEMAS.md` is a display projection.
+
+#### Rationale
+
+Native files can be parsed and compared with implementation structure more
+reliably than prose-only documentation.
 
 ## Open Questions
 
-- How much of Copier's update model should be exposed directly to users?
+There are no blocking plan-stage Open Questions in this worked example.
 
-## External Reference
+### Should the six draft use cases be split into more than six epics?
 
-The selected event sourcing package is documented at
-https://eventsourcing.readthedocs.io/en/stable/. Its documentation covers
-event-sourced applications, SQLite persistence with `eventsourcing.sqlite`,
-notification logs, and projections.
+The stage could theoretically create variants, but the current use cases already
+match the existing epic packages and dependency graph.
+
+#### Answer
+
+No. This example uses one accepted plan item per draft use case and one epic
+package per accepted plan item.
+
+## Epic Projection
+
+| plan item id | epic package | depends on |
+| --- | --- | --- |
+| `hexagonal-foundation` | `epics/hexagonal-foundation/` | none |
+| `event-sourced-core` | `epics/event-sourced-core/` | `hexagonal-foundation` |
+| `projected-documents` | `epics/projected-documents/` | `hexagonal-foundation`, `event-sourced-core` |
+| `stage-gates-open-questions` | `epics/stage-gates-open-questions/` | `hexagonal-foundation`, `event-sourced-core` |
+| `guided-cli-agent-guardrails` | `epics/guided-cli-agent-guardrails/` | `hexagonal-foundation`, `event-sourced-core`, `projected-documents`, `stage-gates-open-questions` |
+| `schema-contract-verification` | `epics/schema-contract-verification/` | `hexagonal-foundation`, `event-sourced-core`, `projected-documents` |
+
+## Success Criteria
+
+- `DRAFT.md` shows the six source use cases and slug-derived ids.
+- `PLAN.md` reuses those six ids as plan item ids.
+- `UML.md` presents the same six ids in the technical object and flow contract.
+- Every epic package declares the same source chain.
+- Native Mermaid contracts remain the schema sources for each epic.
+- Roll can preserve enrichment because ids are stable across stages.

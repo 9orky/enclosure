@@ -1,5 +1,32 @@
 # Schema Contract Verification
 
+## Source Chain
+
+```text
+draft_use_case_id: schema-contract-verification
+plan_item_id: schema-contract-verification
+epic_id: schema-contract-verification
+```
+
+This epic reuses the draft use case and plan item for
+`schema-contract-verification`. The slug stays stable because no split rule
+creates variants for this example.
+
+## Reused Plan Data
+
+Intent: compare accepted Mermaid file, symbol, and flow contracts with actual
+implementation structure so agents can repair drift precisely.
+
+Planned outcome: the planner can parse planned contracts, derive actual schemas,
+compare them, and report missing, extra, or mismatched implementation targets.
+
+Accepted constraints:
+
+- `tree.mermaid` defines expected files.
+- `uml.mermaid` defines expected symbols and file annotations.
+- `flows.mermaid` defines parseable command, use-case, domain, and output flow.
+- Actual schemas come from filesystem and modwire-derived structure.
+
 ## Value
 
 This epic turns Mermaid schemas into enforceable implementation contracts. The

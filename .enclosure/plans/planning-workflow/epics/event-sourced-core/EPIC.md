@@ -1,5 +1,31 @@
 # Event-Sourced Planning Core
 
+## Source Chain
+
+```text
+draft_use_case_id: event-sourced-core
+plan_item_id: event-sourced-core
+epic_id: event-sourced-core
+```
+
+This epic reuses the draft use case and plan item for `event-sourced-core`.
+The slug stays stable because no split rule creates variants for this example.
+
+## Reused Plan Data
+
+Intent: create the authoritative planning model so plan creation, stage
+transitions, question changes, projection registration, and roll requests are
+stored as events and reconstructed into current state.
+
+Planned outcome: the workspace can create one active plan, append durable
+events, and reconstruct the current plan state through the planning application.
+
+Accepted constraints:
+
+- SQLite-backed event persistence is the local authority.
+- Only one active plan may exist.
+- Projectors consume events and do not treat markdown as the database.
+
 ## Value
 
 This epic gives the planning module a reliable authority model. Instead of

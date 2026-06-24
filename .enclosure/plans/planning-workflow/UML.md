@@ -4,279 +4,245 @@
 
 ```mermaid
 stateDiagram-v2
-    [*] --> DraftSeed
-    DraftSeed --> PlanContract: derive plan slots
-    PlanContract --> Epics: derive epic slots
+    [*] --> DraftStage
+    DraftStage --> PlanStage: next accepts six draft use cases
+    PlanStage --> EpicStage: next accepts six plan items
+    EpicStage --> Complete: next accepts six epic packages
 
-    DraftSeed --> DraftSeed: roll starts from seed
-    PlanContract --> PlanContract: preserve matched plan enrichment
-    Epics --> Epics: preserve matched epic enrichment
-    Epics --> [*]: first contract complete
+    DraftStage --> DraftStage: answer draft Open Questions
+    PlanStage --> PlanStage: answer plan Open Questions
+    EpicStage --> EpicStage: answer epic Open Questions
+    Complete --> DraftStage: roll recomputes from draft seed
 ```
 
-## State Procedure
+## Slug Identity Contract
 
 ```mermaid
 flowchart LR
-    Current["Current stage\nselected from events"] --> Intake["Intake\nstage input data objects"]
-    Intake --> Derive["Derive slots\ninput id + stage id + variant key"]
-    Derive --> Scaffold["Scaffold\nproject docs for review"]
-    Scaffold --> Agent["Agent\nupdate current projection"]
-    Agent --> Review["User review\napprove or request update"]
-    Review --> Gate["Gate\nclassify open questions"]
-    Gate --> Accept["Next\naccept stage output"]
-    Accept --> Project["Project\nrender markdown and native files"]
+    subgraph draft["DRAFT.md use_case_id"]
+      D0["hexagonal-foundation"]
+      D1["event-sourced-core"]
+      D2["projected-documents"]
+      D3["stage-gates-open-questions"]
+      D4["guided-cli-agent-guardrails"]
+      D5["schema-contract-verification"]
+    end
+
+    subgraph plan["PLAN.md plan_item_id"]
+      P0["hexagonal-foundation"]
+      P1["event-sourced-core"]
+      P2["projected-documents"]
+      P3["stage-gates-open-questions"]
+      P4["guided-cli-agent-guardrails"]
+      P5["schema-contract-verification"]
+    end
+
+    subgraph epic["epics/<epic_id>/"]
+      E0["hexagonal-foundation"]
+      E1["event-sourced-core"]
+      E2["projected-documents"]
+      E3["stage-gates-open-questions"]
+      E4["guided-cli-agent-guardrails"]
+      E5["schema-contract-verification"]
+    end
+
+    D0 --> P0 --> E0
+    D1 --> P1 --> E1
+    D2 --> P2 --> E2
+    D3 --> P3 --> E3
+    D4 --> P4 --> E4
+    D5 --> P5 --> E5
+```
+
+## Stage Procedure
+
+```mermaid
+flowchart LR
+    Current["current stage\nselected from events"] --> Input["stage input data"]
+    Input --> Slots["derive slots\nslug + stage id + variant key"]
+    Slots --> Scaffold["scaffold projection"]
+    Scaffold --> Agent["agent fills prose\nquestions and contracts"]
+    Agent --> User["user fills answers\nand corrections"]
+    User --> Parse["parse review"]
+    Parse --> Gate["validate and gate"]
+    Gate --> Accept["next accepts output"]
+    Accept --> Events["append events"]
+    Events --> Project["render next projection"]
     Project --> Current
-    Gate --> Blocked["Blocked\nremaining blocking questions"]
-    Review --> Halted["Halted\nunresolved roll drift"]
+
+    Gate --> Blocked["blocked questions\nor drift"]
+```
+
+## Stage Objects
+
+```mermaid
+classDiagram
+    class DraftSeed {
+      +str title
+      +str abstract
+      +List~DraftUseCase~ use_cases
+      +List~OpenQuestion~ answered_questions
+    }
+
+    class DraftUseCase {
+      +str use_case_id
+      +str name
+      +str description
+      +List~str~ constraints
+      +str agent_prose
+    }
+
+    class PlanContract {
+      +str purpose
+      +str value
+      +List~PlanItem~ items
+      +List~PlanDecision~ decisions
+      +List~OpenQuestion~ answered_questions
+    }
+
+    class PlanItem {
+      +str plan_item_id
+      +str source_use_case_id
+      +str name
+      +str intent
+      +List~str~ accepted_constraints
+      +str planned_outcome
+      +List~str~ acceptance_notes
+    }
+
+    class EpicPackage {
+      +str epic_id
+      +str source_plan_item_id
+      +str title
+      +str value
+      +str outcome
+      +List~str~ scope
+      +List~str~ out_of_scope
+      +List~UserStory~ stories
+      +SchemaContracts schemas
+    }
+
+    class SchemaContracts {
+      +str flows_mermaid
+      +str uml_mermaid
+      +str tree_mermaid
+      +str schemas_md
+    }
+
+    class OpenQuestion {
+      +str id
+      +str question
+      +str explanation
+      +str answer
+      +QuestionStatus status
+      +str revisit_at
+    }
+
+    DraftSeed "1" --> "6" DraftUseCase : contains
+    PlanContract "1" --> "6" PlanItem : contains
+    EpicPackage "1" --> "1" SchemaContracts : owns
+    PlanItem "1" --> "1" DraftUseCase : source_use_case_id
+    EpicPackage "1" --> "1" PlanItem : source_plan_item_id
+```
+
+## Example Object Chain
+
+```mermaid
+flowchart TD
+    U0["DraftUseCase\nuse_case_id: hexagonal-foundation"] --> I0["PlanItem\nplan_item_id: hexagonal-foundation"] --> X0["EpicPackage\nepic_id: hexagonal-foundation"]
+    U1["DraftUseCase\nuse_case_id: event-sourced-core"] --> I1["PlanItem\nplan_item_id: event-sourced-core"] --> X1["EpicPackage\nepic_id: event-sourced-core"]
+    U2["DraftUseCase\nuse_case_id: projected-documents"] --> I2["PlanItem\nplan_item_id: projected-documents"] --> X2["EpicPackage\nepic_id: projected-documents"]
+    U3["DraftUseCase\nuse_case_id: stage-gates-open-questions"] --> I3["PlanItem\nplan_item_id: stage-gates-open-questions"] --> X3["EpicPackage\nepic_id: stage-gates-open-questions"]
+    U4["DraftUseCase\nuse_case_id: guided-cli-agent-guardrails"] --> I4["PlanItem\nplan_item_id: guided-cli-agent-guardrails"] --> X4["EpicPackage\nepic_id: guided-cli-agent-guardrails"]
+    U5["DraftUseCase\nuse_case_id: schema-contract-verification"] --> I5["PlanItem\nplan_item_id: schema-contract-verification"] --> X5["EpicPackage\nepic_id: schema-contract-verification"]
 ```
 
 ## Artifact Projection
 
 ```mermaid
 flowchart TD
-    Commands["workspace plan\nstart / next / agent / roll"] --> App["Planning application\neventsourcing.Application"]
+    Commands["enclosure workspace plan\nstart title / next / agent / roll"] --> App["PlanningApplication"]
     App --> Store["SQLite event store\n.enclosure/.cache/plans.sqlite"]
-    Store --> Aggregate["Plan aggregate\nreconstructed from events"]
+    Store --> Aggregate["Plan aggregate"]
 
-    Store --> Draft["DRAFT.md\nstage 1 draft seed"]
-    Store --> Plan["PLAN.md\nstage 2 business contract"]
-    Store --> RootUML["UML.md\nstage 2 technical contract"]
+    Aggregate --> Draft["DRAFT.md\nsix use cases"]
+    Aggregate --> Plan["PLAN.md\nsix plan items"]
+    Aggregate --> RootUML["UML.md\nstage and id contracts"]
 
-    Store --> Epics["epics/<epic-slug>/"]
-    Epics --> Epic["EPIC.md\nstage 3 epic narrative"]
-    Epics --> Stories["USER_STORIES.md\ncurrent epic story placeholders"]
-    Epics --> EpicSchemas["SCHEMAS.md\nembedded native projections"]
-    Epics --> Flows["flows.mermaid\nprojected flow source"]
-    Epics --> Classes["uml.mermaid\nprojected class source"]
-    Epics --> Tree["tree.mermaid\nprojected TreeView source"]
+    Plan --> Epics["six epic packages"]
+    Epics --> E0["epics/hexagonal-foundation"]
+    Epics --> E1["epics/event-sourced-core"]
+    Epics --> E2["epics/projected-documents"]
+    Epics --> E3["epics/stage-gates-open-questions"]
+    Epics --> E4["epics/guided-cli-agent-guardrails"]
+    Epics --> E5["epics/schema-contract-verification"]
+
+    E0 --> S0["flows.mermaid\numl.mermaid\ntree.mermaid\nSCHEMAS.md"]
+    E1 --> S1["flows.mermaid\numl.mermaid\ntree.mermaid\nSCHEMAS.md"]
+    E2 --> S2["flows.mermaid\numl.mermaid\ntree.mermaid\nSCHEMAS.md"]
+    E3 --> S3["flows.mermaid\numl.mermaid\ntree.mermaid\nSCHEMAS.md"]
+    E4 --> S4["flows.mermaid\numl.mermaid\ntree.mermaid\nSCHEMAS.md"]
+    E5 --> S5["flows.mermaid\numl.mermaid\ntree.mermaid\nSCHEMAS.md"]
 ```
 
-## Proposed File Tree
-
-```text
-.enclosure/
-  .cache/
-    plans.sqlite
-  plans/
-    planning-workflow/
-      DRAFT.md
-      PLAN.md
-      UML.md
-      epics/
-        <epic-name-slug>/
-          EPIC.md
-          USER_STORIES.md
-          SCHEMAS.md
-          flows.mermaid
-          uml.mermaid
-          tree.mermaid
-```
-
-## Source Ownership
-
-```mermaid
-flowchart LR
-    Events["Event stream\ncanonical facts"] --> Aggregate["Plan aggregate\ncurrent state"]
-    Events --> Audit["Audit history\nwho changed what and when"]
-    Events --> Projectors["Projectors\nderived artifacts"]
-
-    Frontmatter["Frontmatter\nprojected machine-readable view"] --> Drift["Strict sync checks\nprojection vs event state"]
-    Markdown["Markdown file\nscaffolded projection"] --> Input["Stage review output\naccepted as events"]
-    Input --> Events
-    Markdown --> Drift
-    Native["Native sources\nflows.mermaid, uml.mermaid, tree.mermaid"] --> Embeds["Markdown embeds\nSCHEMAS.md generated sections"]
-
-    Projectors --> Generated["Generated structure\nsafe to rewrite"]
-    Markdown --> Enrichment["Enrichment by derived identity\npreserved across scaffolds"]
-    Markdown --> Disposable["Unkeyed edits\nnot authoritative"]
-    Drift --> Halt["Unresolved roll drift\nhalts advancement"]
-```
-
-## Object Model Sketch
+## Stage Interface
 
 ```mermaid
 classDiagram
-    class PlanningApplication {
-      <<Application>>
-      +start() Plan
-      +next() StageOutput
-      +agent() str
-      +roll() List~StageOutput~
-      +get_plan(PlanId) Plan
-    }
-
-    class Plan {
-      <<Aggregate>>
-      +str id
-      +str title
-      +PlanState state
-      +bool active
-      +current_stage() PlanningStage
-      +accept_stage_output(StageOutput) Plan
-      +classify_question(OpenQuestion, QuestionStatus) OpenQuestion
-    }
-
     class PlanningStage {
-      <<Interface>>
+      <<Interface: application/stages/base.py>>
       +stage_id() str
-      +intake_type() type
+      +input_type() type
       +output_type() type
-      +derive_slots(StageData) List~DerivedSlot~
-      +scaffold(StageData) StageOutput
-      +agent_context(StageData) str
-      +accept(ReviewData) StageOutput
+      +projection_paths(StageContext) List~ArtifactRef~
+      +derive_slots(StageContext) List~DerivedSlot~
+      +scaffold(StageContext) List~ProjectedArtifact~
+      +agent_context(StageContext) AgentContext
+      +parse_review(List~ProjectedArtifact~) ReviewData
+      +validate_review(ReviewData) ValidationResult
+      +accept(StageContext, ReviewData) StageOutput
     }
 
-    class StageRunner {
-      <<Service>>
-      +run_current() StageOutput
-      +advance_current() StageOutput
-      +prepare_agent() str
+    class DraftStage {
+      <<file:application/stages/draft_stage.py>>
+      +stage_id() str
+      +accept(StageContext, ReviewData) StageOutput
     }
 
-    class RollRunner {
-      <<Service>>
-      +start_from_draft() StageOutput
-      +continue_children() List~StageOutput~
-      +halt_on_drift() None
+    class PlanStage {
+      <<file:application/stages/plan_stage.py>>
+      +stage_id() str
+      +accept(StageContext, ReviewData) StageOutput
     }
 
-    class StageData {
-      <<ValueObject>>
-      +str id
-      +str stable_identity
-      +Mapping~str_to_Any~ values
+    class EpicStage {
+      <<file:application/stages/epic_stage.py>>
+      +stage_id() str
+      +accept(StageContext, ReviewData) StageOutput
     }
 
-    class DerivedSlot {
-      <<ValueObject>>
-      +str id
-      +str upstream_identity
-      +str stage_id
-      +str variant_key
-    }
-
-    class StageOutput {
-      <<ValueObject>>
-      +str next_stage_id
-      +List~StageData~ data_objects
-    }
-
-    class Enrichment {
-      <<ValueObject>>
-      +str slot_id
-      +Mapping~str_to_Any~ values
-    }
-
-    class Epic {
-      <<ValueObject>>
-      +str id
-      +str title
-      +str value
-      +List~UserStory~ stories
-    }
-
-    class UserStory {
-      <<ValueObject>>
-      +str id
-      +str actor
-      +str goal
-      +str benefit
-      +List~str~ acceptance_criteria
-    }
-
-    class OpenQuestion {
-      <<Entity>>
-      +str question
-      +QuestionStatus status
-      +str explanation
-      +str decision
-      +str reason
-      +str revisit_at
-    }
-
-    class ArtifactRef {
-      <<ValueObject>>
-      +str path
-      +str type
-      +str source_policy
-    }
-
-    class DomainEvent {
-      <<Event>>
-      +UUID originator_id
-      +int originator_version
-      +datetime timestamp
-    }
-
-    class Projector {
-      <<Interface>>
-      +project(DomainEvent, ProjectionContext) ArtifactRef
-    }
-
-    class Validator {
-      <<Interface>>
-      +validate(Plan) ValidationResult
-    }
-
-    PlanningApplication "1" --> "1" Plan : loads active aggregate
-    PlanningApplication "1" --> "1" StageRunner : runs current stage
-    PlanningApplication "1" --> "1" RollRunner : refreshes projections
-    Plan "1" --> "0..*" Epic : owns
-    Epic "1" --> "1..*" UserStory : contains
-    Plan "1" --> "0..*" OpenQuestion : tracks
-    Plan "1" --> "0..*" ArtifactRef : projects
-    StageRunner "1" --> "1" PlanningStage : executes
-    StageRunner "1" --> "1..*" StageData : reads
-    StageRunner "1" --> "0..*" DerivedSlot : derives
-    StageRunner "1" --> "1" StageOutput : returns
-    StageRunner "1" --> "0..*" Enrichment : preserves
-    RollRunner "1" --> "1" StageRunner : delegates stages
-    DomainEvent "*" ..> "1" Plan : mutates
-    Projector "1" ..> "0..*" ArtifactRef : writes
-    Validator "1" ..> "1" Plan : validates plan
-    Validator "1" ..> "0..*" Epic : validates epics
-    Validator "1" ..> "0..*" UserStory : validates stories
+    PlanningStage <|.. DraftStage : implements
+    PlanningStage <|.. PlanStage : implements
+    PlanningStage <|.. EpicStage : implements
 ```
 
-## Pattern Fit
-
-```mermaid
-flowchart TB
-    CLI["CLI command\nstart / next / agent / roll"] --> Command["Command object"]
-    Command --> App["PlanningApplication\neventsourcing.Application"]
-    App --> Aggregate["Plan aggregate\nstate and transition rules"]
-    App --> Runner["Stage runner\ndata in and data out"]
-    Runner --> Stage["Current stage\none class in one file"]
-    Stage --> Slots["Derived slots\ninput id + stage id + variant key"]
-    Slots --> Scaffold["Scaffold policy\nderived IDs and generated sections"]
-    App --> Roll["Roll runner\nDRAFT seed through children"]
-    Aggregate --> Gates["Stage gates\nopen question classification"]
-    Gates --> Confirm["User confirmation\nrequired to unblock"]
-    Aggregate --> Specs["Specifications\npolicy and validation"]
-    App --> Store["SQLite event store\neventsourcing.sqlite"]
-    Store --> Notifications["Notification log\nordered event sequence"]
-    Notifications --> Projectors["Projection runners\nmarkdown and diagram views"]
-    Projectors --> Sync["Strict sync check\nmust pass before advance"]
-    Projectors --> Ports["Ports\nfilesystem, markdown, templates"]
-    Ports --> Adapters["Adapters\nCopier, pydantic, jinja2, markdown parser"]
-```
-
-## Library Boundary
+## Dependency Order
 
 ```mermaid
 flowchart LR
-    Enclosure["Enclosure planning semantics\nactive plan, lifecycle, drift policy"] --> Planner["workspace.plan module"]
+    HF["hexagonal-foundation"] --> ESC["event-sourced-core"]
+    HF --> PD["projected-documents"]
+    HF --> SGOQ["stage-gates-open-questions"]
+    HF --> GCAG["guided-cli-agent-guardrails"]
+    HF --> SCV["schema-contract-verification"]
 
-    Planner --> EventSourcing["eventsourcing\naggregates, application, SQLite store, projections"]
-    Planner --> Copier["Copier\nprojection templates and updates"]
-    Planner --> Pydantic["Pydantic\ntyped event and stage schemas"]
-    Planner --> Jinja["Jinja2\nmarkdown rendering"]
-    Planner --> Markdown["markdown-it-py\nsection parsing"]
-    Planner --> Mermaid["Mermaid CLI\ndiagram validation"]
-
-    Recipes["Existing Enclosure recipes"] -. stay native .-> Enclosure
+    ESC --> PD
+    ESC --> SGOQ
+    ESC --> GCAG
+    ESC --> SCV
+    PD --> GCAG
+    PD --> SCV
+    SGOQ --> GCAG
 ```
 
 ## Event Flow
@@ -286,172 +252,70 @@ sequenceDiagram
     participant User
     participant CLI
     participant App as PlanningApplication
-    participant Plan as Plan Aggregate
+    participant Runner as StageRunner
+    participant Stage as Current Stage
+    participant Gate as StageGatePolicy
     participant DB as SQLite Event Store
-    participant Proj as Markdown Projections
+    participant Proj as Projections
 
-    User->>CLI: workspace plan next
+    User->>CLI: enclosure workspace plan next
     CLI->>App: next()
-    App->>Plan: reconstruct from events
-    App->>Plan: get current stage
-    App->>Plan: derive slots from current input
-    App->>Plan: accept matched stage output
-    Plan-->>App: stage output events or blocker report
-    App->>DB: append event atomically
+    App->>Runner: advance_current()
+    Runner->>Stage: parse_review()
+    Runner->>Stage: validate_review()
+    Runner->>Gate: check()
+    Gate-->>Runner: allow or block
+    Runner->>Stage: accept()
+    Stage-->>Runner: StageOutput with stable ids
+    Runner->>DB: append accepted output events
     DB-->>Proj: notification log
-    Proj->>Proj: render DRAFT.md / PLAN.md / UML.md / epics
+    Proj->>Proj: render next projection with same ids
 ```
 
 ## Candidate Events
 
 ```text
 PlanCreated
-PlanSeededFromDraft
-DraftUpdated
-RollRequested
-RollHalted
-StageOutputAccepted
-StageSlotsDerived
-StageEnrichmentPreserved
-StageEnrichmentOrphaned
-PlanContractScaffolded
-OpenQuestionAdded
-OpenQuestionClassified
-OpenQuestionClassificationSuggested
-OpenQuestionClassificationConfirmed
-StageGateChecked
-PlanAdvanced
+ActivePlanSelected
+StageEntered
+ProjectionScaffolded
 ProjectionRendered
 ManualProjectionDriftDetected
-EpicAdded
-EpicProjectionScaffolded
-```
-
-## Notes
-
-The planning module should stay open for extension by adding new events,
-aggregate methods, projectors, validators, templates, and transition rules. The
-core workflow should not become a single large planner object that knows every
-artifact shape.
-
-The event store is the authority. Files are deterministic scaffolded
-projections. Stage review output is durable only when `next` accepts it into the
-event stream. Generated structure may be rewritten from derived slots, but
-enrichment attached to matching derived stable identities must be preserved or
-reported as unresolved drift. Unresolved roll drift halts advancement. Roll
-always runs forward from `DRAFT.md` seed data to child stages; child projection
-shape does not flow back into the draft.
-
-Agents may add questions and set blocking classifications. Non-blocking
-classifications require user confirmation before a gate can advance.
-
-## Epic Map
-
-```mermaid
-flowchart TD
-    Plan["Planning Workflow"] --> Hex["Hexagonal Foundation"]
-    Plan --> Core["Event-Sourced Planning Core"]
-    Plan --> Docs["Projected Planning Documents"]
-    Plan --> CLI["Guided CLI and Agent Guardrails"]
-    Plan --> Gates["Stage Gates and Open Questions"]
-    Plan --> Contracts["Schema Contract Verification"]
-
-    Hex --> Core
-    Hex --> Docs
-    Hex --> Gates
-    Hex --> CLI
-    Hex --> Contracts
-    Core --> Docs
-    Core --> Gates
-    Core --> CLI
-    Core --> Contracts
-    Docs --> Contracts
-    Gates --> CLI
-    Docs --> CLI
-```
-
-## Epic Dependency Order
-
-```mermaid
-flowchart LR
-    Hex["0. Hexagonal Foundation\nnext doable"] --> Core["1. Event-Sourced Core"]
-    Hex --> Docs["2. Projected Documents"]
-    Hex --> Gates["3. Stage Gates"]
-    Hex --> CLI["4. Guided CLI"]
-    Hex --> Contracts["5. Schema Contract Verification"]
-    Core --> Docs
-    Core --> Gates["3. Stage Gates"]
-    Core --> CLI["4. Guided CLI"]
-    Core --> Contracts["5. Schema Contract Verification"]
-    Docs --> CLI
-    Docs --> Contracts
-    Gates --> CLI
+OpenQuestionAdded
+OpenQuestionAnswered
+OpenQuestionClassified
+OpenQuestionClassificationConfirmed
+StageGateChecked
+StageGatePassed
+StageGateBlocked
+DraftSeedAccepted
+PlanContractAccepted
+EpicPackageAccepted
+StageOutputAccepted
+StageAdvanced
+RollRequested
+RollHalted
+StageEnrichmentPreserved
+StageEnrichmentOrphaned
 ```
 
 ## Schema Contract Loop
 
 ```mermaid
 flowchart TD
-    Planned["Planned Mermaid contracts\nflows / uml / tree"] --> Implement["Agent implementation"]
-    Implement --> Actual["Actual schemas\nfilesystem + modwire"]
-    Actual --> Compare["Contract comparison"]
-    Compare --> Report["Drift report"]
-    Report --> Agent["Agent repair instruction"]
+    Epic["EpicPackage\nstable epic_id"] --> Native["native Mermaid contracts\nflows / uml / tree"]
+    Native --> Display["SCHEMAS.md\ndisplay projection"]
+    Native --> Implement["agent implementation"]
+    Implement --> Actual["actual schemas\nfilesystem + modwire"]
+    Actual --> Compare["contract comparison"]
+    Compare --> Report["drift report"]
+    Report --> Agent["agent repair instruction"]
     Agent --> Implement
 ```
 
-## Flow-to-Implementation Contract
+## Notes
 
-```mermaid
-flowchart TD
-    Command["command node"] --> Stage["stage: Name\nfile: application/stages/name.py\nclass: Name"]
-    Stage --> Slot["derived slot\ninput id + stage id + variant key"]
-    Slot --> Domain["domain object or port"]
-    Stage --> Event["domain event or projection"]
-```
-
-## UML File Annotation Contract
-
-```mermaid
-classDiagram
-    class PlanningStage {
-      <<Interface: application/stages/base.py>>
-      +derive_slots(StageData) List~DerivedSlot~
-      +scaffold(StageData) StageOutput
-      +accept(ReviewData) StageOutput
-    }
-
-    class PlanStage {
-      <<file:application/stages/plan_stage.py>>
-      +derive_slots(StageData) List~DerivedSlot~
-      +scaffold(StageData) StageOutput
-      +accept(ReviewData) StageOutput
-    }
-
-    PlanningStage <|.. PlanStage : implements
-```
-
-## Swimlane Flow Convention
-
-```mermaid
-flowchart LR
-    subgraph commands["Parameterless Commands"]
-      Command["command: workspace plan next"]
-    end
-
-    subgraph stages["Stages"]
-      Stage["stage: PlanStage\nfile: application/stages/plan_stage.py\nclass: PlanStage"]
-    end
-
-    subgraph ports["Ports / Domain"]
-      Port["port: EventStore"]
-    end
-
-    Command --> Stage --> Port
-```
-
-Libraries should handle event persistence, parsing, validation, rendering,
-formatting, and CLI presentation. Enclosure-specific planning semantics should
-remain explicit in the domain and application layers.
-
-Reference: https://eventsourcing.readthedocs.io/en/stable/
+`../STAGES.md` is the specification. These planning-workflow files are the
+worked example. The example must keep the six use case slugs stable across
+draft, plan, UML, and epic packages so roll can preserve enrichment and schema
+verification can trace implementation contracts back to accepted planning data.

@@ -1,5 +1,31 @@
 # Projected Planning Documents
 
+## Source Chain
+
+```text
+draft_use_case_id: projected-documents
+plan_item_id: projected-documents
+epic_id: projected-documents
+```
+
+This epic reuses the draft use case and plan item for `projected-documents`.
+The slug stays stable because no split rule creates variants for this example.
+
+## Reused Plan Data
+
+Intent: render event-sourced planning facts into deterministic markdown and
+native schema files while preserving reviewed enrichment by stable identity.
+
+Planned outcome: the planner can scaffold, parse, validate, accept, and rerender
+stage projections without losing enrichment attached to derived stable
+identities.
+
+Accepted constraints:
+
+- `DRAFT.md`, `PLAN.md`, `UML.md`, and epic packages are projections.
+- Each stage owns its input type, output type, output cardinality, and slots.
+- `SCHEMAS.md` is display-only; native Mermaid files are schema sources.
+
 ## Value
 
 This epic preserves the comfortable markdown workflow while keeping the event

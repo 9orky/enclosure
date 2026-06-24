@@ -1,5 +1,33 @@
 # Stage Gates and Open Questions
 
+## Source Chain
+
+```text
+draft_use_case_id: stage-gates-open-questions
+plan_item_id: stage-gates-open-questions
+epic_id: stage-gates-open-questions
+```
+
+This epic reuses the draft use case and plan item for
+`stage-gates-open-questions`. The slug stays stable because no split rule
+creates variants for this example.
+
+## Reused Plan Data
+
+Intent: make uncertainty explicit so stages cannot advance while blocking
+questions remain unresolved or while agent-suggested unblocking lacks user
+confirmation.
+
+Planned outcome: every stage can add, classify, confirm, and evaluate Open
+Questions before accepting stage output.
+
+Accepted constraints:
+
+- Every question needs an explanation.
+- Blocking questions stop advancement.
+- Agent-suggested non-blocking classifications require user confirmation.
+- Deferred questions need a revisit stage.
+
 ## Value
 
 This epic prevents plans from advancing while important uncertainty is silently

@@ -1,5 +1,32 @@
 # Hexagonal Foundation
 
+## Source Chain
+
+```text
+draft_use_case_id: hexagonal-foundation
+plan_item_id: hexagonal-foundation
+epic_id: hexagonal-foundation
+```
+
+This epic reuses the draft use case and plan item for `hexagonal-foundation`.
+The slug stays stable because no split rule creates variants for this example.
+
+## Reused Plan Data
+
+Intent: define shared port, adapter, and dependency-shape vocabulary before the
+planning module starts adding concrete event stores, projection stores, schema
+providers, or CLI adapters.
+
+Planned outcome: `shared.hexagonal` exposes protocol-style contracts and adapter
+metadata that the planning module can use without collapsing concrete planning
+behavior into shared code.
+
+Accepted constraints:
+
+- Shared contracts do not contain planning-specific behavior.
+- Domain code remains independent of application, infrastructure, and UI.
+- Concrete planning ports remain owned by the planning module.
+
 ## Value
 
 This epic gives the planning module a shared interface vocabulary before the
