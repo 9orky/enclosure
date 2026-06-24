@@ -3,7 +3,11 @@ from __future__ import annotations
 from .. import stage, stage_data
 
 
-class EpicsStage(stage.PlanningStage, stage.StageSchemaContract):
+class EpicsStage(
+    stage.PlanningStage,
+    stage.StageFileContract,
+    stage.StageSchemaContract,
+):
     def stage_id(self) -> str:
         return "epics"
 
@@ -71,6 +75,9 @@ class EpicsStage(stage.PlanningStage, stage.StageSchemaContract):
         stage_input: stage_data.StageInput,
         native_schemas: stage_data.NativeSchemas,
     ) -> stage_data.ProjectedArtifact:
+        epic_id = "{epic_id}"
+        if stage_input.data_objects:
+            epic_id = stage_input.data_objects[0].stable_identity
         content = "\n".join(
             [
                 "# Schemas",
@@ -96,7 +103,7 @@ class EpicsStage(stage.PlanningStage, stage.StageSchemaContract):
             ]
         )
         return stage_data.ProjectedArtifact(
-            path="epics/{epic_id}/SCHEMAS.md",
+            path=f"epics/{epic_id}/SCHEMAS.md",
             content=content,
             artifact_kind="markdown",
         )
@@ -119,16 +126,134 @@ class EpicsStage(stage.PlanningStage, stage.StageSchemaContract):
         self,
         stage_input: stage_data.StageInput,
     ) -> stage_data.StageProjection:
+        artifacts: list[stage_data.ProjectedArtifact] = []
+        for data_object in stage_input.data_objects:
+            epic_id = data_object.stable_identity
+            name = str(data_object.values.get("name", epic_id))
+            intent = str(data_object.values.get("intent", ""))
+            planned_outcome = str(data_object.values.get("planned_outcome", ""))
+            constraints = data_object.values.get("accepted_constraints", [])
+            notes = data_object.values.get("acceptance_notes", [])
+            if not isinstance(constraints, list):
+                constraints = []
+            if not isinstance(notes, list):
+                notes = []
+            class_name = "".join(
+                part.capitalize() for part in epic_id.replace("-", " ").split()
+            ) or "Epic"
+            flows = "\n".join(
+                [
+                    "%% contract: flow",
+                    '%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#dbeafe", "primaryTextColor": "#172033", "primaryBorderColor": "#2563eb", "secondaryColor": "#e0f2fe", "secondaryBorderColor": "#0284c7", "tertiaryColor": "#f8fafc", "lineColor": "#2563eb"}}}%%',
+                    "flowchart LR",
+                    '    start(["input: accepted plan item"])',
+                    f'    epic["epic: {name}"]',
+                    '    stories["output: user stories"]',
+                    '    schemas["output: schema contract"]',
+                    "    start --> epic",
+                    "    epic --> stories",
+                    "    epic --> schemas",
+                ]
+            )
+            uml = "\n".join(
+                [
+                    "%% contract: symbols",
+                    '%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#f5f3ff", "primaryTextColor": "#172033", "primaryBorderColor": "#7c3aed", "secondaryColor": "#ede9fe", "secondaryBorderColor": "#6d28d9", "tertiaryColor": "#faf5ff", "lineColor": "#7c3aed"}}}%%',
+                    "classDiagram",
+                    f"    class {class_name} {{",
+                    f"      +str id = {epic_id}",
+                    f"      +str name = {name}",
+                    "    }",
+                ]
+            )
+            tree = "\n".join(
+                [
+                    "%% contract: files",
+                    '%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ecfdf5", "primaryTextColor": "#064e3b", "primaryBorderColor": "#059669", "labelColor": "#064e3b", "lineColor": "#059669", "tertiaryColor": "#f0fdf4"}}}%%',
+                    "treeView-beta",
+                    f'  "epics/{epic_id}"',
+                    '    "EPIC.md"',
+                    '    "USER_STORIES.md"',
+                    '    "SCHEMAS.md"',
+                    '    "flows.mermaid"',
+                    '    "uml.mermaid"',
+                    '    "tree.mermaid"',
+                ]
+            )
+            epic_lines = [
+                f"# {name}",
+                "",
+                "## Intent",
+                "",
+                intent or f"{name} is promoted from the accepted plan.",
+                "",
+                "## Planned Outcome",
+                "",
+                planned_outcome or f"{name} is implementation-ready.",
+                "",
+                "## Constraints",
+                "",
+            ]
+            epic_lines.extend(f"- {constraint}" for constraint in constraints)
+            epic_lines.extend(["", "## Contract Role", "", "This epic owns its Mermaid schema files as literal implementation contracts.", ""])
+            story_lines = [
+                f"# {name} User Stories",
+                "",
+                f"## {epic_id}",
+                "",
+                f"As a user, I want {name} so that the planned outcome is visible.",
+                "",
+                "Acceptance criteria:",
+                "",
+            ]
+            if notes:
+                story_lines.extend(f"- {note}" for note in notes)
+            else:
+                story_lines.append("- The epic keeps its stable plan item identity.")
+            native = stage_data.NativeSchemas(
+                flows_mermaid=flows,
+                uml_mermaid=uml,
+                tree_mermaid=tree,
+            )
+            artifacts.extend(
+                [
+                    stage_data.ProjectedArtifact(
+                        path=f"epics/{epic_id}/EPIC.md",
+                        content="\n".join(epic_lines),
+                        artifact_kind="markdown",
+                    ),
+                    stage_data.ProjectedArtifact(
+                        path=f"epics/{epic_id}/USER_STORIES.md",
+                        content="\n".join(story_lines) + "\n",
+                        artifact_kind="markdown",
+                    ),
+                    stage_data.ProjectedArtifact(
+                        path=f"epics/{epic_id}/flows.mermaid",
+                        content=flows + "\n",
+                        artifact_kind="mermaid",
+                    ),
+                    stage_data.ProjectedArtifact(
+                        path=f"epics/{epic_id}/uml.mermaid",
+                        content=uml + "\n",
+                        artifact_kind="mermaid",
+                    ),
+                    stage_data.ProjectedArtifact(
+                        path=f"epics/{epic_id}/tree.mermaid",
+                        content=tree + "\n",
+                        artifact_kind="mermaid",
+                    ),
+                    self.render_schema_display(
+                        stage_data.StageInput(
+                            stage_id=self.stage_id(),
+                            data_objects=[data_object],
+                        ),
+                        native,
+                    ),
+                ]
+            )
         return stage_data.StageProjection(
             stage_id=self.stage_id(),
-            artifacts=[
-                stage_data.ProjectedArtifact(
-                    path=file_model.path,
-                    content="",
-                    artifact_kind=file_model.artifact_kind,
-                )
-                for file_model in self.file_models(stage_input)
-            ],
+            artifacts=artifacts,
         )
 
     def agent_context(

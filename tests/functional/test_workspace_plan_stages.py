@@ -65,6 +65,16 @@ def test_stages_implement_stage_schema_contract() -> None:
     assert all(isinstance(stage, domain.StageSchemaContract) for stage in stages)
 
 
+def test_stages_implement_stage_file_contract() -> None:
+    stages = [
+        domain.DraftStage(),
+        domain.PlanStage(),
+        domain.EpicsStage(),
+    ]
+
+    assert all(isinstance(stage, domain.StageFileContract) for stage in stages)
+
+
 def test_epics_stage_pastes_native_mermaid_sources_into_schema_display() -> None:
     stage = domain.EpicsStage()
 

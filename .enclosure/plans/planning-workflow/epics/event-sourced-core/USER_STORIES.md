@@ -25,8 +25,8 @@ event so that planning history is durable and inspectable.
 
 Acceptance criteria:
 
-- Draft updates, question changes, stage changes, projection registrations, and
-  roll requests append nested `Plan` aggregate events.
+- Draft updates, question changes, accepted stage outputs, stage advances,
+  projection records, and roll requests append nested `Plan` aggregate events.
 - Events are recorded through the `eventsourcing` application and persisted in
   SQLite.
 - Failed commands do not leave partial state.

@@ -57,6 +57,28 @@ def plan_command(
             context={"project_root": module.status().project_root},
         )
         return
+    if action == "next":
+        plan = module.next()
+        typer.echo(f"Advanced plan {plan.id}.")
+        typer.echo(f"Stage: {plan.current_stage}")
+        typer.echo(f"State: {plan.state.value}")
+        typer.echo(f"Version: {plan.version}")
+        return
+    if action == "agent":
+        context = module.agent()
+        typer.echo(f"Agent context for stage: {context.stage_id}")
+        typer.echo("Files:")
+        for file_model in context.file_models:
+            source = " native-schema" if file_model.native_schema_source else ""
+            typer.echo(f"- {file_model.path} [{file_model.model_kind}{source}]")
+        return
+    if action == "roll":
+        plan = module.roll()
+        typer.echo(f"Rolled plan {plan.id}.")
+        typer.echo(f"Stage: {plan.current_stage}")
+        typer.echo(f"State: {plan.state.value}")
+        typer.echo(f"Version: {plan.version}")
+        return
     raise ValueError(f"Unknown plan action: {action}")
 
 

@@ -1,19 +1,11 @@
 from __future__ import annotations
 
-from .events import (
-    DomainEvent,
-    DraftChange,
-    PlanChange,
-    ProjectionChange,
-    QuestionChange,
-    RollRequest,
-    StageChange,
-)
+from .events import DomainEvent
 from .enrichment import Enrichment
 from .plan import Plan, PlanId, PlanState, ProjectionRecord
 from .ports import ProjectionStore, StageCatalog
 from .questions import OpenQuestion, QuestionStatus
-from .stage import PlanningStage, StageSchemaContract
+from .stage import PlanningStage, StageFileContract, StageSchemaContract
 from .stage_data import (
     AgentContext,
     DerivedSlot,
@@ -36,7 +28,6 @@ __all__ = [
     "AgentContext",
     "DerivedSlot",
     "DomainEvent",
-    "DraftChange",
     "DraftStage",
     "DriftReport",
     "Enrichment",
@@ -44,28 +35,24 @@ __all__ = [
     "NativeSchemas",
     "OpenQuestion",
     "Plan",
-    "PlanChange",
     "PlanId",
     "PlanState",
     "PlanStage",
     "PlanningStage",
     "ProjectionStore",
     "ProjectedArtifact",
-    "ProjectionChange",
     "ProjectionRecord",
-    "QuestionChange",
     "QuestionStatus",
     "ReviewData",
-    "RollRequest",
     "StageCatalog",
     "StageData",
+    "StageFileContract",
     "StageFileModel",
     "StageInput",
     "StageOutput",
     "StageProjection",
     "StageRegistry",
     "StageResult",
-    "StageChange",
     "StageSchemaContract",
     "ValidationResult",
 ]

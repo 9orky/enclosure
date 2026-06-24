@@ -142,6 +142,10 @@ classDiagram
       +stage_id() str
       +intake_type() type
       +output_type() type
+    }
+
+    class StageFileContract {
+      <<ABC: domain/stage.py>>
       +file_models(StageInput) List~StageFileModel~
       +derive_slots(StageInput) List~DerivedSlot~
       +scaffold(StageInput) StageProjection
@@ -349,6 +353,9 @@ classDiagram
     PlanningStage <|-- DraftStage
     PlanningStage <|-- PlanStage
     PlanningStage <|-- EpicsStage
+    StageFileContract <|-- DraftStage
+    StageFileContract <|-- PlanStage
+    StageFileContract <|-- EpicsStage
     StageSchemaContract <|-- DraftStage
     StageSchemaContract <|-- PlanStage
     StageSchemaContract <|-- EpicsStage
@@ -356,9 +363,9 @@ classDiagram
     StageCatalog <|.. FilesystemStageCatalog
     StageRegistry "1" --> "1..*" PlanningStage : stores domain stages
     StageRegistry "1" --> "1" Plan : selects current stage
-    PlanningStage "1" --> "1..*" StageFileModel : owns stage file modeling
-    PlanningStage "1" --> "0..*" DerivedSlot : derives slots
-    PlanningStage "1" --> "1" StageProjection : scaffolds
+    StageFileContract "1" --> "1..*" StageFileModel : owns stage file modeling
+    StageFileContract "1" --> "0..*" DerivedSlot : derives slots
+    StageFileContract "1" --> "1" StageProjection : scaffolds
     StageInput "1" --> "0..*" StageData : carries
     StageOutput "1" --> "0..*" StageData : emits
     StageOutput "1" --> "0..*" DerivedSlot : emits

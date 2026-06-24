@@ -4,7 +4,8 @@ flowchart LR
     subgraph commands["Commands / Queries"]
       cmd_status(["query: workspace plan"])
       cmd_start(["command: workspace plan start TITLE"])
-      cmd_change(["internal command: PlanningApplication.apply_change"])
+      cmd_next(["command: workspace plan next"])
+      cmd_roll(["command: workspace plan roll"])
     end
 
     subgraph ui_layer["UI"]
@@ -24,8 +25,7 @@ flowchart LR
 
     subgraph domain_layer["Domain"]
       aggregate["aggregate: Plan\nfile: domain/plan.py\nclass: Plan\nbase: eventsourcing.domain.Aggregate"]
-      changes["command data: StageChange / DraftChange / QuestionChange / ProjectionChange / RollRequest\nfile: domain/events.py"]
-      events["event SSOT: Created / StageChanged / DraftUpdated / QuestionChanged / ProjectionRegistered / RollRequested\nfile: domain/plan.py\nnested classes on Plan"]
+      events["event SSOT: Created / StageOutputAccepted / StageAdvanced / DraftUpdated / QuestionChanged / ProjectionRecorded / RollRequested\nfile: domain/plan.py\nnested classes on Plan"]
       questions["model: OpenQuestion / QuestionStatus\nfile: domain/questions.py"]
     end
 
@@ -44,6 +44,8 @@ flowchart LR
 
     cmd_status -->|invokes| cli
     cmd_start -->|invokes| cli
+    cmd_next -->|invokes| cli
+    cmd_roll -->|invokes| cli
     cli -->|loads current workspace| module
     module -->|configures per call| sqlite_env
     sqlite_env -->|creates env for| app
@@ -70,9 +72,6 @@ flowchart LR
     aggregate -->|renders with| templates
     templates --> started_template
 
-    cmd_change -->|passes PlanChange| app
-    changes -->|apply invokes aggregate behavior| aggregate
-    changes -->|may carry| questions
     aggregate -->|triggers matching nested event| events
     events -->|mutate replay state| aggregate
 
@@ -87,6 +86,6 @@ flowchart LR
     class cli,templates ui;
     class module,status_report workspace;
     class app,active_guard app;
-    class aggregate,changes,events,questions domain;
+    class aggregate,events,questions domain;
     class sqlite_env,sqlite_module,repository,notification_log persistence;
     class current_template,started_template,stored_events output;

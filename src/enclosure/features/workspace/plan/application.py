@@ -22,16 +22,6 @@ class PlanningApplication(Application[UUID]):
         self.save(plan)
         return self.get_plan(domain.PlanId(plan.id))
 
-    def apply_change(
-        self,
-        plan_id: domain.PlanId,
-        change: domain.PlanChange,
-    ) -> domain.Plan:
-        plan = self.get_plan(plan_id)
-        change.apply(plan)
-        self.save(plan)
-        return self.get_plan(plan_id)
-
     def get_plan(self, plan_id: domain.PlanId) -> domain.Plan:
         return self.repository.get(plan_id.value)
 
@@ -43,7 +33,7 @@ class PlanningApplication(Application[UUID]):
         for event in self.ordered_events():
             if isinstance(event, domain.Plan.Created):
                 active_plan_id = event.originator_id
-            if isinstance(event, domain.Plan.StageChanged):
+            if isinstance(event, domain.Plan.StageAdvanced):
                 if event.state == domain.PlanState.COMPLETE.value:
                     active_plan_id = None
         if active_plan_id is None:

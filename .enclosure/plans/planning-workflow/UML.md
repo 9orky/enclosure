@@ -219,38 +219,50 @@ classDiagram
     }
 
     class StageFileModel {
-      <<Value Object: application/stages/base.py>>
+      <<Value Object: domain/stage_data.py>>
       +str path
       +str artifact_kind
       +str model_kind
       +bool native_schema_source
     }
 
+    class StageFileContract {
+      <<ABC: domain/stage.py>>
+      +file_models(StageInput) List~StageFileModel~
+      +scaffold(StageInput) StageProjection
+      +parse_review(StageProjection) ReviewData
+      +validate_review(ReviewData) ValidationResult
+      +accept(ReviewData) StageResult
+    }
+
     class DraftStage {
-      <<file:application/stages/draft_stage.py>>
+      <<file:domain/stages/draft_stage.py>>
       +stage_id() str
-      +file_models(StageContext) List~StageFileModel~
-      +accept(StageContext, ReviewData) StageOutput
+      +file_models(StageInput) List~StageFileModel~
+      +accept(ReviewData) StageResult
     }
 
     class PlanStage {
-      <<file:application/stages/plan_stage.py>>
+      <<file:domain/stages/plan_stage.py>>
       +stage_id() str
-      +file_models(StageContext) List~StageFileModel~
-      +accept(StageContext, ReviewData) StageOutput
+      +file_models(StageInput) List~StageFileModel~
+      +accept(ReviewData) StageResult
     }
 
-    class EpicStage {
-      <<file:application/stages/epic_stage.py>>
+    class EpicsStage {
+      <<file:domain/stages/epics_stage.py>>
       +stage_id() str
-      +file_models(StageContext) List~StageFileModel~
-      +accept(StageContext, ReviewData) StageOutput
+      +file_models(StageInput) List~StageFileModel~
+      +accept(ReviewData) StageResult
     }
 
     PlanningStage <|.. DraftStage : implements
     PlanningStage <|.. PlanStage : implements
-    PlanningStage <|.. EpicStage : implements
-    PlanningStage "1" --> "1..*" StageFileModel : owns file modeling
+    PlanningStage <|.. EpicsStage : implements
+    StageFileContract <|.. DraftStage : implements
+    StageFileContract <|.. PlanStage : implements
+    StageFileContract <|.. EpicsStage : implements
+    StageFileContract "1" --> "1..*" StageFileModel : owns file modeling
 ```
 
 ## Dependency Order

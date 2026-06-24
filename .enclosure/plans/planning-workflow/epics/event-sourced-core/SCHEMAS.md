@@ -25,7 +25,8 @@ flowchart LR
     subgraph commands["Commands / Queries"]
       cmd_status(["query: workspace plan"])
       cmd_start(["command: workspace plan start TITLE"])
-      cmd_change(["internal command: PlanningApplication.apply_change"])
+      cmd_next(["command: workspace plan next"])
+      cmd_roll(["command: workspace plan roll"])
     end
 
     subgraph ui_layer["UI"]
@@ -45,8 +46,7 @@ flowchart LR
 
     subgraph domain_layer["Domain"]
       aggregate["aggregate: Plan\nfile: domain/plan.py\nclass: Plan\nbase: eventsourcing.domain.Aggregate"]
-      changes["command data: StageChange / DraftChange / QuestionChange / ProjectionChange / RollRequest\nfile: domain/events.py"]
-      events["event SSOT: Created / StageChanged / DraftUpdated / QuestionChanged / ProjectionRegistered / RollRequested\nfile: domain/plan.py\nnested classes on Plan"]
+      events["event SSOT: Created / StageOutputAccepted / StageAdvanced / DraftUpdated / QuestionChanged / ProjectionRecorded / RollRequested\nfile: domain/plan.py\nnested classes on Plan"]
       questions["model: OpenQuestion / QuestionStatus\nfile: domain/questions.py"]
     end
 
@@ -65,6 +65,8 @@ flowchart LR
 
     cmd_status -->|invokes| cli
     cmd_start -->|invokes| cli
+    cmd_next -->|invokes| cli
+    cmd_roll -->|invokes| cli
     cli -->|loads current workspace| module
     module -->|configures per call| sqlite_env
     sqlite_env -->|creates env for| app
@@ -91,9 +93,6 @@ flowchart LR
     aggregate -->|renders with| templates
     templates --> started_template
 
-    cmd_change -->|passes PlanChange| app
-    changes -->|apply invokes aggregate behavior| aggregate
-    changes -->|may carry| questions
     aggregate -->|triggers matching nested event| events
     events -->|mutate replay state| aggregate
 
@@ -108,7 +107,7 @@ flowchart LR
     class cli,templates ui;
     class module,status_report workspace;
     class app,active_guard app;
-    class aggregate,changes,events,questions domain;
+    class aggregate,events,questions domain;
     class sqlite_env,sqlite_module,repository,notification_log persistence;
     class current_template,started_template,stored_events output;
 ```
@@ -122,7 +121,6 @@ classDiagram
     class PlanningApplication {
       <<Application: application.py>>
       +create_plan(str) Plan
-      +apply_change(PlanId, PlanChange) Plan
       +get_plan(PlanId) Plan
       +get_active_plan() Plan
       +active_plan_id() PlanId
@@ -150,12 +148,14 @@ classDiagram
       +str draft_content_hash
       +dict~str_to_OpenQuestion~ questions
       +dict~str_to_ProjectionRecord~ projections
+      +dict~str_to_dict~ stage_outputs
       +tuple~str~ roll_requests
       +__init__(str, str, str, str, str, int) None
-      +change_stage(str, PlanState, str) None
+      +accept_stage_output(str, str, tuple~dict~, tuple~dict~) None
+      +advance_stage(str, PlanState, str) None
       +update_draft(str, str) None
       +change_question(str, str, str, QuestionStatus, bool, str) None
-      +register_projection(str, str, str) None
+      +record_projection(str, str, str) None
       +request_roll(str, str) None
     }
 
@@ -191,8 +191,17 @@ classDiagram
       +int schema_version
     }
 
-    class StageChanged {
-      <<Plan.StageChanged: domain/plan.py>>
+    class StageOutputAccepted {
+      <<Plan.StageOutputAccepted: domain/plan.py>>
+      +str stage
+      +str next_stage
+      +tuple~dict~ data_objects
+      +tuple~dict~ derived_slots
+      +apply(Plan) None
+    }
+
+    class StageAdvanced {
+      <<Plan.StageAdvanced: domain/plan.py>>
       +str stage
       +str state
       +str reason
@@ -217,8 +226,8 @@ classDiagram
       +apply(Plan) None
     }
 
-    class ProjectionRegistered {
-      <<Plan.ProjectionRegistered: domain/plan.py>>
+    class ProjectionRecorded {
+      <<Plan.ProjectionRecorded: domain/plan.py>>
       +str projection_id
       +str path
       +str stage
@@ -269,52 +278,6 @@ classDiagram
       +str revisit_stage
     }
 
-    class PlanChange {
-      <<Protocol: domain/events.py>>
-      +apply(Plan) None
-    }
-
-    class StageChange {
-      <<Command Data: domain/events.py>>
-      +str stage
-      +PlanState state
-      +str reason
-      +apply(Plan) None
-    }
-
-    class DraftChange {
-      <<Command Data: domain/events.py>>
-      +str content_hash
-      +str source_path
-      +apply(Plan) None
-    }
-
-    class QuestionChange {
-      <<Command Data: domain/events.py>>
-      +str question_id
-      +str text
-      +str explanation
-      +QuestionStatus status
-      +bool blocking
-      +str revisit_stage
-      +apply(Plan) None
-    }
-
-    class ProjectionChange {
-      <<Command Data: domain/events.py>>
-      +str projection_id
-      +str path
-      +str stage
-      +apply(Plan) None
-    }
-
-    class RollRequest {
-      <<Command Data: domain/events.py>>
-      +str reason
-      +str requested_stage
-      +apply(Plan) None
-    }
-
     class EventsourcingSQLitePersistence {
       <<file: infrastructure/persistence.py>>
       +Path database_path
@@ -347,6 +310,9 @@ classDiagram
       +__init__(Path, Path) None
       +from_current_workspace() WorkspacePlanModule
       +start(str) Plan
+      +next() Plan
+      +agent() AgentContext
+      +roll() Plan
       +status() PlanStatusReport
       -_planning_application() PlanningApplication
     }
@@ -377,26 +343,20 @@ classDiagram
     Plan "1" --> "0..*" OpenQuestion : stores questions
     Plan "1" --> "0..*" ProjectionRecord : stores projections
     Created --|> AggregateCreated : extends
-    StageChanged --|> AggregateEvent : extends
+    StageOutputAccepted --|> AggregateEvent : extends
+    StageAdvanced --|> AggregateEvent : extends
     DraftUpdated --|> AggregateEvent : extends
     QuestionChanged --|> AggregateEvent : extends
-    ProjectionRegistered --|> AggregateEvent : extends
+    ProjectionRecorded --|> AggregateEvent : extends
     RollRequested --|> AggregateEvent : extends
     Plan *-- Created : nested class
-    Plan *-- StageChanged : nested class
+    Plan *-- StageOutputAccepted : nested class
+    Plan *-- StageAdvanced : nested class
     Plan *-- DraftUpdated : nested class
     Plan *-- QuestionChanged : nested class
-    Plan *-- ProjectionRegistered : nested class
+    Plan *-- ProjectionRecorded : nested class
     Plan *-- RollRequested : nested class
-    StageChange ..|> PlanChange : implements
-    DraftChange ..|> PlanChange : implements
-    QuestionChange ..|> PlanChange : implements
-    ProjectionChange ..|> PlanChange : implements
-    RollRequest ..|> PlanChange : implements
-    StageChange "1" --> "1" PlanState : carries state
-    QuestionChange "1" --> "1" QuestionStatus : carries status
     OpenQuestion "1" --> "1" QuestionStatus : has status
-    PlanChange "1" --> "1" Plan : invokes aggregate method
     DomainEvent "*" ..> "1" Plan : mutates
     EventsourcingSQLitePersistence "1" --> "1" EventsourcingSQLite : selects module
     EventsourcingSQLitePersistence "1" --> "1" PlanningApplication : configures

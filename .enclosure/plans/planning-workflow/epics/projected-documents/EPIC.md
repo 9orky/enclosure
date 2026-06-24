@@ -75,8 +75,9 @@ technical adapters.
 
 The application layer owns use-case orchestration only. It loads and saves the
 event-sourced aggregate, asks the domain registry for the current stage, calls
-methods declared by the domain `PlanningStage` contract, and writes returned
-projection artifacts through domain ports. Application code does not know
+methods declared by the domain `PlanningStage` and `StageFileContract`
+contracts, and writes returned projection artifacts through domain ports.
+Application code does not know
 whether a stage performs question-and-answer loops, advances directly, blocks
 on validation, or emits drift; that decision is returned by the domain stage
 result.
@@ -110,10 +111,11 @@ Next dependent epic:
 ## Contract Role
 
 `tree.mermaid` defines projection and stage files. `uml.mermaid` defines the
-domain stage base class, concrete domain stage subclasses, event-sourced
-aggregate, application use cases, domain ports, infrastructure adapters,
-and schema display projection. `flows.mermaid` defines the closed stage loop
-and the parameterless command entry points that drive it.
+domain stage identity interface, stage file contract, schema contract, concrete
+domain stage subclasses, event-sourced aggregate, application use cases, domain
+ports, infrastructure adapters, and schema display projection. `flows.mermaid`
+defines the closed stage loop and the parameterless command entry points that
+drive it.
 
 ## Boundaries
 
@@ -128,6 +130,8 @@ ports follow the shared hexagonal shape.
 
 - `PlanningStage` is a real abstract base class or interface in the domain
   layer; every concrete stage explicitly inherits it.
+- `StageFileContract` is a real abstract base class in the domain layer; every
+  concrete stage explicitly inherits it.
 - Every stage lives as one concrete class in one stage file.
 - Every stage implements its own file model declaration; projected stage files
   are never inferred by a generic projector from prose or folder naming alone.

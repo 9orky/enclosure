@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import Any
 from uuid import UUID
 
 from eventsourcing.domain import Aggregate
@@ -59,9 +60,39 @@ class Plan(Aggregate):
         self.draft_content_hash = ""
         self.questions: dict[str, questions.OpenQuestion] = {}
         self.projections: dict[str, ProjectionRecord] = {}
+        self.stage_outputs: dict[str, dict[str, Any]] = {}
         self.roll_requests: tuple[str, ...] = ()
 
-    class StageChanged(Aggregate.Event):
+    class StageOutputAccepted(Aggregate.Event):
+        stage: str
+        next_stage: str
+        data_objects: tuple[dict[str, Any], ...]
+        derived_slots: tuple[dict[str, str], ...]
+
+        def apply(self, aggregate: Plan) -> None:
+            aggregate.stage_outputs[self.stage] = {
+                "stage": self.stage,
+                "next_stage": self.next_stage,
+                "data_objects": self.data_objects,
+                "derived_slots": self.derived_slots,
+            }
+
+    def accept_stage_output(
+        self,
+        stage: str,
+        next_stage: str,
+        data_objects: tuple[dict[str, Any], ...],
+        derived_slots: tuple[dict[str, str], ...],
+    ) -> None:
+        self.trigger_event(
+            type(self).StageOutputAccepted,
+            stage=stage,
+            next_stage=next_stage,
+            data_objects=data_objects,
+            derived_slots=derived_slots,
+        )
+
+    class StageAdvanced(Aggregate.Event):
         stage: str
         state: str
         reason: str
@@ -71,9 +102,9 @@ class Plan(Aggregate):
             aggregate.state = PlanState(self.state)
             aggregate.active = aggregate.state != PlanState.COMPLETE
 
-    def change_stage(self, stage: str, state: PlanState, reason: str) -> None:
+    def advance_stage(self, stage: str, state: PlanState, reason: str) -> None:
         self.trigger_event(
-            type(self).StageChanged,
+            type(self).StageAdvanced,
             stage=stage,
             state=state.value,
             reason=reason,
@@ -130,7 +161,7 @@ class Plan(Aggregate):
             revisit_stage=revisit_stage,
         )
 
-    class ProjectionRegistered(Aggregate.Event):
+    class ProjectionRecorded(Aggregate.Event):
         projection_id: str
         path: str
         stage: str
@@ -142,14 +173,14 @@ class Plan(Aggregate):
                 stage=self.stage,
             )
 
-    def register_projection(
+    def record_projection(
         self,
         projection_id: str,
         path: str,
         stage: str,
     ) -> None:
         self.trigger_event(
-            type(self).ProjectionRegistered,
+            type(self).ProjectionRecorded,
             projection_id=projection_id,
             path=path,
             stage=stage,

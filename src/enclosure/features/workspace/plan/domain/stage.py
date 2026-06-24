@@ -18,6 +18,8 @@ class PlanningStage(ABC):
     def output_type(self) -> type:
         ...
 
+
+class StageFileContract(ABC):
     @abstractmethod
     def file_models(
         self,
@@ -86,6 +88,7 @@ class StageSchemaContract(ABC):
 
 
 __all__ = [
+    "StageFileContract",
     "PlanningStage",
     "StageSchemaContract",
 ]
