@@ -30,8 +30,8 @@ def start_plan(title: str) -> domain.Plan:
         plan_runtime,
         plan,
         projection,
-        plan_app.notification_log_position(),
     )
+    plan_app.record_projection_tracking(plan_app.notification_log_position())
     return plan_app.get_plan(domain.PlanId(plan.id))
 
 
@@ -64,8 +64,8 @@ def _advance_plan(
         plan_runtime,
         advanced.plan,
         advanced.next_projection,
-        plan_app.notification_log_position(),
     )
+    plan_app.record_projection_tracking(plan_app.notification_log_position())
     return plan_app.get_plan(domain.PlanId(advanced.plan.id))
 
 
@@ -104,8 +104,8 @@ def put_stage_artifact(path: str, content: str) -> domain.Plan:
         plan_runtime,
         plan,
         projection,
-        plan_app.notification_log_position(),
     )
+    plan_app.record_projection_tracking(plan_app.notification_log_position())
     return plan_app.get_plan(domain.PlanId(plan.id))
 
 
@@ -156,8 +156,8 @@ def restore_plan_projections() -> domain.Plan:
     projections.restore_recorded_projections(
         plan_runtime,
         plan,
-        plan_app.notification_log_position(),
     )
+    plan_app.record_projection_tracking(plan_app.notification_log_position())
     return plan
 
 

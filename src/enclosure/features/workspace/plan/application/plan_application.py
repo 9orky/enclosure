@@ -36,6 +36,8 @@ class StageAdvance:
 
 
 class PlanApplication(application.Application[UUID]):
+    _projection_tracking_recorder: persistence.TrackingRecorder | None = None
+
     def create_plan(self, title: str) -> domain.Plan:
         registry = self._get_or_create_registry()
         plan = domain.Plan(
@@ -310,6 +312,22 @@ class PlanApplication(application.Application[UUID]):
                 return position
             position = notifications[-1].id
             start = position + 1
+
+    def projection_tracking_position(self) -> int:
+        position = self.projection_tracking_recorder().max_tracking_id(self.name)
+        return position or 0
+
+    def record_projection_tracking(self, notification_id: int) -> None:
+        if notification_id <= self.projection_tracking_position():
+            return
+        self.projection_tracking_recorder().insert_tracking(
+            persistence.Tracking(self.name, notification_id)
+        )
+
+    def projection_tracking_recorder(self) -> persistence.TrackingRecorder:
+        if self._projection_tracking_recorder is None:
+            self._projection_tracking_recorder = self.factory.tracking_recorder()
+        return self._projection_tracking_recorder
 
 
 __all__ = [

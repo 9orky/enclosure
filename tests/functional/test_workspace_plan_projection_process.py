@@ -34,7 +34,7 @@ def test_projection_writes_are_tracked_by_notification_position(
     tmp_path: Path,
 ) -> None:
     plan_runtime = _runtime(tmp_path)
-    app = plan_application.PlanApplication()
+    app = plan_application.PlanApplication(env=plan_runtime.persistence.environment())
     plan = app.create_plan("Projection Tracking")
     projection = _draft_projection("# Projection Tracking\n")
 
@@ -42,23 +42,22 @@ def test_projection_writes_are_tracked_by_notification_position(
     app.save(plan)
     plan = app.get_plan(domain.PlanId(plan.id))
     notification_id = app.notification_log_position()
-    projections.write_stage_projection(
-        plan_runtime,
-        plan,
-        projection,
-        notification_id,
+    projections.write_stage_projection(plan_runtime, plan, projection)
+    app.record_projection_tracking(notification_id)
+
+    tracking_path = (
+        tmp_path / ".enclosure" / "plans" / "projection-tracking" / ".projection-tracking"
     )
 
-    store = plan_runtime_module.projection_store(plan_runtime, plan)
-
-    assert store.tracking_position() == notification_id
+    assert app.projection_tracking_position() == notification_id
+    assert not tracking_path.exists()
 
 
 def test_projection_rewrite_is_idempotent(
     tmp_path: Path,
 ) -> None:
     plan_runtime = _runtime(tmp_path)
-    app = plan_application.PlanApplication()
+    app = plan_application.PlanApplication(env=plan_runtime.persistence.environment())
     plan = app.create_plan("Projection Idempotency")
     projection = _draft_projection("# Projection Idempotency\n")
     projections.record_stage_projection(plan_runtime, plan, projection)
@@ -66,8 +65,10 @@ def test_projection_rewrite_is_idempotent(
     plan = app.get_plan(domain.PlanId(plan.id))
     notification_id = app.notification_log_position()
 
-    projections.write_stage_projection(plan_runtime, plan, projection, notification_id)
-    projections.write_stage_projection(plan_runtime, plan, projection, notification_id)
+    projections.write_stage_projection(plan_runtime, plan, projection)
+    app.record_projection_tracking(notification_id)
+    projections.write_stage_projection(plan_runtime, plan, projection)
+    app.record_projection_tracking(notification_id)
 
     draft_path = (
         tmp_path
@@ -76,33 +77,30 @@ def test_projection_rewrite_is_idempotent(
         / "projection-idempotency"
         / "DRAFT.md"
     )
-    store = plan_runtime_module.projection_store(plan_runtime, plan)
 
     assert draft_path.read_text(encoding="utf-8") == "# Projection Idempotency\n"
-    assert store.tracking_position() == notification_id
+    assert app.projection_tracking_position() == notification_id
 
 
 def test_missing_projection_file_can_be_restored_from_replayed_events(
     tmp_path: Path,
 ) -> None:
     plan_runtime = _runtime(tmp_path)
-    app = plan_application.PlanApplication()
+    app = plan_application.PlanApplication(env=plan_runtime.persistence.environment())
     plan = app.create_plan("Projection Restore")
     projection = _draft_projection("# Projection Restore\n")
     projections.record_stage_projection(plan_runtime, plan, projection)
     app.save(plan)
     plan = app.get_plan(domain.PlanId(plan.id))
     notification_id = app.notification_log_position()
-    projections.write_stage_projection(plan_runtime, plan, projection, notification_id)
+    projections.write_stage_projection(plan_runtime, plan, projection)
+    app.record_projection_tracking(notification_id)
     draft_path = tmp_path / ".enclosure" / "plans" / "projection-restore" / "DRAFT.md"
     draft_path.unlink()
 
     replayed_plan = app.get_plan(domain.PlanId(plan.id))
-    projections.restore_recorded_projections(
-        plan_runtime,
-        replayed_plan,
-        notification_id,
-    )
+    projections.restore_recorded_projections(plan_runtime, replayed_plan)
+    app.record_projection_tracking(notification_id)
 
     assert draft_path.read_text(encoding="utf-8") == "# Projection Restore\n"
 

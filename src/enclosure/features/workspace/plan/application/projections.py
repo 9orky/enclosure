@@ -104,18 +104,15 @@ def write_stage_projection(
     plan_runtime: runtime._Runtime,
     plan: domain.Plan,
     projection: domain.StageProjection,
-    notification_id: int,
 ) -> None:
     store = runtime.projection_store(plan_runtime, plan)
     for artifact in projection.artifacts:
         store.write_projection(artifact)
-    store.record_tracking(notification_id)
 
 
 def restore_recorded_projections(
     plan_runtime: runtime._Runtime,
     plan: domain.Plan,
-    notification_id: int,
 ) -> None:
     store = runtime.projection_store(plan_runtime, plan)
     for record in plan.projections.values():
@@ -128,7 +125,6 @@ def restore_recorded_projections(
                 artifact_kind="markdown",
             )
         )
-    store.record_tracking(notification_id)
 
 
 __all__ = [
