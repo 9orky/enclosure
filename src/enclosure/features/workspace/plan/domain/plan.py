@@ -121,32 +121,9 @@ class Plan(Aggregate):
         self.state = PlanState(state)
         self.active = self.state != PlanState.COMPLETE
 
-    def update_draft(self, content_hash: str, source_path: str) -> None:
-        self._update_draft(content_hash, source_path)
-
     @event("DraftUpdated")
     def _update_draft(self, content_hash: str, source_path: str) -> None:
         return None
-
-    def change_question(
-        self,
-        question_id: str,
-        text: str,
-        explanation: str,
-        status: questions.QuestionStatus,
-        blocking: bool,
-        revisit_stage: str,
-    ) -> None:
-        answer = explanation if status == questions.QuestionStatus.RESOLVED else ""
-        self._change_question(
-            question_id=question_id,
-            text=text,
-            explanation=explanation,
-            answer=answer,
-            status=status.value,
-            blocking=blocking,
-            revisit_stage=revisit_stage,
-        )
 
     @event("QuestionChanged")
     def _change_question(
