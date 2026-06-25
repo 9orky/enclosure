@@ -63,63 +63,6 @@ def extract_open_questions(projection: QuestionProjection) -> list[OpenQuestion]
     return questions
 
 
-def append_open_question(content: str, question: str, explanation: str) -> str:
-    question_block = "\n".join(
-        [
-            "",
-            f"### {question.strip()}",
-            "",
-            explanation.strip(),
-            "",
-        ]
-    )
-    if "## Open Questions" in content:
-        return content.rstrip() + "\n" + question_block
-    return content.rstrip() + "\n\n## Open Questions\n" + question_block
-
-
-def append_question_answer(
-    stage_id: str,
-    artifact_path: str,
-    content: str,
-    question_id: str,
-    answer: str,
-) -> str:
-    lines = content.splitlines()
-    output: list[str] = []
-    in_open_questions = False
-    in_target_question = False
-    inserted = False
-    for line in lines:
-        stripped = line.strip()
-        if stripped.startswith("## "):
-            if in_target_question and not inserted:
-                output.extend(_answer_lines(answer))
-                inserted = True
-            in_open_questions = stripped[3:].strip().lower() == "open questions"
-            in_target_question = False
-            output.append(line)
-            continue
-        if in_open_questions and stripped.startswith("### "):
-            if in_target_question and not inserted:
-                output.extend(_answer_lines(answer))
-                inserted = True
-            title = stripped[4:].strip()
-            in_target_question = (
-                ":".join([stage_id, _slug(artifact_path), _slug(title)])
-                == question_id
-            )
-            output.append(line)
-            continue
-        output.append(line)
-    if in_target_question and not inserted:
-        output.extend(_answer_lines(answer))
-        inserted = True
-    if not inserted:
-        raise ValueError(f"Question not found in current stage files: {question_id}")
-    return "\n".join(output).rstrip() + "\n"
-
-
 def _extract_artifact_questions(
     stage_id: str,
     artifact_path: str,
@@ -233,13 +176,7 @@ def _slug(value: str) -> str:
     return slug or "question"
 
 
-def _answer_lines(answer: str) -> list[str]:
-    return ["", "#### Answer", "", answer.strip(), ""]
-
-
 __all__ = [
-    "append_open_question",
-    "append_question_answer",
     "answered_questions",
     "blocking_questions",
     "extract_open_questions",

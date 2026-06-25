@@ -118,55 +118,6 @@ def test_plan_next_records_open_question_and_answer_from_stage_file(
     assert "Questions: 1" in advanced_status.stdout
 
 
-def test_plan_live_companion_commands_submit_and_answer_question(
-    tmp_path: Path,
-) -> None:
-    project_root = copy_fixture(tmp_path, "clean_architecture")
-
-    started = run_cli(project_root, "workspace", "plan", "start", "Live Plan Session")
-    connected = run_cli(project_root, "workspace", "plan", "connect", "once")
-    asked = run_cli(
-        project_root,
-        "workspace",
-        "plan",
-        "ask",
-        "Which live scope should this plan keep?",
-        "The draft needs a concrete live-session boundary.",
-    )
-    blocked = run_cli(project_root, "workspace", "plan", "next")
-    answered = run_cli(
-        project_root,
-        "workspace",
-        "plan",
-        "answer",
-        "draft:draft-md:which-live-scope-should-this-plan-keep",
-        "Keep the live session scoped to draft review.",
-    )
-    advanced = run_cli(project_root, "workspace", "plan", "next")
-
-    draft_path = (
-        project_root / ".enclosure" / "plans" / "live-plan-session" / "DRAFT.md"
-    )
-    draft = draft_path.read_text(encoding="utf-8")
-
-    assert started.returncode == 0, started.stderr
-    assert connected.returncode == 0, connected.stderr
-    assert "Agent heartbeat:" in connected.stdout
-    assert asked.returncode == 0, asked.stderr
-    assert "Question submitted." in asked.stdout
-    assert "draft:draft-md:which-live-scope-should-this-plan-keep" in asked.stdout
-    assert blocked.returncode == 1
-    assert "Blocking open questions prevent stage advance" in blocked.stderr
-    assert answered.returncode == 0, answered.stderr
-    assert "Answer recorded." in answered.stdout
-    assert "Status: resolved" in answered.stdout
-    assert advanced.returncode == 0, advanced.stderr
-    assert "Stage: plan" in advanced.stdout
-    assert "### Which live scope should this plan keep?" in draft
-    assert "#### Answer" in draft
-    assert "Keep the live session scoped to draft review." in draft
-
-
 def test_plan_agent_reports_current_stage_file_models(tmp_path: Path) -> None:
     project_root = copy_fixture(tmp_path, "clean_architecture")
 

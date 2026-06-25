@@ -1,16 +1,13 @@
 from __future__ import annotations
 
-from . import application, domain, infrastructure, workspace
+from . import application, domain, infrastructure
 
-PlanStatusReport = workspace.PlanStatusReport
-WorkspacePlanModule = workspace.WorkspacePlanModule
+PlanStatusReport = application.PlanStatusReport
 
 
 __all__ = [
     "PlanStatusReport",
-    "WorkspacePlanModule",
     "application",
     "domain",
     "infrastructure",
-    "workspace",
 ]

@@ -5,10 +5,10 @@ from uuid import UUID
 
 from eventsourcing.application import Application
 
-from . import domain
+from .. import domain
 
 
-class PlanningApplication(Application[UUID]):
+class PlanEventStore(Application[UUID]):
     def create_plan(self, title: str) -> domain.Plan:
         self._reject_when_active_plan_exists()
         plan = domain.Plan(
@@ -61,6 +61,4 @@ class PlanningApplication(Application[UUID]):
         raise ValueError("Only one active plan may exist")
 
 
-__all__ = [
-    "PlanningApplication",
-]
+__all__ = ["PlanEventStore"]

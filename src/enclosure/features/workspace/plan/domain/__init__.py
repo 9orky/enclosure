@@ -7,8 +7,6 @@ from .ports import ProjectionStore, StageCatalog
 from .questions import (
     OpenQuestion,
     QuestionStatus,
-    append_open_question,
-    append_question_answer,
     answered_questions,
     blocking_questions,
     extract_open_questions,
@@ -35,8 +33,6 @@ from .stages import DraftStage, EpicsStage, PlanStage
 
 __all__ = [
     "AgentContext",
-    "append_open_question",
-    "append_question_answer",
     "answered_questions",
     "blocking_questions",
     "DerivedSlot",
