@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .. import domain
-from . import plan_application, runtime
+from . import runtime
 
 
 def read_stage_projection(
@@ -49,26 +49,6 @@ def _artifact_kind_for_path(
     raise ValueError(f"Projection path is not declared by the stage file model: {path}")
 
 
-def record_projection_questions(
-    store: plan_application.PlanApplication,
-    plan: domain.Plan,
-    projection: domain.StageProjection,
-) -> list[domain.OpenQuestion]:
-    questions = domain.extract_open_questions(projection)
-    for question in questions:
-        plan.change_question(
-            question.id,
-            question.text,
-            question.explanation,
-            question.status,
-            question.blocking,
-            question.revisit_stage,
-        )
-    if questions:
-        store.save(plan)
-    return questions
-
-
 def record_stage_projection(
     plan_runtime: runtime._Runtime,
     plan: domain.Plan,
@@ -94,7 +74,6 @@ def write_stage_projection(
 
 __all__ = [
     "read_stage_projection",
-    "record_projection_questions",
     "record_stage_projection",
     "write_stage_projection",
 ]
