@@ -49,7 +49,6 @@ def test_plan_reconstructs_workflow_state_from_decorated_events() -> None:
         "draft",
     )
     plan.record_projection("plan-hash", "PLAN.md", "plan", "# Plan\n")
-    plan.request_roll("workspace plan roll", "plan")
     plan.close("Done", "workspace plan close")
 
     reconstructed = _replay(plan.collect_events())

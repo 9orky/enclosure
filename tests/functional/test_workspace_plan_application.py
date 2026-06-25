@@ -94,14 +94,12 @@ def test_plan_application_advances_stage_and_records_questions() -> None:
     )
 
 
-def test_plan_application_roll_and_close_are_event_store_commands() -> None:
+def test_plan_application_close_is_event_store_command() -> None:
     app = plan_application.PlanApplication()
-    created = app.create_plan("Application Commands")
+    app.create_plan("Application Commands")
 
-    rolled = app.request_roll()
     closed = app.close_active_plan("done")
 
-    assert rolled.id == created.id
     assert closed.current_stage == domain.PlanState.COMPLETE.value
     assert closed.state == domain.PlanState.COMPLETE
     assert not closed.active
@@ -132,9 +130,21 @@ def test_plan_application_rejects_stale_concurrent_save(tmp_path: Path) -> None:
     stale_plan = stale_app.get_active_plan()
     current_plan = current_app.get_active_plan()
 
-    current_plan.request_roll("current write", current_plan.current_stage)
+    current_plan.ask_question(
+        "concurrency:current",
+        "Current write?",
+        "Current writer changes the stream.",
+        False,
+        current_plan.current_stage,
+    )
     current_app.save(current_plan)
-    stale_plan.request_roll("stale write", stale_plan.current_stage)
+    stale_plan.ask_question(
+        "concurrency:stale",
+        "Stale write?",
+        "Stale writer changes the stream.",
+        False,
+        stale_plan.current_stage,
+    )
 
     try:
         stale_app.save(stale_plan)

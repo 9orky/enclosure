@@ -201,12 +201,6 @@ class PlanApplication(application.Application[UUID]):
         self.save(plan)
         return self.get_plan(domain.PlanId(plan.id))
 
-    def request_roll(self) -> domain.Plan:
-        plan = self.get_active_plan()
-        plan.request_roll("workspace plan roll", plan.current_stage)
-        self.save(plan)
-        return self.get_plan(domain.PlanId(plan.id))
-
     def close_active_plan(self, reason: str) -> domain.Plan:
         plan = self.get_active_plan()
         plan.close(

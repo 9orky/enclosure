@@ -69,7 +69,7 @@ def _advance_plan(
 def roll_plan() -> domain.Plan:
     plan_runtime = runtime.current_runtime()
     plan_app = runtime.current_plan_application(plan_runtime)
-    plan = plan_app.request_roll()
+    plan = plan_app.get_active_plan()
     while plan.active:
         plan = _advance_plan(plan_runtime, plan_app)
         if plan.current_stage == domain.PlanState.COMPLETE.value:

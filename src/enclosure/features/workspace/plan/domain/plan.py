@@ -242,13 +242,6 @@ class Plan(Aggregate):
     ) -> None:
         return None
 
-    def request_roll(self, reason: str, requested_stage: str) -> None:
-        self._request_roll(reason, requested_stage)
-
-    @event("RollRequested")
-    def _request_roll(self, reason: str, requested_stage: str) -> None:
-        return None
-
     def close(self, reason: str, closed_by_command: str) -> None:
         self._close(reason, closed_by_command)
 
