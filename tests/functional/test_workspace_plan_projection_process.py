@@ -85,6 +85,26 @@ def test_projection_rewrite_is_idempotent(
     assert app.projection_tracking_position() == notification_id
 
 
+def test_projection_tracking_ignores_non_projection_events(
+    tmp_path: Path,
+) -> None:
+    plan_runtime = _runtime(tmp_path)
+    app = plan_application.PlanApplication(env=plan_runtime.persistence.environment())
+    plan = app.create_plan("Projection Topics")
+    projection = _draft_projection("# Projection Topics\n")
+    projections.record_stage_projection(plan_runtime, plan, projection)
+    app.save(plan)
+    plan = app.get_plan(domain.PlanId(plan.id))
+    notification_id = projections.project_recorded_projections(plan_runtime, app, plan)
+
+    app.ask_stage_question("Scope?", "The scope needs an answer.", "draft", "DRAFT.md")
+
+    assert projections.project_recorded_projections(plan_runtime, app, plan) == (
+        notification_id
+    )
+    assert app.projection_tracking_position() == notification_id
+
+
 def test_missing_projection_file_can_be_restored_from_replayed_events(
     tmp_path: Path,
 ) -> None:

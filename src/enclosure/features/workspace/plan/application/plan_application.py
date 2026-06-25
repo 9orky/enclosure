@@ -6,6 +6,7 @@ from pathlib import Path
 from uuid import UUID
 
 from eventsourcing import application, persistence
+from eventsourcing.utils import get_topic
 
 from .. import domain
 
@@ -272,11 +273,19 @@ class PlanApplication(application.Application[UUID]):
             raise LookupError("No active plan exists")
         return domain.PlanId(active_plan_id)
 
-    def _ordered_events_from_notification_log(self) -> Iterable[domain.DomainEvent]:
+    def _ordered_events_from_notification_log(
+        self,
+        *,
+        topics: tuple[str, ...] = (),
+    ) -> Iterable[domain.DomainEvent]:
         start = 1
         limit = self.log_section_size
         while True:
-            notifications = self.notification_log.select(start=start, limit=limit)
+            notifications = self.notification_log.select(
+                start=start,
+                limit=limit,
+                topics=topics,
+            )
             if not notifications:
                 return
             for notification in notifications:
@@ -285,7 +294,9 @@ class PlanApplication(application.Application[UUID]):
 
     def _projection_count(self, plan_id: UUID) -> int:
         projection_ids: set[str] = set()
-        for event in self._ordered_events_from_notification_log():
+        for event in self._ordered_events_from_notification_log(
+            topics=(get_topic(domain.Plan.ProjectionRecorded),)
+        ):
             if (
                 isinstance(event, domain.Plan.ProjectionRecorded)
                 and event.originator_id == plan_id
