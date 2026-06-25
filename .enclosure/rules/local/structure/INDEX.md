@@ -21,6 +21,7 @@ child_paths:
   - SHAPE.md
   - FEATURE.md
   - FEATURE_LAYERS.md
+  - EVENTSOURCING.md
   - FEATURE_FILE_TREE.md
   - MODULE_LADDER.md
 ---
@@ -38,6 +39,8 @@ child_paths:
 - Read [SHAPE.md](SHAPE.md) for local signature and import-shape flags.
 - Read [FEATURE.md](FEATURE.md) for feature-root conventions.
 - Read [FEATURE_LAYERS.md](FEATURE_LAYERS.md) for the local layer set.
+- Read [EVENTSOURCING.md](EVENTSOURCING.md) for local use of the
+  `eventsourcing` package.
 - Read [FEATURE_FILE_TREE.md](FEATURE_FILE_TREE.md) for compact starter files.
 - Read [MODULE_LADDER.md](MODULE_LADDER.md) for local recipe slot names and growth rungs.
 - Stop when shared structure rules are enough.

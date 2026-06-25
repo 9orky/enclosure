@@ -23,6 +23,7 @@ tightens_paths:
   - ../../shared/structure/FEATURE_LAYERS.md
 escalation_paths:
   - FEATURE_FILE_TREE.md
+  - EVENTSOURCING.md
   - ../../shared/architecture/DEPENDENCIES.md
 ---
 
@@ -40,7 +41,9 @@ escalation_paths:
 - Split a layer into a folder only after stable internal responsibilities appear.
 - Direction is `ui -> application -> infrastructure -> domain`.
 - `application` may use domain types directly.
-- UI uses the shared current-workspace SSOT; do not forward alternate roots or config paths.
+- UI uses current-workspace SSOT; no alternate roots or config paths.
+- If a feature imports `eventsourcing`, read [EVENTSOURCING.md](EVENTSOURCING.md)
+  before assigning package components to layers.
 - Construct concrete collaborators explicitly; do not hide same-scope defaults behind `None`.
 - Keep bootstrap helpers at composition seams unless they form a real service.
 - Do not introduce a new layer name without changing the rules first.
