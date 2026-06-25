@@ -5,6 +5,29 @@ from pathlib import Path
 from conftest import copy_fixture, run_cli
 
 
+def _append_resolved_question(path: Path, title: str, answer: str) -> None:
+    content = path.read_text(encoding="utf-8")
+    path.write_text(
+        content.rstrip()
+        + "\n\n"
+        + "\n".join(
+            [
+                "## Open Questions",
+                "",
+                f"### {title}",
+                "",
+                "This must be answered before the stage can advance.",
+                "",
+                "#### Answer",
+                "",
+                answer,
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
 def test_plan_without_active_event_stream_reports_none(tmp_path: Path) -> None:
     project_root = copy_fixture(tmp_path, "clean_architecture")
 
@@ -42,12 +65,20 @@ def test_plan_next_projects_plan_stage_files(tmp_path: Path) -> None:
     project_root = copy_fixture(tmp_path, "clean_architecture")
 
     started = run_cli(project_root, "workspace", "plan", "start", "Planning Workflow")
+    blocked = run_cli(project_root, "workspace", "plan", "next")
+    _append_resolved_question(
+        project_root / ".enclosure" / "plans" / "planning-workflow" / "DRAFT.md",
+        "Is the draft ready for planning?",
+        "The draft is ready for planning.",
+    )
     advanced = run_cli(project_root, "workspace", "plan", "next")
     status = run_cli(project_root, "workspace", "plan")
 
     plan_root = project_root / ".enclosure" / "plans" / "planning-workflow"
 
     assert started.returncode == 0, started.stderr
+    assert blocked.returncode == 1
+    assert "A resolved question is required before stage advance: draft" in blocked.stderr
     assert advanced.returncode == 0, advanced.stderr
     assert "Stage: plan" in advanced.stdout
     assert (plan_root / "PLAN.md").is_file()
@@ -130,12 +161,12 @@ def test_plan_agent_reports_current_stage_file_models(tmp_path: Path) -> None:
     assert "- DRAFT.md [draft_seed]" in agent.stdout
 
 
-def test_plan_roll_projects_epic_package_and_completes(tmp_path: Path) -> None:
+def test_plan_next_projects_epic_package_and_completes(
+    tmp_path: Path,
+) -> None:
     project_root = copy_fixture(tmp_path, "clean_architecture")
 
     started = run_cli(project_root, "workspace", "plan", "start", "Planning Workflow")
-    rolled = run_cli(project_root, "workspace", "plan", "roll")
-
     epic_root = (
         project_root
         / ".enclosure"
@@ -144,10 +175,34 @@ def test_plan_roll_projects_epic_package_and_completes(tmp_path: Path) -> None:
         / "epics"
         / "your-use-case-name"
     )
+    plan_root = project_root / ".enclosure" / "plans" / "planning-workflow"
+
+    _append_resolved_question(
+        plan_root / "DRAFT.md",
+        "Can the draft become a plan?",
+        "The draft can become a plan.",
+    )
+    planned = run_cli(project_root, "workspace", "plan", "next")
+    _append_resolved_question(
+        plan_root / "PLAN.md",
+        "Can the plan become epics?",
+        "The plan can become epics.",
+    )
+    epics = run_cli(project_root, "workspace", "plan", "next")
+    _append_resolved_question(
+        epic_root / "EPIC.md",
+        "Can the epic package complete?",
+        "The epic package can complete.",
+    )
+    completed = run_cli(project_root, "workspace", "plan", "next")
 
     assert started.returncode == 0, started.stderr
-    assert rolled.returncode == 0, rolled.stderr
-    assert "Stage: complete" in rolled.stdout
+    assert planned.returncode == 0, planned.stderr
+    assert "Stage: plan" in planned.stdout
+    assert epics.returncode == 0, epics.stderr
+    assert "Stage: epics" in epics.stdout
+    assert completed.returncode == 0, completed.stderr
+    assert "Stage: complete" in completed.stdout
     assert (epic_root / "EPIC.md").is_file()
     assert (epic_root / "USER_STORIES.md").is_file()
     assert (epic_root / "flows.mermaid").is_file()
@@ -158,6 +213,17 @@ def test_plan_roll_projects_epic_package_and_completes(tmp_path: Path) -> None:
     assert (epic_root / "flows.mermaid").read_text(encoding="utf-8").strip() in schemas
     assert (epic_root / "uml.mermaid").read_text(encoding="utf-8").strip() in schemas
     assert (epic_root / "tree.mermaid").read_text(encoding="utf-8").strip() in schemas
+
+
+def test_plan_roll_requires_resolved_stage_question(tmp_path: Path) -> None:
+    project_root = copy_fixture(tmp_path, "clean_architecture")
+
+    started = run_cli(project_root, "workspace", "plan", "start", "Planning Workflow")
+    rolled = run_cli(project_root, "workspace", "plan", "roll")
+
+    assert started.returncode == 0, started.stderr
+    assert rolled.returncode == 1
+    assert "A resolved question is required before stage advance: draft" in rolled.stderr
 
 
 def test_plan_start_rejects_second_active_plan(tmp_path: Path) -> None:

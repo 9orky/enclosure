@@ -51,6 +51,11 @@ def _advance_plan(
             "Blocking open questions prevent stage advance: "
             + ", ".join(question.id for question in blocking_questions)
         )
+    if not domain.question_cycle_passed(questions):
+        raise ValueError(
+            "A resolved question is required before stage advance: "
+            f"{stage.stage_id()}"
+        )
     review = stage.parse_review(projection)
     validation = stage.validate_review(review)
     if not validation.valid:

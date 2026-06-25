@@ -45,8 +45,6 @@ def answered_questions(questions: Sequence[OpenQuestion]) -> list[OpenQuestion]:
 
 
 def question_cycle_passed(questions: Sequence[OpenQuestion]) -> bool:
-    if not questions:
-        return True
     return bool(answered_questions(questions))
 
 
