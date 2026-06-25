@@ -57,3 +57,5 @@ escalation_paths: []
 
 - No step files before approval.
 - Implementation detail stays out of the big picture.
+- Planning workflows are not complete until required downstream planning
+  projections, such as epic artifacts, have been materialized.
