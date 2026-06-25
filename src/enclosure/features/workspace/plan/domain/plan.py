@@ -86,7 +86,6 @@ class Plan(Aggregate):
         self.active = True
         self.questions: dict[str, questions.OpenQuestion] = {}
         self.stage_outputs: dict[str, dict[str, Any]] = {}
-        self.close_reason = ""
 
     def accept_stage_output(
         self,
@@ -259,7 +258,6 @@ class Plan(Aggregate):
 
     @event("Closed")
     def _close(self, reason: str, closed_by_command: str) -> None:
-        self.close_reason = reason
         self.current_stage = PlanState.COMPLETE.value
         self.state = PlanState.COMPLETE
         self.active = False

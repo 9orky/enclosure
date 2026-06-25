@@ -105,7 +105,6 @@ def test_plan_application_roll_and_close_are_event_store_commands() -> None:
     assert closed.current_stage == domain.PlanState.COMPLETE.value
     assert closed.state == domain.PlanState.COMPLETE
     assert not closed.active
-    assert closed.close_reason == "done"
     assert app.plan_status(Path("."), Path(DEFAULT_DATABASE_NAME)).current_plan_id == ""
 
 
