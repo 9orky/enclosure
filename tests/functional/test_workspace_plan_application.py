@@ -102,7 +102,6 @@ def test_plan_application_roll_and_close_are_event_store_commands() -> None:
     closed = app.close_active_plan("done")
 
     assert rolled.id == created.id
-    assert rolled.roll_requests == ("workspace plan roll",)
     assert closed.current_stage == domain.PlanState.COMPLETE.value
     assert closed.state == domain.PlanState.COMPLETE
     assert not closed.active

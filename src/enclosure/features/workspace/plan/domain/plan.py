@@ -86,7 +86,6 @@ class Plan(Aggregate):
         self.active = True
         self.questions: dict[str, questions.OpenQuestion] = {}
         self.stage_outputs: dict[str, dict[str, Any]] = {}
-        self.roll_requests: tuple[str, ...] = ()
         self.close_reason = ""
 
     def accept_stage_output(
@@ -253,7 +252,7 @@ class Plan(Aggregate):
 
     @event("RollRequested")
     def _request_roll(self, reason: str, requested_stage: str) -> None:
-        self.roll_requests = (*self.roll_requests, reason)
+        return None
 
     def close(self, reason: str, closed_by_command: str) -> None:
         self._close(reason, closed_by_command)
