@@ -127,16 +127,17 @@ def test_projection_read_model_replays_saved_events_from_notification_log(
     assert replay_app.projection_tracking_position() == notification_id
 
 
-def test_stage_read_falls_back_to_recorded_projection_content(
+def test_stage_read_uses_materialized_projection_files(
     tmp_path: Path,
 ) -> None:
     plan_runtime = _runtime(tmp_path)
-    app = plan_application.PlanApplication()
+    app = plan_application.PlanApplication(env=plan_runtime.persistence.environment())
     plan = app.create_plan("Projection Fallback")
     projection = _draft_projection("# Projection Fallback\n")
     projections.record_stage_projection(plan_runtime, plan, projection)
     app.save(plan)
     plan = app.get_plan(domain.PlanId(plan.id))
+    projections.project_recorded_projections(plan_runtime, app, plan)
 
     read_projection = projections.read_stage_projection(
         plan_runtime,

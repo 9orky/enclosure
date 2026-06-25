@@ -86,7 +86,7 @@ class PlanApplication(application.Application[UUID]):
             active=plan.active,
             version=plan.version,
             question_count=len(plan.questions),
-            projection_count=len(plan.projections),
+            projection_count=self._projection_count(plan.id),
             snapshot_policy=SNAPSHOT_POLICY,
         )
 
@@ -301,6 +301,16 @@ class PlanApplication(application.Application[UUID]):
             for notification in notifications:
                 yield self.mapper.to_domain_event(notification)
             start = notifications[-1].id + 1
+
+    def _projection_count(self, plan_id: UUID) -> int:
+        projection_ids: set[str] = set()
+        for event in self._ordered_events_from_notification_log():
+            if (
+                isinstance(event, domain.Plan.ProjectionRecorded)
+                and event.originator_id == plan_id
+            ):
+                projection_ids.add(event.projection_id)
+        return len(projection_ids)
 
     def notification_log_position(self) -> int:
         position = 0

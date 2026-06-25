@@ -27,14 +27,6 @@ class PlanId:
         return str(self.value)
 
 
-@dataclass(frozen=True)
-class ProjectionRecord:
-    id: str
-    path: str
-    stage: str
-    content: str
-
-
 class PlanRegistry(Aggregate):
     def __init__(self, id: UUID) -> None:
         self.active_plan_id_text = ""
@@ -93,7 +85,6 @@ class Plan(Aggregate):
         self.active = True
         self.draft_content_hash = ""
         self.questions: dict[str, questions.OpenQuestion] = {}
-        self.projections: dict[str, ProjectionRecord] = {}
         self.stage_outputs: dict[str, dict[str, Any]] = {}
         self.roll_requests: tuple[str, ...] = ()
         self.close_reason = ""
@@ -278,12 +269,7 @@ class Plan(Aggregate):
         stage: str,
         content: str,
     ) -> None:
-        self.projections[projection_id] = ProjectionRecord(
-            id=projection_id,
-            path=path,
-            stage=stage,
-            content=content,
-        )
+        return None
 
     def request_roll(self, reason: str, requested_stage: str) -> None:
         self._request_roll(reason, requested_stage)
@@ -309,5 +295,4 @@ __all__ = [
     "PLAN_REGISTRY_ID",
     "PlanRegistry",
     "PlanState",
-    "ProjectionRecord",
 ]

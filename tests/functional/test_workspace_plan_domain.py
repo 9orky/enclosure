@@ -61,8 +61,6 @@ def test_plan_reconstructs_workflow_state_from_decorated_events() -> None:
     assert reconstructed.questions["draft:draft-md:ready"].answer == (
         "The draft is ready."
     )
-    assert reconstructed.projections["plan-hash"].path == "PLAN.md"
-    assert reconstructed.projections["plan-hash"].content == "# Plan\n"
     assert reconstructed.stage_outputs["draft"]["next_stage"] == "plan"
     assert reconstructed.roll_requests == ("workspace plan roll",)
     assert reconstructed.close_reason == "Done"

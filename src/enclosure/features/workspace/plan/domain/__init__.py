@@ -8,7 +8,6 @@ from .plan import (
     PlanId,
     PlanRegistry,
     PlanState,
-    ProjectionRecord,
 )
 from .ports import ProjectionStore, StageCatalog
 from .questions import (
@@ -61,7 +60,6 @@ __all__ = [
     "PlanningStage",
     "ProjectionStore",
     "ProjectedArtifact",
-    "ProjectionRecord",
     "QuestionStatus",
     "question_cycle_passed",
     "question_id_for",
