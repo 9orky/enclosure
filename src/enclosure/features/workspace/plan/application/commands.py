@@ -150,11 +150,12 @@ def restore_plan_projections() -> domain.Plan:
     plan_runtime = runtime.current_runtime()
     plan_app = runtime.current_plan_application(plan_runtime)
     plan = plan_app.get_active_plan()
-    projections.restore_recorded_projections(
+    projections.project_recorded_projections(
         plan_runtime,
+        plan_app,
         plan,
+        start=0,
     )
-    plan_app.record_projection_tracking(plan_app.notification_log_position())
     return plan
 
 

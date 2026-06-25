@@ -98,10 +98,10 @@ def test_missing_projection_file_can_be_restored_from_replayed_events(
     draft_path.unlink()
 
     replayed_plan = app.get_plan(domain.PlanId(plan.id))
-    projections.restore_recorded_projections(plan_runtime, replayed_plan)
-    app.record_projection_tracking(notification_id)
+    projections.project_recorded_projections(plan_runtime, app, replayed_plan, start=0)
 
     assert draft_path.read_text(encoding="utf-8") == "# Projection Restore\n"
+    assert app.projection_tracking_position() == notification_id
 
 
 def test_projection_read_model_replays_saved_events_from_notification_log(

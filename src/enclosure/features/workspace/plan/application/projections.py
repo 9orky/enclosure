@@ -191,28 +191,10 @@ def project_recorded_projections(
         next_notification_id = notifications[-1].id + 1
 
 
-def restore_recorded_projections(
-    plan_runtime: runtime._Runtime,
-    plan: domain.Plan,
-) -> None:
-    store = runtime.projection_store(plan_runtime, plan)
-    for record in plan.projections.values():
-        if not record.content:
-            continue
-        store.write_projection(
-            domain.ProjectedArtifact(
-                path=record.path,
-                content=record.content,
-                artifact_kind="markdown",
-            )
-        )
-
-
 __all__ = [
     "PlanProjectionView",
     "PlanReadModelProjection",
     "project_recorded_projections",
     "read_stage_projection",
     "record_stage_projection",
-    "restore_recorded_projections",
 ]

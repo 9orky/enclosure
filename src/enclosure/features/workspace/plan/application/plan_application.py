@@ -317,13 +317,6 @@ class PlanApplication(application.Application[UUID]):
         position = self.projection_tracking_recorder().max_tracking_id(self.name)
         return position or 0
 
-    def record_projection_tracking(self, notification_id: int) -> None:
-        if notification_id <= self.projection_tracking_position():
-            return
-        self.projection_tracking_recorder().insert_tracking(
-            persistence.Tracking(self.name, notification_id)
-        )
-
     def projection_tracking_recorder(self) -> persistence.TrackingRecorder:
         if self._projection_tracking_recorder is None:
             self._projection_tracking_recorder = self.factory.tracking_recorder()
