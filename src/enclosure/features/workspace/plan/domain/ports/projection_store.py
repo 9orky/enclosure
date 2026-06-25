@@ -15,8 +15,5 @@ class ProjectionStore(Protocol):
     ) -> None:
         ...
 
-    def content_hash(self, content: str) -> str:
-        ...
-
 
 __all__ = ["ProjectionStore"]

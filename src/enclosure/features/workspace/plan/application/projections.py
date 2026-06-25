@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import singledispatchmethod
+import hashlib
 from uuid import UUID
 
 from eventsourcing import persistence
@@ -83,19 +84,20 @@ def read_stage_projection(
 
 
 def record_stage_projection(
-    plan_runtime: runtime._Runtime,
     plan: domain.Plan,
     projection: domain.StageProjection,
 ) -> None:
-    store = runtime.projection_store(plan_runtime, plan)
     for artifact in projection.artifacts:
-        projection_id = store.content_hash(artifact.content)
         plan.record_projection(
-            projection_id,
+            _projection_id(artifact.content),
             artifact.path,
             projection.stage_id,
             artifact.content,
         )
+
+
+def _projection_id(content: str) -> str:
+    return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
 
 def project_recorded_projections(

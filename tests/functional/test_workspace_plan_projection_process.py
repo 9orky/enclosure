@@ -38,7 +38,7 @@ def test_projection_writes_are_tracked_by_notification_position(
     plan = app.create_plan("Projection Tracking")
     projection = _draft_projection("# Projection Tracking\n")
 
-    projections.record_stage_projection(plan_runtime, plan, projection)
+    projections.record_stage_projection(plan, projection)
     app.save(plan)
     plan = app.get_plan(domain.PlanId(plan.id))
     notification_id = projections.project_recorded_projections(plan_runtime, app, plan)
@@ -61,7 +61,7 @@ def test_projection_rewrite_is_idempotent(
     app = plan_application.PlanApplication(env=plan_runtime.persistence.environment())
     plan = app.create_plan("Projection Idempotency")
     projection = _draft_projection("# Projection Idempotency\n")
-    projections.record_stage_projection(plan_runtime, plan, projection)
+    projections.record_stage_projection(plan, projection)
     app.save(plan)
     plan = app.get_plan(domain.PlanId(plan.id))
 
@@ -92,7 +92,7 @@ def test_projection_tracking_ignores_non_projection_events(
     app = plan_application.PlanApplication(env=plan_runtime.persistence.environment())
     plan = app.create_plan("Projection Topics")
     projection = _draft_projection("# Projection Topics\n")
-    projections.record_stage_projection(plan_runtime, plan, projection)
+    projections.record_stage_projection(plan, projection)
     app.save(plan)
     plan = app.get_plan(domain.PlanId(plan.id))
     notification_id = projections.project_recorded_projections(plan_runtime, app, plan)
@@ -112,7 +112,7 @@ def test_missing_projection_file_can_be_restored_from_replayed_events(
     app = plan_application.PlanApplication(env=plan_runtime.persistence.environment())
     plan = app.create_plan("Projection Restore")
     projection = _draft_projection("# Projection Restore\n")
-    projections.record_stage_projection(plan_runtime, plan, projection)
+    projections.record_stage_projection(plan, projection)
     app.save(plan)
     plan = app.get_plan(domain.PlanId(plan.id))
     notification_id = projections.project_recorded_projections(plan_runtime, app, plan)
@@ -133,7 +133,7 @@ def test_projection_read_model_replays_saved_events_from_notification_log(
     app = plan_application.PlanApplication(env=plan_runtime.persistence.environment())
     plan = app.create_plan("Projection Replay")
     projection = _draft_projection("# Projection Replay\n")
-    projections.record_stage_projection(plan_runtime, plan, projection)
+    projections.record_stage_projection(plan, projection)
     app.save(plan)
 
     replay_app = plan_application.PlanApplication(
@@ -159,7 +159,7 @@ def test_stage_read_uses_materialized_projection_files(
     app = plan_application.PlanApplication(env=plan_runtime.persistence.environment())
     plan = app.create_plan("Projection Fallback")
     projection = _draft_projection("# Projection Fallback\n")
-    projections.record_stage_projection(plan_runtime, plan, projection)
+    projections.record_stage_projection(plan, projection)
     app.save(plan)
     plan = app.get_plan(domain.PlanId(plan.id))
     projections.project_recorded_projections(plan_runtime, app, plan)
