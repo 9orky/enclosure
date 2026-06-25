@@ -293,17 +293,6 @@ class PlanApplication(application.Application[UUID]):
                 projection_ids.add(event.projection_id)
         return len(projection_ids)
 
-    def notification_log_position(self) -> int:
-        position = 0
-        start = 1
-        limit = self.log_section_size
-        while True:
-            notifications = self.notification_log.select(start=start, limit=limit)
-            if not notifications:
-                return position
-            position = notifications[-1].id
-            start = position + 1
-
     def projection_tracking_position(self) -> int:
         position = self.projection_tracking_recorder().max_tracking_id(self.name)
         return position or 0

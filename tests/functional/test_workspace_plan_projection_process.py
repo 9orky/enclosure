@@ -41,8 +41,7 @@ def test_projection_writes_are_tracked_by_notification_position(
     projections.record_stage_projection(plan_runtime, plan, projection)
     app.save(plan)
     plan = app.get_plan(domain.PlanId(plan.id))
-    notification_id = app.notification_log_position()
-    projections.project_recorded_projections(plan_runtime, app, plan)
+    notification_id = projections.project_recorded_projections(plan_runtime, app, plan)
 
     tracking_path = (
         tmp_path / ".enclosure" / "plans" / "projection-tracking" / ".projection-tracking"
@@ -65,10 +64,13 @@ def test_projection_rewrite_is_idempotent(
     projections.record_stage_projection(plan_runtime, plan, projection)
     app.save(plan)
     plan = app.get_plan(domain.PlanId(plan.id))
-    notification_id = app.notification_log_position()
 
-    projections.project_recorded_projections(plan_runtime, app, plan)
-    projections.project_recorded_projections(plan_runtime, app, plan)
+    notification_id = projections.project_recorded_projections(plan_runtime, app, plan)
+    repeated_notification_id = projections.project_recorded_projections(
+        plan_runtime,
+        app,
+        plan,
+    )
 
     draft_path = (
         tmp_path
@@ -79,6 +81,7 @@ def test_projection_rewrite_is_idempotent(
     )
 
     assert draft_path.read_text(encoding="utf-8") == "# Projection Idempotency\n"
+    assert repeated_notification_id == notification_id
     assert app.projection_tracking_position() == notification_id
 
 
@@ -92,8 +95,7 @@ def test_missing_projection_file_can_be_restored_from_replayed_events(
     projections.record_stage_projection(plan_runtime, plan, projection)
     app.save(plan)
     plan = app.get_plan(domain.PlanId(plan.id))
-    notification_id = app.notification_log_position()
-    projections.project_recorded_projections(plan_runtime, app, plan)
+    notification_id = projections.project_recorded_projections(plan_runtime, app, plan)
     draft_path = tmp_path / ".enclosure" / "plans" / "projection-restore" / "DRAFT.md"
     draft_path.unlink()
 
@@ -113,14 +115,17 @@ def test_projection_read_model_replays_saved_events_from_notification_log(
     projection = _draft_projection("# Projection Replay\n")
     projections.record_stage_projection(plan_runtime, plan, projection)
     app.save(plan)
-    notification_id = app.notification_log_position()
 
     replay_app = plan_application.PlanApplication(
         env=plan_runtime.persistence.environment()
     )
     replayed_plan = replay_app.get_plan(domain.PlanId(plan.id))
 
-    projections.project_recorded_projections(plan_runtime, replay_app, replayed_plan)
+    notification_id = projections.project_recorded_projections(
+        plan_runtime,
+        replay_app,
+        replayed_plan,
+    )
 
     draft_path = tmp_path / ".enclosure" / "plans" / "projection-replay" / "DRAFT.md"
     assert draft_path.read_text(encoding="utf-8") == "# Projection Replay\n"
