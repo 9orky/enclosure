@@ -83,7 +83,6 @@ class Plan(Aggregate):
         self.schema_version = schema_version
         self.state = PlanState.ACTIVE
         self.active = True
-        self.draft_content_hash = ""
         self.questions: dict[str, questions.OpenQuestion] = {}
         self.stage_outputs: dict[str, dict[str, Any]] = {}
         self.roll_requests: tuple[str, ...] = ()
@@ -127,7 +126,7 @@ class Plan(Aggregate):
 
     @event("DraftUpdated")
     def _update_draft(self, content_hash: str, source_path: str) -> None:
-        self.draft_content_hash = content_hash
+        return None
 
     def change_question(
         self,

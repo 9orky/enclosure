@@ -34,13 +34,18 @@ def test_plan_reconstructs_workflow_state_from_decorated_events() -> None:
         [{"id": "draft:plan", "upstream_identity": "draft", "stage_id": "plan"}],
     )
     plan.advance_stage("plan", domain.PlanState.ACTIVE, "Accepted draft")
-    plan.update_draft("draft-hash", "DRAFT.md")
-    plan.change_question(
+    plan.ask_question(
         "draft:draft-md:ready",
         "Ready?",
         "The draft is ready.",
-        domain.QuestionStatus.RESOLVED,
-        False,
+        True,
+        "draft",
+    )
+    plan.answer_question(
+        "draft:draft-md:ready",
+        "Ready?",
+        "The draft is ready.",
+        "The draft is ready.",
         "draft",
     )
     plan.record_projection("plan-hash", "PLAN.md", "plan", "# Plan\n")
@@ -54,7 +59,6 @@ def test_plan_reconstructs_workflow_state_from_decorated_events() -> None:
     assert reconstructed.current_stage == domain.PlanState.COMPLETE.value
     assert reconstructed.state == domain.PlanState.COMPLETE
     assert not reconstructed.active
-    assert reconstructed.draft_content_hash == "draft-hash"
     assert reconstructed.questions["draft:draft-md:ready"].status == (
         domain.QuestionStatus.RESOLVED
     )

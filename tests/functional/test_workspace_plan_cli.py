@@ -28,7 +28,7 @@ def test_plan_start_records_active_plan_event(tmp_path: Path) -> None:
     assert "Started plan " in started.stdout
     assert "Title: Planning Workflow" in started.stdout
     assert "State: active" in started.stdout
-    assert "Version: 3" in started.stdout
+    assert "Version: 2" in started.stdout
     assert status.returncode == 0, status.stderr
     assert "Current plan: none" not in status.stdout
     assert "Title: Planning Workflow" in status.stdout

@@ -15,7 +15,6 @@ from .questions import (
     QuestionStatus,
     answered_questions,
     blocking_questions,
-    extract_open_questions,
     question_cycle_passed,
     question_id_for,
     stage_questions,
@@ -75,6 +74,5 @@ __all__ = [
     "StageResult",
     "StageSchemaContract",
     "ValidationResult",
-    "extract_open_questions",
     "stage_questions",
 ]

@@ -94,8 +94,6 @@ def record_stage_projection(
             projection.stage_id,
             artifact.content,
         )
-        if artifact.path == "DRAFT.md":
-            plan.update_draft(projection_id, artifact.path)
 
 
 def project_recorded_projections(

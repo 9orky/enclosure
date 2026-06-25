@@ -201,25 +201,6 @@ class PlanApplication(application.Application[UUID]):
         self.save(plan)
         return self.get_plan(domain.PlanId(plan.id))
 
-    def record_projection_questions(
-        self,
-        plan: domain.Plan,
-        projection: domain.StageProjection,
-    ) -> list[domain.OpenQuestion]:
-        questions = domain.extract_open_questions(projection)
-        for question in questions:
-            plan.change_question(
-                question.id,
-                question.text,
-                question.explanation,
-                question.status,
-                question.blocking,
-                question.revisit_stage,
-            )
-        if questions:
-            self.save(plan)
-        return questions
-
     def request_roll(self) -> domain.Plan:
         plan = self.get_active_plan()
         plan.request_roll("workspace plan roll", plan.current_stage)
