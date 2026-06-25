@@ -6,13 +6,9 @@ from uuid import UUID
 
 from eventsourcing import persistence
 from eventsourcing.projection import Projection
-from eventsourcing.utils import get_topic
 
 from .. import domain
 from . import plan_application, runtime
-
-
-PROJECTION_RECORDED_TOPIC = get_topic(domain.Plan.ProjectionRecorded)
 
 
 @dataclass(frozen=True)
@@ -43,7 +39,7 @@ class PlanProjectionView:
 
 
 class PlanReadModelProjection(Projection[PlanProjectionView]):
-    topics = (PROJECTION_RECORDED_TOPIC,)
+    topics = (domain.PROJECTION_RECORDED_TOPIC,)
 
     @singledispatchmethod
     def process_event(
@@ -144,7 +140,6 @@ def project_recorded_projections(
 __all__ = [
     "PlanProjectionView",
     "PlanReadModelProjection",
-    "PROJECTION_RECORDED_TOPIC",
     "project_recorded_projections",
     "read_stage_projection",
     "record_stage_projection",

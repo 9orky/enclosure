@@ -6,6 +6,7 @@ from typing import Any
 from uuid import UUID
 
 from eventsourcing.domain import Aggregate, event
+from eventsourcing.utils import get_topic
 
 from . import questions
 
@@ -271,4 +272,8 @@ __all__ = [
     "PLAN_REGISTRY_ID",
     "PlanRegistry",
     "PlanState",
+    "PROJECTION_RECORDED_TOPIC",
 ]
+
+
+PROJECTION_RECORDED_TOPIC = get_topic(Plan.ProjectionRecorded)

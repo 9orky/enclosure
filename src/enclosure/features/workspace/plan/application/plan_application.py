@@ -6,7 +6,6 @@ from pathlib import Path
 from uuid import UUID
 
 from eventsourcing import application, persistence
-from eventsourcing.utils import get_topic
 
 from .. import domain
 
@@ -295,7 +294,7 @@ class PlanApplication(application.Application[UUID]):
     def _projection_count(self, plan_id: UUID) -> int:
         projection_ids: set[str] = set()
         for event in self._ordered_events_from_notification_log(
-            topics=(get_topic(domain.Plan.ProjectionRecorded),)
+            topics=(domain.PROJECTION_RECORDED_TOPIC,)
         ):
             if (
                 isinstance(event, domain.Plan.ProjectionRecorded)
