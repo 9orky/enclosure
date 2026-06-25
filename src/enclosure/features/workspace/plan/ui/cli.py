@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import Annotated
 
 import typer
@@ -72,6 +73,40 @@ def plan_command(
         for file_model in context.file_models:
             source = " native-schema" if file_model.native_schema_source else ""
             typer.echo(f"- {file_model.path} [{file_model.model_kind}{source}]")
+        return
+    if action == "put":
+        if value is None:
+            raise ValueError("Artifact path is required: workspace plan put PATH")
+        content = detail
+        if content is None:
+            if sys.stdin.isatty():
+                raise ValueError(
+                    "Artifact content is required as DETAIL or stdin"
+                )
+            content = sys.stdin.read()
+        plan = application.put_stage_artifact(value, content)
+        typer.echo(f"Updated artifact {value}.")
+        typer.echo(f"Plan: {plan.id}")
+        typer.echo(f"Stage: {plan.current_stage}")
+        typer.echo(f"Version: {plan.version}")
+        return
+    if action == "answer":
+        if value is None:
+            raise ValueError(
+                "Question title is required: workspace plan answer TITLE ANSWER"
+            )
+        answer = detail
+        if answer is None:
+            if sys.stdin.isatty():
+                raise ValueError(
+                    "Question answer is required as DETAIL or stdin"
+                )
+            answer = sys.stdin.read()
+        plan = application.answer_stage_question(value, answer)
+        typer.echo(f"Answered question: {value}")
+        typer.echo(f"Plan: {plan.id}")
+        typer.echo(f"Stage: {plan.current_stage}")
+        typer.echo(f"Version: {plan.version}")
         return
     if action == "roll":
         plan = application.roll_plan()

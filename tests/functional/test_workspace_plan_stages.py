@@ -38,6 +38,7 @@ def test_epics_stage_owns_native_mermaid_schema_sources() -> None:
         "epics/{epic_id}/flows.mermaid",
         "epics/{epic_id}/uml.mermaid",
         "epics/{epic_id}/tree.mermaid",
+        "eventmodeling.mermaid",
     ]
 
 
@@ -88,6 +89,35 @@ def test_stages_implement_stage_file_contract() -> None:
     assert all(isinstance(stage, domain.StageFileContract) for stage in stages)
 
 
+def test_plan_stage_uml_schema_uses_valid_class_attributes() -> None:
+    stage = domain.PlanStage()
+
+    projection = stage.scaffold(
+        domain.StageInput(
+            stage_id="plan",
+            data_objects=[
+                domain.StageData(
+                    id="session-protocol",
+                    stable_identity="session-protocol",
+                    values={
+                        "name": "Session Protocol",
+                        "description": "Plan the session protocol.",
+                    },
+                ),
+            ],
+        )
+    )
+
+    artifact = next(
+        artifact for artifact in projection.artifacts if artifact.path == "UML.md"
+    )
+
+    assert "+str id" in artifact.content
+    assert "+str name" in artifact.content
+    assert "+str id =" not in artifact.content
+    assert "+str name =" not in artifact.content
+
+
 def test_epics_stage_pastes_native_mermaid_sources_into_schema_display() -> None:
     stage = domain.EpicsStage()
 
@@ -105,6 +135,72 @@ def test_epics_stage_pastes_native_mermaid_sources_into_schema_display() -> None
     assert "## Flow\n\n```mermaid\nflowchart LR\nA --> B\n```" in artifact.content
     assert "## UML\n\n```mermaid\nclassDiagram\nclass A\n```" in artifact.content
     assert '## Tree\n\n```mermaid\ntreeView-beta\n  "root"\n```' in artifact.content
+
+
+def test_epics_stage_projects_all_epics_into_event_modeling_view() -> None:
+    stage = domain.EpicsStage()
+
+    projection = stage.scaffold(
+        domain.StageInput(
+            stage_id="epics",
+            data_objects=[
+                domain.StageData(
+                    id="session-protocol",
+                    stable_identity="session-protocol",
+                    values={"name": "Session Protocol"},
+                ),
+                domain.StageData(
+                    id="inspection-gate",
+                    stable_identity="inspection-gate",
+                    values={"name": "Inspection Gate"},
+                ),
+            ],
+        )
+    )
+
+    artifact = next(
+        artifact
+        for artifact in projection.artifacts
+        if artifact.path == "eventmodeling.mermaid"
+    )
+
+    assert artifact.artifact_kind == "mermaid"
+    assert artifact.content.startswith("eventmodeling\n")
+    assert "tf 10 ui Plan.SessionProtocol" in artifact.content
+    assert (
+        "tf 16 evt WorkspacePlan.SessionProtocolEpicProjected ->> 15"
+        in artifact.content
+    )
+    assert "tf 30 ui Plan.InspectionGate" in artifact.content
+    assert "tf 39 rmo Docs.InspectionGateSchemas ->> 36" in artifact.content
+
+
+def test_epics_stage_uml_schema_uses_valid_class_attributes() -> None:
+    stage = domain.EpicsStage()
+
+    projection = stage.scaffold(
+        domain.StageInput(
+            stage_id="epics",
+            data_objects=[
+                domain.StageData(
+                    id="session-protocol",
+                    stable_identity="session-protocol",
+                    values={"name": "Session Protocol"},
+                ),
+            ],
+        )
+    )
+
+    artifact = next(
+        artifact
+        for artifact in projection.artifacts
+        if artifact.path == "epics/session-protocol/uml.mermaid"
+    )
+
+    assert "+str id" in artifact.content
+    assert "+str name" in artifact.content
+    assert "+str id =" not in artifact.content
+    assert "+str name =" not in artifact.content
 
 
 def test_filesystem_projection_store_writes_projection(tmp_path: Path) -> None:

@@ -135,8 +135,8 @@ class PlanStage(
             uml_lines.extend(
                 [
                     f"    class {class_name} {{",
-                    f"      +str id = {plan_item_id}",
-                    f"      +str name = {name}",
+                    "      +str id",
+                    "      +str name",
                     "    }",
                 ]
             )

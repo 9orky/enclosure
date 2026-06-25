@@ -161,6 +161,86 @@ def test_plan_agent_reports_current_stage_file_models(tmp_path: Path) -> None:
     assert "- DRAFT.md [draft_seed]" in agent.stdout
 
 
+def test_plan_put_and_answer_advance_draft_without_file_edits(
+    tmp_path: Path,
+) -> None:
+    project_root = copy_fixture(tmp_path, "clean_architecture")
+    draft_content = "\n".join(
+        [
+            "# CLI Authored Plan",
+            "",
+            "## Abstract",
+            "",
+            "The deterministic CLI path writes stage content through workspace plan.",
+            "",
+            "## Use Cases",
+            "",
+            "### CLI authored stage",
+            "",
+            "The agent produces the stage text through the plan command.",
+            "",
+            "#### Constraints",
+            "",
+            "- no direct projection file edit",
+            "- stage data moves through next",
+            "",
+        ]
+    )
+
+    started = run_cli(project_root, "workspace", "plan", "start", "CLI Authored Plan")
+    put = run_cli(project_root, "workspace", "plan", "put", "DRAFT.md", draft_content)
+    answered = run_cli(
+        project_root,
+        "workspace",
+        "plan",
+        "answer",
+        "Can the CLI-authored draft advance?",
+        "Yes. The draft was authored through the CLI.",
+    )
+    advanced = run_cli(project_root, "workspace", "plan", "next")
+
+    assert started.returncode == 0, started.stderr
+    assert put.returncode == 0, put.stderr
+    assert "Updated artifact DRAFT.md." in put.stdout
+    assert answered.returncode == 0, answered.stderr
+    assert "Answered question: Can the CLI-authored draft advance?" in answered.stdout
+    assert advanced.returncode == 0, advanced.stderr
+    assert "Stage: plan" in advanced.stdout
+    plan_content = (
+        project_root / ".enclosure" / "plans" / "cli-authored-plan" / "PLAN.md"
+    ).read_text(encoding="utf-8")
+    assert "cli-authored-stage" in plan_content
+    assert "no direct projection file edit" in plan_content
+
+
+def test_plan_put_rejects_paths_outside_current_stage(tmp_path: Path) -> None:
+    project_root = copy_fixture(tmp_path, "clean_architecture")
+
+    started = run_cli(project_root, "workspace", "plan", "start", "Path Guard")
+    escaped = run_cli(
+        project_root,
+        "workspace",
+        "plan",
+        "put",
+        "../DRAFT.md",
+        "# Escaped",
+    )
+    undeclared = run_cli(
+        project_root,
+        "workspace",
+        "plan",
+        "put",
+        "NOT_DRAFT.md",
+        "# Undeclared",
+    )
+
+    assert started.returncode == 0, started.stderr
+    assert escaped.returncode == 1
+    assert "Artifact path must stay inside the active plan" in escaped.stderr
+    assert undeclared.returncode == 1
+    assert "Artifact path is not declared by the current stage" in undeclared.stderr
+
+
 def test_plan_next_projects_epic_package_and_completes(
     tmp_path: Path,
 ) -> None:
@@ -209,6 +289,15 @@ def test_plan_next_projects_epic_package_and_completes(
     assert (epic_root / "uml.mermaid").is_file()
     assert (epic_root / "tree.mermaid").is_file()
     assert (epic_root / "SCHEMAS.md").is_file()
+    event_modeling = plan_root / "eventmodeling.mermaid"
+    assert event_modeling.is_file()
+    event_modeling_content = event_modeling.read_text(encoding="utf-8")
+    assert event_modeling_content.startswith("eventmodeling\n")
+    assert "tf 10 ui Plan.YourUseCaseName" in event_modeling_content
+    assert (
+        "tf 16 evt WorkspacePlan.YourUseCaseNameEpicProjected ->> 15"
+        in event_modeling_content
+    )
     schemas = (epic_root / "SCHEMAS.md").read_text(encoding="utf-8")
     assert (epic_root / "flows.mermaid").read_text(encoding="utf-8").strip() in schemas
     assert (epic_root / "uml.mermaid").read_text(encoding="utf-8").strip() in schemas

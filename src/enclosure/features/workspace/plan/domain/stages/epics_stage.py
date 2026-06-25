@@ -58,6 +58,12 @@ class EpicsStage(
                 model_kind="file_contract",
                 native_schema_source=True,
             ),
+            stage_data.StageFileModel(
+                path="eventmodeling.mermaid",
+                artifact_kind="mermaid",
+                model_kind="all_epics_event_model",
+                native_schema_source=True,
+            ),
         ]
 
     def schema_file_models(
@@ -161,8 +167,8 @@ class EpicsStage(
                     '%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#f5f3ff", "primaryTextColor": "#172033", "primaryBorderColor": "#7c3aed", "secondaryColor": "#ede9fe", "secondaryBorderColor": "#6d28d9", "tertiaryColor": "#faf5ff", "lineColor": "#7c3aed"}}}%%',
                     "classDiagram",
                     f"    class {class_name} {{",
-                    f"      +str id = {epic_id}",
-                    f"      +str name = {name}",
+                    "      +str id",
+                    "      +str name",
                     "    }",
                 ]
             )
@@ -251,9 +257,46 @@ class EpicsStage(
                     ),
                 ]
             )
+        artifacts.append(self._render_event_modeling(stage_input.data_objects))
         return stage_data.StageProjection(
             stage_id=self.stage_id(),
             artifacts=artifacts,
+        )
+
+    def _render_event_modeling(
+        self,
+        data_objects: list[stage_data.StageData],
+    ) -> stage_data.ProjectedArtifact:
+        lines = [
+            "eventmodeling",
+            "",
+        ]
+        frame = 10
+        for data_object in data_objects:
+            epic_id = data_object.stable_identity
+            symbol = _symbol_name(epic_id)
+            lines.extend(
+                [
+                    f"tf {frame} ui Plan.{symbol}",
+                    f"tf {frame + 1} cmd WorkspacePlan.Accept{symbol} ->> {frame}",
+                    f"tf {frame + 2} evt WorkspacePlan.{symbol}Accepted ->> {frame + 1}",
+                    f"tf {frame + 3} rmo WorkspacePlan.{symbol}PlanItem ->> {frame + 2}",
+                    f"tf {frame + 4} pcr WorkspacePlan.Project{symbol}Epic ->> {frame + 3}",
+                    f"tf {frame + 5} cmd WorkspacePlan.Project{symbol}Epic ->> {frame + 4}",
+                    f"tf {frame + 6} evt WorkspacePlan.{symbol}EpicProjected ->> {frame + 5}",
+                    f"tf {frame + 7} rmo Docs.{symbol}Epic ->> {frame + 6}",
+                    f"tf {frame + 8} rmo Docs.{symbol}Stories ->> {frame + 6}",
+                    f"tf {frame + 9} rmo Docs.{symbol}Schemas ->> {frame + 6}",
+                    "",
+                ]
+            )
+            frame += 20
+        if not data_objects:
+            lines.append("tf 10 rmo Docs.EmptyPlan")
+        return stage_data.ProjectedArtifact(
+            path="eventmodeling.mermaid",
+            content="\n".join(lines).rstrip() + "\n",
+            artifact_kind="mermaid",
         )
 
     def agent_context(
@@ -293,6 +336,13 @@ class EpicsStage(
             questions=[],
             drift=stage_data.DriftReport(messages=[]),
         )
+
+
+def _symbol_name(value: str) -> str:
+    return (
+        "".join(part.capitalize() for part in value.replace("-", " ").split())
+        or "Epic"
+    )
 
 
 __all__ = ["EpicsStage"]
