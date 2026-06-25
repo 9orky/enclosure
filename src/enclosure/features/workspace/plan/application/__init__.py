@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from .commands import (
     advance_plan,
+    ask_stage_question,
     answer_stage_question,
     close_plan,
     put_stage_artifact,
@@ -19,6 +20,7 @@ from .queries import (
 __all__ = [
     "advance_plan",
     "agent_context",
+    "ask_stage_question",
     "answer_stage_question",
     "close_plan",
     "PlanApplication",

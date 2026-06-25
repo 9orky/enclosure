@@ -108,6 +108,24 @@ def plan_command(
         typer.echo(f"Stage: {plan.current_stage}")
         typer.echo(f"Version: {plan.version}")
         return
+    if action == "ask":
+        if value is None:
+            raise ValueError(
+                "Question title is required: workspace plan ask TITLE EXPLANATION"
+            )
+        explanation = detail
+        if explanation is None:
+            if sys.stdin.isatty():
+                raise ValueError(
+                    "Question explanation is required as DETAIL or stdin"
+                )
+            explanation = sys.stdin.read()
+        plan = application.ask_stage_question(value, explanation)
+        typer.echo(f"Asked question: {value}")
+        typer.echo(f"Plan: {plan.id}")
+        typer.echo(f"Stage: {plan.current_stage}")
+        typer.echo(f"Version: {plan.version}")
+        return
     if action == "roll":
         plan = application.roll_plan()
         typer.echo(f"Rolled plan {plan.id}.")

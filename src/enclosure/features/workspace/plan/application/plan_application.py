@@ -97,7 +97,10 @@ class PlanApplication(application.Application[UUID]):
         if plan.current_stage == domain.PlanState.COMPLETE.value:
             return StageAdvance(plan=plan, next_projection=None)
         stage = registry.current_for(plan)
-        questions = self.record_projection_questions(plan, projection)
+        questions = domain.stage_questions(
+            list(plan.questions.values()),
+            stage.stage_id(),
+        )
         blocking_questions = domain.blocking_questions(questions)
         if blocking_questions:
             raise ValueError(
@@ -159,6 +162,42 @@ class PlanApplication(application.Application[UUID]):
             plan=plan,
             next_projection=next_stage.scaffold(next_input),
         )
+
+    def ask_stage_question(
+        self,
+        title: str,
+        explanation: str,
+        stage_id: str,
+        artifact_path: str,
+    ) -> domain.Plan:
+        plan = self.get_active_plan()
+        plan.ask_question(
+            domain.question_id_for(stage_id, artifact_path, title),
+            title,
+            explanation,
+            True,
+            stage_id,
+        )
+        self.save(plan)
+        return self.get_plan(domain.PlanId(plan.id))
+
+    def answer_stage_question(
+        self,
+        title: str,
+        answer: str,
+        stage_id: str,
+        artifact_path: str,
+    ) -> domain.Plan:
+        plan = self.get_active_plan()
+        plan.answer_question(
+            domain.question_id_for(stage_id, artifact_path, title),
+            title,
+            "This question was resolved through the workspace plan CLI.",
+            answer,
+            stage_id,
+        )
+        self.save(plan)
+        return self.get_plan(domain.PlanId(plan.id))
 
     def record_projection_questions(
         self,

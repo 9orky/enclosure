@@ -147,10 +147,12 @@ class Plan(Aggregate):
         blocking: bool,
         revisit_stage: str,
     ) -> None:
+        answer = explanation if status == questions.QuestionStatus.RESOLVED else ""
         self._change_question(
             question_id=question_id,
             text=text,
             explanation=explanation,
+            answer=answer,
             status=status.value,
             blocking=blocking,
             revisit_stage=revisit_stage,
@@ -162,6 +164,7 @@ class Plan(Aggregate):
         question_id: str,
         text: str,
         explanation: str,
+        answer: str,
         status: str,
         blocking: bool,
         revisit_stage: str,
@@ -170,8 +173,80 @@ class Plan(Aggregate):
             id=question_id,
             text=text,
             explanation=explanation,
+            answer=answer,
             status=questions.QuestionStatus(status),
             blocking=blocking,
+            revisit_stage=revisit_stage,
+        )
+
+    def ask_question(
+        self,
+        question_id: str,
+        text: str,
+        explanation: str,
+        blocking: bool,
+        revisit_stage: str,
+    ) -> None:
+        self._ask_question(
+            question_id,
+            text,
+            explanation,
+            blocking,
+            revisit_stage,
+        )
+
+    @event("QuestionAsked")
+    def _ask_question(
+        self,
+        question_id: str,
+        text: str,
+        explanation: str,
+        blocking: bool,
+        revisit_stage: str,
+    ) -> None:
+        self.questions[question_id] = questions.OpenQuestion(
+            id=question_id,
+            text=text,
+            explanation=explanation,
+            answer="",
+            status=questions.QuestionStatus.OPEN,
+            blocking=blocking,
+            revisit_stage=revisit_stage,
+        )
+
+    def answer_question(
+        self,
+        question_id: str,
+        text: str,
+        explanation: str,
+        answer: str,
+        revisit_stage: str,
+    ) -> None:
+        self._answer_question(
+            question_id,
+            text,
+            explanation,
+            answer,
+            revisit_stage,
+        )
+
+    @event("QuestionAnswered")
+    def _answer_question(
+        self,
+        question_id: str,
+        text: str,
+        explanation: str,
+        answer: str,
+        revisit_stage: str,
+    ) -> None:
+        existing = self.questions.get(question_id)
+        self.questions[question_id] = questions.OpenQuestion(
+            id=question_id,
+            text=existing.text if existing else text,
+            explanation=existing.explanation if existing else explanation,
+            answer=answer,
+            status=questions.QuestionStatus.RESOLVED,
+            blocking=False,
             revisit_stage=revisit_stage,
         )
 

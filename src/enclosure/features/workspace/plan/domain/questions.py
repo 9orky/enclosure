@@ -27,6 +27,7 @@ class OpenQuestion:
     id: str
     text: str
     explanation: str
+    answer: str
     status: QuestionStatus
     blocking: bool
     revisit_stage: str
@@ -46,6 +47,23 @@ def answered_questions(questions: Sequence[OpenQuestion]) -> list[OpenQuestion]:
 
 def question_cycle_passed(questions: Sequence[OpenQuestion]) -> bool:
     return bool(answered_questions(questions))
+
+
+def stage_questions(
+    questions: Sequence[OpenQuestion],
+    stage_id: str,
+) -> list[OpenQuestion]:
+    return [question for question in questions if question.revisit_stage == stage_id]
+
+
+def question_id_for(stage_id: str, artifact_path: str, title: str) -> str:
+    return ":".join(
+        [
+            stage_id,
+            _slug(artifact_path),
+            _slug(title),
+        ]
+    )
 
 
 def extract_open_questions(projection: QuestionProjection) -> list[OpenQuestion]:
@@ -140,13 +158,7 @@ def _question_from_parts(
     explanation_lines: list[str],
     answer_lines: list[str],
 ) -> OpenQuestion:
-    question_id = ":".join(
-        [
-            stage_id,
-            _slug(artifact_path),
-            _slug(title),
-        ]
-    )
+    question_id = question_id_for(stage_id, artifact_path, title)
     answer = " ".join(answer_lines).strip()
     explanation = " ".join(explanation_lines).strip()
     if answer:
@@ -160,6 +172,7 @@ def _question_from_parts(
         id=question_id,
         text=title,
         explanation=explanation,
+        answer=answer,
         status=status,
         blocking=blocking,
         revisit_stage=stage_id,
@@ -180,5 +193,7 @@ __all__ = [
     "extract_open_questions",
     "OpenQuestion",
     "question_cycle_passed",
+    "question_id_for",
     "QuestionStatus",
+    "stage_questions",
 ]

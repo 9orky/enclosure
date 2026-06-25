@@ -58,6 +58,9 @@ def test_plan_reconstructs_workflow_state_from_decorated_events() -> None:
     assert reconstructed.questions["draft:draft-md:ready"].status == (
         domain.QuestionStatus.RESOLVED
     )
+    assert reconstructed.questions["draft:draft-md:ready"].answer == (
+        "The draft is ready."
+    )
     assert reconstructed.projections["plan-hash"].path == "PLAN.md"
     assert reconstructed.projections["plan-hash"].content == "# Plan\n"
     assert reconstructed.stage_outputs["draft"]["next_stage"] == "plan"
@@ -89,3 +92,39 @@ def test_plan_registry_reconstructs_active_plan_from_decorated_events() -> None:
         pass
     else:
         raise AssertionError("Released registry should not expose an active plan")
+
+
+def test_plan_reconstructs_asked_and_answered_questions_from_events() -> None:
+    plan = domain.Plan(
+        title="Question Plan",
+        current_stage=domain.PlanState.DRAFT.value,
+        source_use_case_id="manual",
+        source_plan_item_id="manual",
+        created_by_command="test",
+        schema_version=1,
+    )
+
+    plan.ask_question(
+        "draft:draft-md:scope",
+        "Scope?",
+        "The scope must be clear.",
+        True,
+        "draft",
+    )
+    plan.answer_question(
+        "draft:draft-md:scope",
+        "Scope?",
+        "The scope must be clear.",
+        "The scope is draft only.",
+        "draft",
+    )
+
+    reconstructed = _replay(plan.collect_events())
+
+    assert isinstance(reconstructed, domain.Plan)
+    question = reconstructed.questions["draft:draft-md:scope"]
+    assert question.text == "Scope?"
+    assert question.explanation == "The scope must be clear."
+    assert question.answer == "The scope is draft only."
+    assert question.status == domain.QuestionStatus.RESOLVED
+    assert not question.blocking

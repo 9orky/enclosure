@@ -11,8 +11,11 @@ in `.enclosure/.cache/plans.sqlite`.
 `workspace plan put PATH` writes current-stage artifact content from stdin. The
 path must match the current stage file model.
 
-`workspace plan answer TITLE ANSWER` appends a resolved gate question to the
-current stage markdown artifact.
+`workspace plan ask TITLE EXPLANATION` records an open gate question for the
+current stage.
+
+`workspace plan answer TITLE ANSWER` records a resolved gate question for the
+current stage. It does not edit markdown artifacts.
 
 `workspace plan next` validates the current stage, records its output, and
 projects the next stage.

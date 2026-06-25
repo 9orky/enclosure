@@ -12,8 +12,11 @@ and the artifact paths that may be written.
 Use `workspace plan put PATH` with stdin to write the current-stage artifact
 through the plan module instead of editing files directly.
 
-Use `workspace plan answer TITLE ANSWER` to append the resolved gate question
-that allows the stage to advance.
+Use `workspace plan ask TITLE EXPLANATION` to record an open gate question for
+the current stage.
+
+Use `workspace plan answer TITLE ANSWER` to record a resolved gate question for
+the current stage. Do not edit markdown artifacts to submit question state.
 
 Use `workspace plan next` only after the current stage artifact and its resolved
 question are present.

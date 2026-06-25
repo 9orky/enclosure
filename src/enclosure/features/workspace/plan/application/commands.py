@@ -118,14 +118,29 @@ def answer_stage_question(title: str, answer: str) -> domain.Plan:
     plan_app = runtime.current_plan_application(plan_runtime)
     plan = plan_app.get_active_plan()
     stage = runtime.stage_registry().current_for(plan)
-    projection = projections.read_stage_projection(plan_runtime, plan, stage)
-    artifact = _question_target_artifact(projection)
-    content = _append_answered_question(
-        artifact.content,
+    return plan_app.answer_stage_question(
         title.strip(),
         answer.strip(),
+        stage.stage_id(),
+        _question_artifact_path(stage),
     )
-    return put_stage_artifact(artifact.path, content)
+
+
+def ask_stage_question(title: str, explanation: str) -> domain.Plan:
+    if not title.strip():
+        raise ValueError("Question title is required")
+    if not explanation.strip():
+        raise ValueError("Question explanation is required")
+    plan_runtime = runtime.current_runtime()
+    plan_app = runtime.current_plan_application(plan_runtime)
+    plan = plan_app.get_active_plan()
+    stage = runtime.stage_registry().current_for(plan)
+    return plan_app.ask_stage_question(
+        title.strip(),
+        explanation.strip(),
+        stage.stage_id(),
+        _question_artifact_path(stage),
+    )
 
 
 def close_plan(reason: str) -> domain.Plan:
@@ -170,36 +185,21 @@ def _declared_file_model(
     raise ValueError(f"Artifact path is not declared by the current stage: {path}")
 
 
-def _question_target_artifact(
-    projection: domain.StageProjection,
-) -> domain.ProjectedArtifact:
-    for artifact in projection.artifacts:
-        if artifact.artifact_kind == "markdown":
-            return artifact
+def _question_artifact_path(stage: domain.PlanningStage) -> str:
+    if not isinstance(stage, domain.StageFileContract):
+        raise ValueError("Current stage does not declare file models")
+    for file_model in stage.file_models(
+        domain.StageInput(stage_id=stage.stage_id(), data_objects=[])
+    ):
+        if file_model.artifact_kind == "markdown":
+            return file_model.path
     raise ValueError("Current stage has no markdown artifact for questions")
-
-
-def _append_answered_question(content: str, title: str, answer: str) -> str:
-    lines = [
-        content.rstrip(),
-        "",
-        "## Open Questions",
-        "",
-        f"### {title}",
-        "",
-        "This question was resolved through the workspace plan CLI.",
-        "",
-        "#### Answer",
-        "",
-        answer,
-        "",
-    ]
-    return "\n".join(lines)
 
 
 __all__ = [
     "advance_plan",
     "answer_stage_question",
+    "ask_stage_question",
     "close_plan",
     "put_stage_artifact",
     "restore_plan_projections",

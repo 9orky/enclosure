@@ -6,29 +6,6 @@ import shutil
 from conftest import copy_fixture, run_cli
 
 
-def _append_resolved_question(path: Path, title: str, answer: str) -> None:
-    content = path.read_text(encoding="utf-8")
-    path.write_text(
-        content.rstrip()
-        + "\n\n"
-        + "\n".join(
-            [
-                "## Open Questions",
-                "",
-                f"### {title}",
-                "",
-                "This must be answered before the stage can advance.",
-                "",
-                "#### Answer",
-                "",
-                answer,
-                "",
-            ]
-        ),
-        encoding="utf-8",
-    )
-
-
 def test_plan_without_active_event_stream_reports_none(tmp_path: Path) -> None:
     project_root = copy_fixture(tmp_path, "clean_architecture")
 
@@ -67,8 +44,11 @@ def test_plan_next_projects_plan_stage_files(tmp_path: Path) -> None:
 
     started = run_cli(project_root, "workspace", "plan", "start", "Planning Workflow")
     blocked = run_cli(project_root, "workspace", "plan", "next")
-    _append_resolved_question(
-        project_root / ".enclosure" / "plans" / "planning-workflow" / "DRAFT.md",
+    answered = run_cli(
+        project_root,
+        "workspace",
+        "plan",
+        "answer",
         "Is the draft ready for planning?",
         "The draft is ready for planning.",
     )
@@ -80,6 +60,7 @@ def test_plan_next_projects_plan_stage_files(tmp_path: Path) -> None:
     assert started.returncode == 0, started.stderr
     assert blocked.returncode == 1
     assert "A resolved question is required before stage advance: draft" in blocked.stderr
+    assert answered.returncode == 0, answered.stderr
     assert advanced.returncode == 0, advanced.stderr
     assert "Stage: plan" in advanced.stdout
     assert (plan_root / "PLAN.md").is_file()
@@ -88,7 +69,7 @@ def test_plan_next_projects_plan_stage_files(tmp_path: Path) -> None:
     assert "Stage: plan" in status.stdout
 
 
-def test_plan_next_records_open_question_and_answer_from_stage_file(
+def test_plan_next_uses_event_sourced_questions_not_stage_file_questions(
     tmp_path: Path,
 ) -> None:
     project_root = copy_fixture(tmp_path, "clean_architecture")
@@ -113,8 +94,7 @@ def test_plan_next_records_open_question_and_answer_from_stage_file(
         encoding="utf-8",
     )
 
-    blocked = run_cli(project_root, "workspace", "plan", "next")
-    blocked_status = run_cli(project_root, "workspace", "plan")
+    markdown_only_blocked = run_cli(project_root, "workspace", "plan", "next")
     draft_path.write_text(
         draft_content
         + "\n".join(
@@ -133,16 +113,38 @@ def test_plan_next_records_open_question_and_answer_from_stage_file(
         ),
         encoding="utf-8",
     )
+    markdown_answer_blocked = run_cli(project_root, "workspace", "plan", "next")
+    asked = run_cli(
+        project_root,
+        "workspace",
+        "plan",
+        "ask",
+        "Which scope blocks the draft?",
+        "We need a concrete answer before advancing.",
+    )
+    event_blocked = run_cli(project_root, "workspace", "plan", "next")
+    answered = run_cli(
+        project_root,
+        "workspace",
+        "plan",
+        "answer",
+        "Which scope blocks the draft?",
+        "The draft scope is complete.",
+    )
     advanced = run_cli(project_root, "workspace", "plan", "next")
     advanced_status = run_cli(project_root, "workspace", "plan")
 
     assert started.returncode == 0, started.stderr
-    assert blocked.returncode == 1
-    assert "Blocking open questions prevent stage advance" in blocked.stderr
-    assert "draft:draft-md:which-scope-blocks-the-draft" in blocked.stderr
-    assert blocked_status.returncode == 0, blocked_status.stderr
-    assert "Stage: draft" in blocked_status.stdout
-    assert "Questions: 1" in blocked_status.stdout
+    assert markdown_only_blocked.returncode == 1
+    assert "A resolved question is required" in markdown_only_blocked.stderr
+    assert markdown_answer_blocked.returncode == 1
+    assert "A resolved question is required" in markdown_answer_blocked.stderr
+    assert asked.returncode == 0, asked.stderr
+    assert "Asked question: Which scope blocks the draft?" in asked.stdout
+    assert event_blocked.returncode == 1
+    assert "Blocking open questions prevent stage advance" in event_blocked.stderr
+    assert "draft:draft-md:which-scope-blocks-the-draft" in event_blocked.stderr
+    assert answered.returncode == 0, answered.stderr
     assert advanced.returncode == 0, advanced.stderr
     assert "Stage: plan" in advanced.stdout
     assert advanced_status.returncode == 0, advanced_status.stderr
@@ -258,30 +260,42 @@ def test_plan_next_projects_epic_package_and_completes(
     )
     plan_root = project_root / ".enclosure" / "plans" / "planning-workflow"
 
-    _append_resolved_question(
-        plan_root / "DRAFT.md",
+    draft_answered = run_cli(
+        project_root,
+        "workspace",
+        "plan",
+        "answer",
         "Can the draft become a plan?",
         "The draft can become a plan.",
     )
     planned = run_cli(project_root, "workspace", "plan", "next")
-    _append_resolved_question(
-        plan_root / "PLAN.md",
+    plan_answered = run_cli(
+        project_root,
+        "workspace",
+        "plan",
+        "answer",
         "Can the plan become epics?",
         "The plan can become epics.",
     )
     epics = run_cli(project_root, "workspace", "plan", "next")
-    _append_resolved_question(
-        epic_root / "EPIC.md",
+    epic_answered = run_cli(
+        project_root,
+        "workspace",
+        "plan",
+        "answer",
         "Can the epic package complete?",
         "The epic package can complete.",
     )
     completed = run_cli(project_root, "workspace", "plan", "next")
 
     assert started.returncode == 0, started.stderr
+    assert draft_answered.returncode == 0, draft_answered.stderr
     assert planned.returncode == 0, planned.stderr
     assert "Stage: plan" in planned.stdout
+    assert plan_answered.returncode == 0, plan_answered.stderr
     assert epics.returncode == 0, epics.stderr
     assert "Stage: epics" in epics.stdout
+    assert epic_answered.returncode == 0, epic_answered.stderr
     assert completed.returncode == 0, completed.stderr
     assert "Stage: complete" in completed.stdout
     assert (epic_root / "EPIC.md").is_file()
@@ -405,14 +419,7 @@ def test_plan_restore_regenerates_active_projection_files_from_event_store(
     assert planned.returncode == 0, planned.stderr
     assert restored.returncode == 0, restored.stderr
     assert "Restored projections for plan " in restored.stdout
-    assert (plan_root / "DRAFT.md").read_text(encoding="utf-8") == (
-        draft_content.rstrip()
-        + "\n\n## Open Questions\n\n"
-        + "### Can projections be restored?\n\n"
-        + "This question was resolved through the workspace plan CLI.\n\n"
-        + "#### Answer\n\n"
-        + "Yes. The event store has the recorded projection content.\n"
-    )
+    assert (plan_root / "DRAFT.md").read_text(encoding="utf-8") == draft_content
     assert (plan_root / "PLAN.md").is_file()
     assert (plan_root / "UML.md").is_file()
 

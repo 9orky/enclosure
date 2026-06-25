@@ -31,16 +31,6 @@ def _resolved_draft_projection() -> domain.StageProjection:
             "",
             "- application owns save",
             "",
-            "## Open Questions",
-            "",
-            "### Can the draft advance?",
-            "",
-            "The application has enough data.",
-            "",
-            "#### Answer",
-            "",
-            "Yes.",
-            "",
         ]
     )
     return domain.StageProjection(
@@ -80,6 +70,12 @@ def test_plan_application_advances_stage_and_records_questions() -> None:
             domain.EpicsStage(),
         ]
     )
+    app.answer_stage_question(
+        "Can the draft advance?",
+        "Yes.",
+        "draft",
+        "DRAFT.md",
+    )
 
     advanced = app.advance_active_plan(registry, _resolved_draft_projection())
 
@@ -92,6 +88,9 @@ def test_plan_application_advances_stage_and_records_questions() -> None:
     assert len(advanced.plan.questions) == 1
     assert advanced.plan.questions["draft:draft-md:can-the-draft-advance"].status == (
         domain.QuestionStatus.RESOLVED
+    )
+    assert advanced.plan.questions["draft:draft-md:can-the-draft-advance"].answer == (
+        "Yes."
     )
 
 

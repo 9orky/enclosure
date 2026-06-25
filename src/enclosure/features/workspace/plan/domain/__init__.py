@@ -18,6 +18,8 @@ from .questions import (
     blocking_questions,
     extract_open_questions,
     question_cycle_passed,
+    question_id_for,
+    stage_questions,
 )
 from .stage import PlanningStage, StageFileContract, StageSchemaContract
 from .stage_data import (
@@ -62,6 +64,7 @@ __all__ = [
     "ProjectionRecord",
     "QuestionStatus",
     "question_cycle_passed",
+    "question_id_for",
     "ReviewData",
     "StageCatalog",
     "StageData",
@@ -75,4 +78,5 @@ __all__ = [
     "StageSchemaContract",
     "ValidationResult",
     "extract_open_questions",
+    "stage_questions",
 ]
