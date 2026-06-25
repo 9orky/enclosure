@@ -10,6 +10,9 @@ from eventsourcing.domain import Aggregate
 from . import questions
 
 
+PLAN_REGISTRY_ID = UUID("00000000-0000-4000-8000-000000000001")
+
+
 class PlanState(StrEnum):
     DRAFT = "draft"
     ACTIVE = "active"
@@ -29,6 +32,48 @@ class ProjectionRecord:
     id: str
     path: str
     stage: str
+
+
+class PlanRegistry(Aggregate):
+    def __init__(self, id: UUID) -> None:
+        self.active_plan_id_text = ""
+
+    class PlanActivated(Aggregate.Event):
+        plan_id: str
+
+        def apply(self, aggregate: PlanRegistry) -> None:
+            aggregate.active_plan_id_text = self.plan_id
+
+    def activate_plan(self, plan_id: PlanId) -> None:
+        if self.active_plan_id_text:
+            raise ValueError("Only one active plan may exist")
+        self.trigger_event(
+            type(self).PlanActivated,
+            plan_id=plan_id.as_text(),
+        )
+
+    class PlanReleased(Aggregate.Event):
+        plan_id: str
+        reason: str
+
+        def apply(self, aggregate: PlanRegistry) -> None:
+            aggregate.active_plan_id_text = ""
+
+    def release_plan(self, plan_id: PlanId, reason: str) -> None:
+        if not self.active_plan_id_text:
+            raise LookupError("No active plan exists")
+        if self.active_plan_id_text != plan_id.as_text():
+            raise ValueError("Active plan changed")
+        self.trigger_event(
+            type(self).PlanReleased,
+            plan_id=plan_id.as_text(),
+            reason=reason,
+        )
+
+    def active_plan_id(self) -> PlanId:
+        if not self.active_plan_id_text:
+            raise LookupError("No active plan exists")
+        return PlanId(UUID(self.active_plan_id_text))
 
 
 class Plan(Aggregate):
@@ -67,8 +112,8 @@ class Plan(Aggregate):
     class StageOutputAccepted(Aggregate.Event):
         stage: str
         next_stage: str
-        data_objects: tuple[dict[str, Any], ...]
-        derived_slots: tuple[dict[str, str], ...]
+        data_objects: list[dict[str, Any]]
+        derived_slots: list[dict[str, str]]
 
         def apply(self, aggregate: Plan) -> None:
             aggregate.stage_outputs[self.stage] = {
@@ -82,8 +127,8 @@ class Plan(Aggregate):
         self,
         stage: str,
         next_stage: str,
-        data_objects: tuple[dict[str, Any], ...],
-        derived_slots: tuple[dict[str, str], ...],
+        data_objects: list[dict[str, Any]],
+        derived_slots: list[dict[str, str]],
     ) -> None:
         self.trigger_event(
             type(self).StageOutputAccepted,
@@ -222,6 +267,8 @@ class Plan(Aggregate):
 __all__ = [
     "Plan",
     "PlanId",
+    "PLAN_REGISTRY_ID",
+    "PlanRegistry",
     "PlanState",
     "ProjectionRecord",
 ]

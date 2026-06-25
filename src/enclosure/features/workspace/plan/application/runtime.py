@@ -6,7 +6,7 @@ from pathlib import Path
 from enclosure.shared.config import settings
 
 from .. import domain, infrastructure
-from .event_store import PlanEventStore
+from . import plan_application
 
 
 @dataclass(frozen=True)
@@ -26,9 +26,9 @@ def current_runtime() -> _Runtime:
     )
 
 
-def event_store(runtime: _Runtime) -> PlanEventStore:
+def current_plan_application(runtime: _Runtime) -> plan_application.PlanApplication:
     persistence = infrastructure.EventsourcingSQLitePersistence(runtime.database_path)
-    return PlanEventStore(env=persistence.environment())
+    return plan_application.PlanApplication(env=persistence.environment())
 
 
 def projection_store(
@@ -56,7 +56,7 @@ def plan_root(runtime: _Runtime, plan: domain.Plan) -> Path:
 
 __all__ = [
     "current_runtime",
-    "event_store",
+    "current_plan_application",
     "plan_root",
     "projection_store",
     "stage_registry",

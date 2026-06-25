@@ -6,7 +6,7 @@ from .commands import (
     roll_plan,
     start_plan,
 )
-from .event_store import PlanEventStore
+from .plan_application import PlanApplication
 from .queries import (
     agent_context,
     plan_status,
@@ -17,7 +17,7 @@ __all__ = [
     "advance_plan",
     "agent_context",
     "close_plan",
-    "PlanEventStore",
+    "PlanApplication",
     "plan_status",
     "PlanStatusReport",
     "roll_plan",

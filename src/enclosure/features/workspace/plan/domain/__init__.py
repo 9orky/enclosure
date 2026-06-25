@@ -2,7 +2,14 @@ from __future__ import annotations
 
 from .events import DomainEvent
 from .enrichment import Enrichment
-from .plan import Plan, PlanId, PlanState, ProjectionRecord
+from .plan import (
+    PLAN_REGISTRY_ID,
+    Plan,
+    PlanId,
+    PlanRegistry,
+    PlanState,
+    ProjectionRecord,
+)
 from .ports import ProjectionStore, StageCatalog
 from .questions import (
     OpenQuestion,
@@ -45,6 +52,8 @@ __all__ = [
     "OpenQuestion",
     "Plan",
     "PlanId",
+    "PLAN_REGISTRY_ID",
+    "PlanRegistry",
     "PlanState",
     "PlanStage",
     "PlanningStage",

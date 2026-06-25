@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from . import plan, stage
-from .stages import DraftStage, EpicsStage, PlanStage
+from . import plan, stage, stages
 
 
 class StageRegistry:
@@ -16,7 +15,9 @@ class StageRegistry:
 
     @classmethod
     def default(cls) -> StageRegistry:
-        return cls(stages=[DraftStage(), PlanStage(), EpicsStage()])
+        return cls(
+            stages=[stages.DraftStage(), stages.PlanStage(), stages.EpicsStage()]
+        )
 
     def current_for(self, current_plan: plan.Plan) -> stage.PlanningStage:
         return self._stages[current_plan.current_stage]
