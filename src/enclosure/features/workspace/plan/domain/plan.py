@@ -120,10 +120,6 @@ class Plan(Aggregate):
         self.state = PlanState(state)
         self.active = self.state != PlanState.COMPLETE
 
-    @event("DraftUpdated")
-    def _update_draft(self, content_hash: str, source_path: str) -> None:
-        return None
-
     @event("QuestionChanged")
     def _change_question(
         self,
