@@ -1,9 +1,4 @@
 # Local architecture contract for this repository.
-#
-# New or refactored feature modules should use a small package seam plus
-# domain.py, infrastructure.py, application.py, and ui.py when those
-# responsibilities are needed. Legacy layer folders may remain until refactored.
-
 architecture:
   language: python
   root: src/enclosure
