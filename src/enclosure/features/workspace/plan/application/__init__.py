@@ -5,6 +5,7 @@ from .commands import (
     answer_stage_question,
     close_plan,
     put_stage_artifact,
+    restore_plan_projections,
     roll_plan,
     start_plan,
 )
@@ -24,6 +25,7 @@ __all__ = [
     "plan_status",
     "PlanStatusReport",
     "put_stage_artifact",
+    "restore_plan_projections",
     "roll_plan",
     "start_plan",
 ]

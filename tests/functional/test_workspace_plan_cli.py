@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import shutil
 
 from conftest import copy_fixture, run_cli
 
@@ -356,6 +357,64 @@ def test_plan_close_records_terminal_event_without_deleting_files(
     assert status.returncode == 0, status.stderr
     assert "Current plan: none" in status.stdout
     assert draft_path.is_file()
+
+
+def test_plan_restore_regenerates_active_projection_files_from_event_store(
+    tmp_path: Path,
+) -> None:
+    project_root = copy_fixture(tmp_path, "clean_architecture")
+    draft_content = "\n".join(
+        [
+            "# Restorable Plan",
+            "",
+            "## Abstract",
+            "",
+            "The event stream can regenerate projection files.",
+            "",
+            "## Use Cases",
+            "",
+            "### Restore projection files",
+            "",
+            "Regenerate the active plan folder after projection purge.",
+            "",
+            "#### Constraints",
+            "",
+            "- source remains the event store",
+            "",
+        ]
+    )
+
+    started = run_cli(project_root, "workspace", "plan", "start", "Restorable Plan")
+    put = run_cli(project_root, "workspace", "plan", "put", "DRAFT.md", draft_content)
+    answered = run_cli(
+        project_root,
+        "workspace",
+        "plan",
+        "answer",
+        "Can projections be restored?",
+        "Yes. The event store has the recorded projection content.",
+    )
+    planned = run_cli(project_root, "workspace", "plan", "next")
+    plan_root = project_root / ".enclosure" / "plans" / "restorable-plan"
+    shutil.rmtree(plan_root)
+    restored = run_cli(project_root, "workspace", "plan", "restore")
+
+    assert started.returncode == 0, started.stderr
+    assert put.returncode == 0, put.stderr
+    assert answered.returncode == 0, answered.stderr
+    assert planned.returncode == 0, planned.stderr
+    assert restored.returncode == 0, restored.stderr
+    assert "Restored projections for plan " in restored.stdout
+    assert (plan_root / "DRAFT.md").read_text(encoding="utf-8") == (
+        draft_content.rstrip()
+        + "\n\n## Open Questions\n\n"
+        + "### Can projections be restored?\n\n"
+        + "This question was resolved through the workspace plan CLI.\n\n"
+        + "#### Answer\n\n"
+        + "Yes. The event store has the recorded projection content.\n"
+    )
+    assert (plan_root / "PLAN.md").is_file()
+    assert (plan_root / "UML.md").is_file()
 
 
 def test_plan_start_requires_title_without_writing(tmp_path: Path) -> None:

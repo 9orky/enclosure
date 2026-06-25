@@ -134,6 +134,18 @@ def close_plan(reason: str) -> domain.Plan:
     return plan_app.close_active_plan(reason)
 
 
+def restore_plan_projections() -> domain.Plan:
+    plan_runtime = runtime.current_runtime()
+    plan_app = runtime.current_plan_application(plan_runtime)
+    plan = plan_app.get_active_plan()
+    projections.restore_recorded_projections(
+        plan_runtime,
+        plan,
+        plan_app.notification_log_position(),
+    )
+    return plan
+
+
 def _normalize_artifact_path(path: str) -> str:
     stripped = path.strip()
     if not stripped:
@@ -190,6 +202,7 @@ __all__ = [
     "answer_stage_question",
     "close_plan",
     "put_stage_artifact",
+    "restore_plan_projections",
     "roll_plan",
     "start_plan",
 ]

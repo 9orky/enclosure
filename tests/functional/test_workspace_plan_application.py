@@ -2,9 +2,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from eventsourcing import persistence
+
 from enclosure.features.workspace.plan import domain
 from enclosure.features.workspace.plan.application import plan_application
-from enclosure.features.workspace.plan.infrastructure import DEFAULT_DATABASE_NAME
+from enclosure.features.workspace.plan.infrastructure import (
+    DEFAULT_DATABASE_NAME,
+    EventsourcingSQLitePersistence,
+)
 
 
 def _resolved_draft_projection() -> domain.StageProjection:
@@ -118,3 +123,25 @@ def test_plan_application_legacy_adapter_reads_notification_log_sections() -> No
         "Created",
     ]
     assert plan_application.LEGACY_REGISTRY_MIGRATION_DEADLINE == "2026-09-30"
+
+
+def test_plan_application_rejects_stale_concurrent_save(tmp_path: Path) -> None:
+    sqlite = EventsourcingSQLitePersistence.for_workspace_cache(tmp_path)
+    env = sqlite.environment()
+    creator = plan_application.PlanApplication(env=env)
+    creator.create_plan("Concurrent Plan")
+    stale_app = plan_application.PlanApplication(env=env)
+    current_app = plan_application.PlanApplication(env=env)
+    stale_plan = stale_app.get_active_plan()
+    current_plan = current_app.get_active_plan()
+
+    current_plan.request_roll("current write", current_plan.current_stage)
+    current_app.save(current_plan)
+    stale_plan.request_roll("stale write", stale_plan.current_stage)
+
+    try:
+        stale_app.save(stale_plan)
+    except persistence.IntegrityError:
+        pass
+    else:
+        raise AssertionError("Stale concurrent save should fail by aggregate version")

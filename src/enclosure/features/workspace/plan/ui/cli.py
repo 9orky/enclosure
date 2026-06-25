@@ -115,6 +115,13 @@ def plan_command(
         typer.echo(f"State: {plan.state.value}")
         typer.echo(f"Version: {plan.version}")
         return
+    if action == "restore":
+        plan = application.restore_plan_projections()
+        typer.echo(f"Restored projections for plan {plan.id}.")
+        typer.echo(f"Stage: {plan.current_stage}")
+        typer.echo(f"State: {plan.state.value}")
+        typer.echo(f"Version: {plan.version}")
+        return
     if action == "close":
         plan = application.close_plan(value or "Closed by user request.")
         typer.echo(f"Closed plan {plan.id}.")
