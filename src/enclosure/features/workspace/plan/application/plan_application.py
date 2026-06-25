@@ -27,6 +27,8 @@ class PlanStatusReport:
     question_count: int
     projection_count: int
     snapshot_policy: str
+    closeable: bool = False
+    close_blockers: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

@@ -9,5 +9,12 @@ Active: {{ "yes" if report.active else "no" }}
 Version: {{ report.version }}
 Questions: {{ report.question_count }}
 Projections: {{ report.projection_count }}
+Closeable: {{ "yes" if report.closeable else "no" }}
+{% if report.close_blockers -%}
+Close blockers:
+{% for blocker in report.close_blockers -%}
+- {{ blocker }}
+{% endfor -%}
+{% endif -%}
 {% endif -%}
 Status: ok

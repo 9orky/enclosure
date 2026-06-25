@@ -25,6 +25,11 @@ current stage. It does not edit markdown artifacts.
 `workspace plan next` validates the current stage, records its output, and
 projects the next stage.
 
+`workspace plan close REASON` closes only when `enclosure architecture health`
+has no blocking contract findings. Boundary, shape, and scan errors mean the
+architecture contract does not match implementation and the active plan remains
+open.
+
 Draft is only the first stage. After draft is written, continue with
 `workspace plan next` until epics are projected and the active plan completes,
 or record a blocking question.

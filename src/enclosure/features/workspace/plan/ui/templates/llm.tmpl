@@ -25,6 +25,11 @@ the current stage. Do not edit markdown artifacts to submit question state.
 Use `workspace plan next` only after the current stage artifact and its resolved
 question are present.
 
+Use `workspace plan close REASON` only after the architecture contract matches
+implementation. A close attempt is blocked while `enclosure architecture health`
+has blocking findings, and `workspace plan` reports the same close blockers
+during inspection.
+
 Do not stop at draft unless the active plan is blocked, explicitly paused, or
 closed by the user. Advance the loop until epics are projected and the active
 plan completes.

@@ -34,6 +34,7 @@ def test_plan_start_records_active_plan_event(tmp_path: Path) -> None:
     assert "Title: Stage Workflow" in status.stdout
     assert "Questions: 0" in status.stdout
     assert "Projections: 1" in status.stdout
+    assert "Closeable: yes" in status.stdout
     assert (
         project_root / ".enclosure" / "plans" / "stage-workflow" / "DRAFT.md"
     ).is_file()
@@ -343,6 +344,38 @@ def test_plan_start_rejects_second_active_plan(tmp_path: Path) -> None:
     assert status.returncode == 0, status.stderr
     assert "Title: First" in status.stdout
     assert "Title: Second" not in status.stdout
+
+
+def test_plan_close_rejects_contract_mismatch(
+    tmp_path: Path,
+) -> None:
+    project_root = copy_fixture(tmp_path, "violating_architecture")
+
+    started = run_cli(project_root, "workspace", "plan", "start", "Closeable Plan")
+    closed = run_cli(
+        project_root,
+        "workspace",
+        "plan",
+        "close",
+        "Closing before projection purge.",
+    )
+    status = run_cli(project_root, "workspace", "plan")
+
+    draft_path = project_root / ".enclosure" / "plans" / "closeable-plan" / "DRAFT.md"
+
+    assert started.returncode == 0, started.stderr
+    assert closed.returncode == 1
+    assert "Plan is not closeable until the architecture contract matches" in (
+        closed.stderr
+    )
+    assert "boundaries: 2 violation(s) detected." in closed.stderr
+    assert "shape: 1 violation(s) detected." in closed.stderr
+    assert status.returncode == 0, status.stderr
+    assert "Current plan: none" not in status.stdout
+    assert "Closeable: no" in status.stdout
+    assert "- boundaries: 2 violation(s) detected." in status.stdout
+    assert "- shape: 1 violation(s) detected." in status.stdout
+    assert draft_path.is_file()
 
 
 def test_plan_close_records_terminal_event_without_deleting_files(

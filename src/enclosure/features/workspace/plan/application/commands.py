@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import PurePosixPath
 
 from .. import domain
-from . import plan_application, projections, runtime
+from . import closeability, plan_application, projections, runtime
 
 
 def start_plan(title: str) -> domain.Plan:
@@ -142,6 +142,7 @@ def ask_stage_question(title: str, explanation: str) -> domain.Plan:
 def close_plan(reason: str) -> domain.Plan:
     plan_runtime = runtime.current_runtime()
     plan_app = runtime.current_plan_application(plan_runtime)
+    closeability.require_plan_closeable(plan_app.get_active_plan())
     return plan_app.close_active_plan(reason)
 
 

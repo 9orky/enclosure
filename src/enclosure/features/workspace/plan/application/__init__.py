@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from . import closeability
 from .commands import (
     advance_plan,
     ask_stage_question,
@@ -23,6 +24,7 @@ __all__ = [
     "ask_stage_question",
     "answer_stage_question",
     "close_plan",
+    "closeability",
     "PlanApplication",
     "plan_status",
     "PlanStatusReport",
