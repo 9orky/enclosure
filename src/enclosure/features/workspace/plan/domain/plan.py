@@ -32,6 +32,7 @@ class ProjectionRecord:
     id: str
     path: str
     stage: str
+    content: str
 
 
 class PlanRegistry(Aggregate):
@@ -179,15 +180,34 @@ class Plan(Aggregate):
         projection_id: str,
         path: str,
         stage: str,
+        content: str,
     ) -> None:
-        self._record_projection(projection_id, path, stage)
+        self._record_projection(projection_id, path, stage, content)
 
-    @event("ProjectionRecorded")
-    def _record_projection(self, projection_id: str, path: str, stage: str) -> None:
+    class ProjectionRecorded(Aggregate.Event):
+        class_version = 2
+        projection_id: str
+        path: str
+        stage: str
+        content: str
+
+        @staticmethod
+        def upcast_v1_v2(state: dict) -> None:
+            state["content"] = ""
+
+    @event(ProjectionRecorded)
+    def _record_projection(
+        self,
+        projection_id: str,
+        path: str,
+        stage: str,
+        content: str,
+    ) -> None:
         self.projections[projection_id] = ProjectionRecord(
             id=projection_id,
             path=path,
             stage=stage,
+            content=content,
         )
 
     def request_roll(self, reason: str, requested_stage: str) -> None:

@@ -26,7 +26,12 @@ def start_plan(title: str) -> domain.Plan:
     projection = stage.scaffold(stage_input)
     projections.record_stage_projection(plan_runtime, plan, projection)
     plan_app.save(plan)
-    projections.write_stage_projection(plan_runtime, plan, projection)
+    projections.write_stage_projection(
+        plan_runtime,
+        plan,
+        projection,
+        plan_app.notification_log_position(),
+    )
     return plan_app.get_plan(domain.PlanId(plan.id))
 
 
@@ -59,6 +64,7 @@ def _advance_plan(
         plan_runtime,
         advanced.plan,
         advanced.next_projection,
+        plan_app.notification_log_position(),
     )
     return plan_app.get_plan(domain.PlanId(advanced.plan.id))
 
@@ -94,7 +100,12 @@ def put_stage_artifact(path: str, content: str) -> domain.Plan:
     )
     projections.record_stage_projection(plan_runtime, plan, projection)
     plan_app.save(plan)
-    projections.write_stage_projection(plan_runtime, plan, projection)
+    projections.write_stage_projection(
+        plan_runtime,
+        plan,
+        projection,
+        plan_app.notification_log_position(),
+    )
     return plan_app.get_plan(domain.PlanId(plan.id))
 
 

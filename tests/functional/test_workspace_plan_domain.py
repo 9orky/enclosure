@@ -43,7 +43,7 @@ def test_plan_reconstructs_workflow_state_from_decorated_events() -> None:
         False,
         "draft",
     )
-    plan.record_projection("plan-hash", "PLAN.md", "plan")
+    plan.record_projection("plan-hash", "PLAN.md", "plan", "# Plan\n")
     plan.request_roll("workspace plan roll", "plan")
     plan.close("Done", "workspace plan close")
 
@@ -59,6 +59,7 @@ def test_plan_reconstructs_workflow_state_from_decorated_events() -> None:
         domain.QuestionStatus.RESOLVED
     )
     assert reconstructed.projections["plan-hash"].path == "PLAN.md"
+    assert reconstructed.projections["plan-hash"].content == "# Plan\n"
     assert reconstructed.stage_outputs["draft"]["next_stage"] == "plan"
     assert reconstructed.roll_requests == ("workspace plan roll",)
     assert reconstructed.close_reason == "Done"

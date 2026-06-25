@@ -261,6 +261,17 @@ class PlanApplication(application.Application[UUID]):
                 yield self.mapper.to_domain_event(notification)
             start = notifications[-1].id + 1
 
+    def notification_log_position(self) -> int:
+        position = 0
+        start = 1
+        limit = self.log_section_size
+        while True:
+            notifications = self.notification_log.select(start=start, limit=limit)
+            if not notifications:
+                return position
+            position = notifications[-1].id
+            start = position + 1
+
 
 __all__ = [
     "LEGACY_REGISTRY_MIGRATION_DEADLINE",

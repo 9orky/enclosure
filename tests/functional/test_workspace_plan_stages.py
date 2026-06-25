@@ -212,9 +212,11 @@ def test_filesystem_projection_store_writes_projection(tmp_path: Path) -> None:
     )
 
     store.write_projection(artifact)
+    store.record_tracking(12)
 
     assert (tmp_path / "plans" / "SCHEMAS.md").read_text(encoding="utf-8") == "# Schemas\n"
     assert store.content_hash("# Schemas\n")
+    assert store.tracking_position() == 12
 
 
 def test_filesystem_stage_catalog_loads_concrete_stage_order() -> None:

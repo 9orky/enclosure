@@ -31,8 +31,23 @@ class FilesystemProjectionStore:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(artifact.content, encoding="utf-8")
 
+    def tracking_position(self) -> int:
+        tracking_path = self._tracking_path()
+        if not tracking_path.is_file():
+            return 0
+        content = tracking_path.read_text(encoding="utf-8").strip()
+        return int(content or "0")
+
+    def record_tracking(self, notification_id: int) -> None:
+        tracking_path = self._tracking_path()
+        tracking_path.parent.mkdir(parents=True, exist_ok=True)
+        tracking_path.write_text(str(notification_id), encoding="utf-8")
+
     def content_hash(self, content: str) -> str:
         return hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+    def _tracking_path(self) -> Path:
+        return self.root / ".projection-tracking"
 
 
 __all__ = ["FilesystemProjectionStore"]
