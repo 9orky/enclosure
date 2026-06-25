@@ -5,12 +5,15 @@ from pathlib import Path
 from enclosure.features.workspace.plan import domain
 from enclosure.features.workspace.plan.application import plan_application, projections
 from enclosure.features.workspace.plan.application import runtime as plan_runtime_module
+from enclosure.features.workspace.plan.infrastructure import EventsourcingSQLitePersistence
 
 
 def _runtime(project_root: Path) -> plan_runtime_module._Runtime:
     return plan_runtime_module._Runtime(
         project_root=project_root,
-        database_path=project_root / ".enclosure" / ".cache" / "plans.sqlite",
+        persistence=EventsourcingSQLitePersistence.for_workspace_cache(
+            project_root / ".enclosure" / ".cache"
+        ),
     )
 
 

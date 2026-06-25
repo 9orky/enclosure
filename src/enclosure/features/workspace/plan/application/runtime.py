@@ -12,7 +12,11 @@ from . import plan_application
 @dataclass(frozen=True)
 class _Runtime:
     project_root: Path
-    database_path: Path
+    persistence: infrastructure.EventsourcingSQLitePersistence
+
+    @property
+    def database_path(self) -> Path:
+        return self.persistence.database_path
 
 
 def current_runtime() -> _Runtime:
@@ -22,13 +26,14 @@ def current_runtime() -> _Runtime:
         )
     return _Runtime(
         project_root=settings.metadata.project_root,
-        database_path=settings.metadata.cache_dir / "plans.sqlite",
+        persistence=infrastructure.EventsourcingSQLitePersistence.for_workspace_cache(
+            settings.metadata.cache_dir
+        ),
     )
 
 
 def current_plan_application(runtime: _Runtime) -> plan_application.PlanApplication:
-    persistence = infrastructure.EventsourcingSQLitePersistence(runtime.database_path)
-    return plan_application.PlanApplication(env=persistence.environment())
+    return plan_application.PlanApplication(env=runtime.persistence.environment())
 
 
 def projection_store(

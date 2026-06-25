@@ -4,6 +4,7 @@ from pathlib import Path
 
 from enclosure.features.workspace.plan import domain
 from enclosure.features.workspace.plan.application import plan_application
+from enclosure.features.workspace.plan.infrastructure import DEFAULT_DATABASE_NAME
 
 
 def _resolved_draft_projection() -> domain.StageProjection:
@@ -51,10 +52,11 @@ def _resolved_draft_projection() -> domain.StageProjection:
 
 def test_plan_application_reports_status_and_snapshot_policy() -> None:
     app = plan_application.PlanApplication()
+    database_path = Path(DEFAULT_DATABASE_NAME)
 
-    empty_status = app.plan_status(Path("."), Path("plans.sqlite"))
+    empty_status = app.plan_status(Path("."), database_path)
     created = app.create_plan("Application Status")
-    active_status = app.plan_status(Path("."), Path("plans.sqlite"))
+    active_status = app.plan_status(Path("."), database_path)
 
     assert empty_status.current_plan_id == ""
     assert empty_status.snapshot_policy == plan_application.SNAPSHOT_POLICY
@@ -101,7 +103,7 @@ def test_plan_application_roll_and_close_are_event_store_commands() -> None:
     assert closed.state == domain.PlanState.COMPLETE
     assert not closed.active
     assert closed.close_reason == "done"
-    assert app.plan_status(Path("."), Path("plans.sqlite")).current_plan_id == ""
+    assert app.plan_status(Path("."), Path(DEFAULT_DATABASE_NAME)).current_plan_id == ""
 
 
 def test_plan_application_legacy_adapter_reads_notification_log_sections() -> None:
