@@ -14,8 +14,8 @@ class FilesystemProjectionStore:
     def read_text(self, path: str) -> str:
         return (self.root / path).read_text(encoding="utf-8")
 
-    def write_text(self, path: str, content: str) -> domain.ProjectionRecord:
-        return self.write_projection(
+    def write_text(self, path: str, content: str) -> None:
+        self.write_projection(
             domain.ProjectedArtifact(
                 path=path,
                 content=content,
@@ -26,15 +26,10 @@ class FilesystemProjectionStore:
     def write_projection(
         self,
         artifact: domain.ProjectedArtifact,
-    ) -> domain.ProjectionRecord:
+    ) -> None:
         target = self.root / artifact.path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(artifact.content, encoding="utf-8")
-        return domain.ProjectionRecord(
-            id=self.content_hash(artifact.content),
-            path=artifact.path,
-            stage=artifact.artifact_kind,
-        )
 
     def content_hash(self, content: str) -> str:
         return hashlib.sha256(content.encode("utf-8")).hexdigest()

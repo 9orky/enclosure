@@ -52,12 +52,16 @@ def validate_rule_graph(
     findings: list[RuleGraphFinding] = []
 
     for document in documents_:
-        if document.read_directly and not document.entrypoint:
+        if (
+            document.document_class is documents.RuleDocumentClass.NAVIGATIONAL
+            and document.read_directly
+            and not document.entrypoint
+        ):
             findings.append(
                 _finding(
                     document.path,
                     "invalid-direct-read",
-                    "Only entrypoint rule documents may be marked read_directly.",
+                    "Only entrypoint navigational documents may be marked read_directly.",
                 )
             )
 

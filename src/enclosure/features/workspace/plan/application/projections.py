@@ -11,11 +11,10 @@ def read_stage_projection(
 ) -> domain.StageProjection:
     store = runtime.projection_store(plan_runtime, plan)
     artifacts: list[domain.ProjectedArtifact] = []
-    artifact_kinds: dict[str, str] = {}
-    for file_model in stage.file_models(
+    file_models = stage.file_models(
         domain.StageInput(stage_id=stage.stage_id(), data_objects=[])
-    ):
-        artifact_kinds[file_model.path] = file_model.artifact_kind
+    )
+    for file_model in file_models:
         if "{" in file_model.path:
             continue
         artifacts.append(
@@ -33,22 +32,21 @@ def read_stage_projection(
             domain.ProjectedArtifact(
                 path=record.path,
                 content=store.read_text(record.path),
-                artifact_kind=artifact_kinds.get(
-                    record.path,
-                    _artifact_kind_from_path(record.path),
-                ),
+                artifact_kind=_artifact_kind_for_path(file_models, record.path),
             )
         )
         artifact_paths.add(record.path)
     return domain.StageProjection(stage_id=stage.stage_id(), artifacts=artifacts)
 
 
-def _artifact_kind_from_path(path: str) -> str:
-    if path.endswith(".mermaid"):
-        return "mermaid"
-    if path.endswith(".md"):
-        return "markdown"
-    return "text"
+def _artifact_kind_for_path(
+    file_models: list[domain.StageFileModel],
+    path: str,
+) -> str:
+    for file_model in file_models:
+        if file_model.matches_path(path):
+            return file_model.artifact_kind
+    raise ValueError(f"Projection path is not declared by the stage file model: {path}")
 
 
 def record_projection_questions(

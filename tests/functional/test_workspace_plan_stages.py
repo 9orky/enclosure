@@ -41,6 +41,19 @@ def test_epics_stage_owns_native_mermaid_schema_sources() -> None:
     ]
 
 
+def test_stage_file_model_matches_declared_path_templates() -> None:
+    file_model = domain.StageFileModel(
+        path="epics/{epic_id}/EPIC.md",
+        artifact_kind="markdown",
+        model_kind="epic_package",
+        native_schema_source=False,
+    )
+
+    assert file_model.matches_path("epics/customer-import/EPIC.md")
+    assert not file_model.matches_path("epics/customer-import/flows.mermaid")
+    assert not file_model.matches_path("notes/customer-import/EPIC.md")
+
+
 def test_stage_registry_uses_stage_ids_without_switching_on_types() -> None:
     registry = domain.StageRegistry(
         stages=[
@@ -102,11 +115,10 @@ def test_filesystem_projection_store_writes_projection(tmp_path: Path) -> None:
         artifact_kind="markdown",
     )
 
-    record = store.write_projection(artifact)
+    store.write_projection(artifact)
 
     assert (tmp_path / "plans" / "SCHEMAS.md").read_text(encoding="utf-8") == "# Schemas\n"
-    assert record.path == "plans/SCHEMAS.md"
-    assert record.id == store.content_hash("# Schemas\n")
+    assert store.content_hash("# Schemas\n")
 
 
 def test_filesystem_stage_catalog_loads_concrete_stage_order() -> None:

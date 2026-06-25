@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from .. import plan, stage_data
+from .. import stage_data
 
 
 class ProjectionStore(Protocol):
@@ -12,7 +12,7 @@ class ProjectionStore(Protocol):
     def write_projection(
         self,
         artifact: stage_data.ProjectedArtifact,
-    ) -> plan.ProjectionRecord:
+    ) -> None:
         ...
 
     def content_hash(self, content: str) -> str:

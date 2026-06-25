@@ -18,6 +18,7 @@ class RuleDocumentClass(StrEnum):
     NAVIGATIONAL = "navigational"
     POLICY = "policy"
     EXECUTION = "execution"
+    RULE = "rule"
 
     @classmethod
     def from_literal(cls, value: str) -> RuleDocumentClass:

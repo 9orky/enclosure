@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Any
 
 from . import questions
@@ -19,6 +20,13 @@ class StageFileModel:
     artifact_kind: str
     model_kind: str
     native_schema_source: bool
+
+    def matches_path(self, path: str) -> bool:
+        if "{" not in self.path:
+            return self.path == path
+        pattern = re.escape(self.path)
+        pattern = re.sub(r"\\\{[^}]+\\\}", r"[^/]+", pattern)
+        return re.fullmatch(pattern, path) is not None
 
 
 @dataclass(frozen=True)

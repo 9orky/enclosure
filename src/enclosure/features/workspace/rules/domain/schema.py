@@ -78,6 +78,17 @@ class RuleDocumentSchema(BaseModel):
         )
 
     @classmethod
+    def rule(cls) -> RuleDocumentSchema:
+        return cls(
+            document_class=documents.RuleDocumentClass.RULE,
+            section_requirements=(
+                RuleSectionRequirement(headings=("Source Of Truth",)),
+                RuleSectionRequirement(headings=("Complete Diagram Standard",)),
+                RuleSectionRequirement(headings=("Review Checks",)),
+            ),
+        )
+
+    @classmethod
     def local_policy(cls) -> RuleDocumentSchema:
         return cls(
             document_class=documents.RuleDocumentClass.POLICY,

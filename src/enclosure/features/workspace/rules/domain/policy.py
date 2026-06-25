@@ -11,6 +11,7 @@ class RuleSchemaPolicy:
         *,
         navigational_schema: schema.RuleDocumentSchema,
         policy_schema: schema.RuleDocumentSchema,
+        rule_schema: schema.RuleDocumentSchema,
         local_policy_schema: schema.RuleDocumentSchema,
         execution_calibration_schema: schema.RuleDocumentSchema,
         execution_big_picture_schema: schema.RuleDocumentSchema,
@@ -20,6 +21,7 @@ class RuleSchemaPolicy:
     ) -> None:
         self._navigational_schema = navigational_schema
         self._policy_schema = policy_schema
+        self._rule_schema = rule_schema
         self._local_policy_schema = local_policy_schema
         self._execution_calibration_schema = execution_calibration_schema
         self._execution_big_picture_schema = execution_big_picture_schema
@@ -47,6 +49,7 @@ class RuleSchemaPolicy:
         return cls(
             navigational_schema=schema.RuleDocumentSchema.navigational(),
             policy_schema=schema.RuleDocumentSchema.policy(),
+            rule_schema=schema.RuleDocumentSchema.rule(),
             local_policy_schema=schema.RuleDocumentSchema.local_policy(),
             execution_calibration_schema=schema.RuleDocumentSchema.execution_calibration(),
             execution_big_picture_schema=schema.RuleDocumentSchema.execution_big_picture(),
@@ -68,6 +71,8 @@ class RuleSchemaPolicy:
             if scope is documents.RuleDocumentScope.LOCAL:
                 return self._local_policy_schema
             return self._policy_schema
+        if document_class is documents.RuleDocumentClass.RULE:
+            return self._rule_schema
         if scope is documents.RuleDocumentScope.LOCAL:
             return self._local_execution_schema
         if stage == "calibration":

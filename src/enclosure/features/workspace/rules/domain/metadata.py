@@ -54,10 +54,17 @@ class ExecutionRuleDocumentMetadata(RuleDocumentMetadataBase):
     same_artifact_family: str
 
 
+class RuleRuleDocumentMetadata(RuleDocumentMetadataBase):
+    doc_class: Literal["rule"]
+    rule_kind: str
+    read_strategy: str = ""
+
+
 RuleDocumentMetadata = (
     NavigationalRuleDocumentMetadata
     | PolicyRuleDocumentMetadata
     | ExecutionRuleDocumentMetadata
+    | RuleRuleDocumentMetadata
 )
 _RULE_DOCUMENT_METADATA_ADAPTER = TypeAdapter(RuleDocumentMetadata)
 
@@ -91,6 +98,7 @@ __all__ = [
     "ExecutionRuleDocumentMetadata",
     "NavigationalRuleDocumentMetadata",
     "PolicyRuleDocumentMetadata",
+    "RuleRuleDocumentMetadata",
     "RuleDocumentMetadata",
     "RuleDocumentMetadataBase",
     "RuleDocumentParseError",
