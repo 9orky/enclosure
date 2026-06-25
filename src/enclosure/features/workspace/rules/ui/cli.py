@@ -77,13 +77,13 @@ def route_command(
     if not raw_tags and not raw_paths and not task:
         raise ValueError("At least one --tag, --path, or --task is required")
 
-    plan = application.build_rule_read_plan(
+    route = application.build_rule_read_route(
         tuple(raw_tags or ()),
         paths=tuple(raw_paths or ()),
         task=task,
     )
-    ui.render(plan, template_name="route.tmpl", context={"plan": plan})
-    if not plan.found:
+    ui.render(route, template_name="route.tmpl", context={"route": route})
+    if not route.found:
         ui.exit_with_error()
 
 

@@ -67,7 +67,7 @@ class PlanStage(
         self,
         stage_input: stage_data.StageInput,
     ) -> stage_data.StageProjection:
-        title = "Planning Workflow"
+        title = "Stage Workflow"
         if stage_input.data_objects:
             title = str(stage_input.data_objects[0].values.get("title", title))
         plan_lines = [

@@ -17,7 +17,7 @@ class RuleGraphFinding(BaseModel):
     violation: documents.RuleSchemaViolation
 
 
-class RuleReadStep(BaseModel):
+class RuleReadEntry(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     path: Path
@@ -29,18 +29,18 @@ class RuleReadStep(BaseModel):
     local_supplement: bool = False
 
 
-class RuleReadPlan(BaseModel):
+class RuleReadRoute(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     requested_tags: tuple[str, ...]
     available_tags: tuple[str, ...]
-    steps: tuple[RuleReadStep, ...]
+    entries: tuple[RuleReadEntry, ...]
     tag_selections: tuple[inference.RuleTagSelection, ...] = ()
     stop_point: str = ""
 
     @property
     def found(self) -> bool:
-        return bool(self.steps)
+        return bool(self.entries)
 
 
 def validate_rule_graph(
@@ -115,18 +115,18 @@ def validate_rule_graph(
     return tuple(findings)
 
 
-def build_rule_read_plan(
+def build_rule_read_route(
     documents_: tuple[documents.RuleDocument, ...],
     requested_tags: tuple[str, ...],
     tag_selections: tuple[inference.RuleTagSelection, ...],
-) -> RuleReadPlan:
+) -> RuleReadRoute:
     normalized_tags = _normalize_tags(requested_tags)
     available_tags = _available_tags(documents_)
     if not normalized_tags:
-        return RuleReadPlan(
+        return RuleReadRoute(
             requested_tags=(),
             available_tags=available_tags,
-            steps=(),
+            entries=(),
             tag_selections=tag_selections,
         )
 
@@ -134,7 +134,7 @@ def build_rule_read_plan(
     supplements_by_target = _supplements_by_target(documents_, documents_by_path)
     parent_paths = _navigation_parent_paths(documents_, documents_by_path)
     target_documents = _route_targets(documents_, normalized_tags, documents_by_path)
-    step_paths: list[tuple[Path, bool, str]] = []
+    route_paths: list[tuple[Path, bool, str]] = []
     seen: set[Path] = set()
 
     for target in target_documents:
@@ -149,16 +149,16 @@ def build_rule_read_plan(
                 requested_tags=normalized_tags,
                 is_target=index == len(path) - 1,
             )
-            _append_step_path(step_paths, seen, path_item, False, reason)
+            _append_route_path(route_paths, seen, path_item, False, reason)
             _append_local_supplements(
-                step_paths,
+                route_paths,
                 seen,
                 path_item,
                 supplements_by_target,
             )
 
-    steps = tuple(
-        RuleReadStep(
+    entries = tuple(
+        RuleReadEntry(
             path=path,
             reason=reason,
             document_class=documents_by_path[path].document_class,
@@ -167,15 +167,15 @@ def build_rule_read_plan(
             tags=documents_by_path[path].tags,
             local_supplement=local_supplement,
         )
-        for path, local_supplement, reason in step_paths
+        for path, local_supplement, reason in route_paths
         if path in documents_by_path
     )
-    return RuleReadPlan(
+    return RuleReadRoute(
         requested_tags=normalized_tags,
         available_tags=available_tags,
-        steps=steps,
+        entries=entries,
         tag_selections=tag_selections,
-        stop_point=steps[-1].path.as_posix() if steps else "",
+        stop_point=entries[-1].path.as_posix() if entries else "",
     )
 
 
@@ -381,24 +381,24 @@ def _route_reason(
 
 
 def _append_local_supplements(
-    step_paths: list[tuple[Path, bool, str]],
+    route_paths: list[tuple[Path, bool, str]],
     seen: set[Path],
     target_path: Path,
     supplements_by_target: dict[Path, tuple[Path, ...]],
 ) -> None:
     for supplement_path in supplements_by_target.get(target_path, ()):
         reason = f"Local supplement tightening {target_path.as_posix()}."
-        _append_step_path(step_paths, seen, supplement_path, True, reason)
+        _append_route_path(route_paths, seen, supplement_path, True, reason)
         _append_local_supplements(
-            step_paths,
+            route_paths,
             seen,
             supplement_path,
             supplements_by_target,
         )
 
 
-def _append_step_path(
-    step_paths: list[tuple[Path, bool, str]],
+def _append_route_path(
+    route_paths: list[tuple[Path, bool, str]],
     seen: set[Path],
     path: Path,
     local_supplement: bool,
@@ -407,7 +407,7 @@ def _append_step_path(
     if path in seen:
         return
     seen.add(path)
-    step_paths.append((path, local_supplement, reason))
+    route_paths.append((path, local_supplement, reason))
 
 
 def _available_tags(documents_: tuple[documents.RuleDocument, ...]) -> tuple[str, ...]:
@@ -452,9 +452,9 @@ def _finding(path: Path, code: str, message: str) -> RuleGraphFinding:
 
 __all__ = [
     "RuleGraphFinding",
-    "RuleReadPlan",
-    "RuleReadStep",
+    "RuleReadEntry",
+    "RuleReadRoute",
     "available_rule_tags",
-    "build_rule_read_plan",
+    "build_rule_read_route",
     "validate_rule_graph",
 ]

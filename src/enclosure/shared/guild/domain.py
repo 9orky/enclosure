@@ -22,7 +22,7 @@ GUILD_GLOSSARY: tuple[GuildTerm, ...] = (
     ),
     GuildTerm(
         "Plumb",
-        "The discovery pass before planning or edits. Plumb finds ownership, seams, "
+        "The discovery pass before stage configuration or edits. Plumb finds ownership, seams, "
         "dependency direction, risk, and the right checks.",
     ),
     GuildTerm(

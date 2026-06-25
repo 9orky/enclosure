@@ -83,7 +83,9 @@ class RuleDocumentSchema(BaseModel):
             document_class=documents.RuleDocumentClass.RULE,
             section_requirements=(
                 RuleSectionRequirement(headings=("Source Of Truth",)),
-                RuleSectionRequirement(headings=("Complete Diagram Standard",)),
+                RuleSectionRequirement(headings=("Flowcharts",)),
+                RuleSectionRequirement(headings=("Class Diagrams",)),
+                RuleSectionRequirement(headings=("Tree Diagrams",)),
                 RuleSectionRequirement(headings=("Review Checks",)),
             ),
         )
@@ -99,20 +101,14 @@ class RuleDocumentSchema(BaseModel):
         )
 
     @classmethod
-    def execution_big_picture(cls) -> RuleDocumentSchema:
+    def execution_stage_loop(cls) -> RuleDocumentSchema:
         return cls(
             document_class=documents.RuleDocumentClass.EXECUTION,
             section_requirements=(
-                RuleSectionRequirement(headings=("Required Sections",)),
-                RuleSectionRequirement(headings=("Optional Sections",), required=False),
-                RuleSectionRequirement(headings=("File Tree Rules",)),
-                RuleSectionRequirement(headings=("Phase Rules",)),
-                RuleSectionRequirement(
-                    headings=("Strategic Model Gate",),
-                    required=False,
-                ),
+                RuleSectionRequirement(headings=("Core Rule",)),
+                RuleSectionRequirement(headings=("Loop",)),
+                RuleSectionRequirement(headings=("Artifact Rules",)),
                 RuleSectionRequirement(headings=("Review Checks",)),
-                RuleSectionRequirement(headings=("Handoff Checks",)),
             ),
         )
 
@@ -126,20 +122,6 @@ class RuleDocumentSchema(BaseModel):
                 RuleSectionRequirement(headings=("Human Gates",)),
                 RuleSectionRequirement(headings=("Drift Controls",)),
                 RuleSectionRequirement(headings=("Codification Rules",)),
-                RuleSectionRequirement(headings=("Review Checks",)),
-                RuleSectionRequirement(headings=("Handoff Checks",)),
-            ),
-        )
-
-    @classmethod
-    def execution_step(cls) -> RuleDocumentSchema:
-        return cls(
-            document_class=documents.RuleDocumentClass.EXECUTION,
-            section_requirements=(
-                RuleSectionRequirement(headings=("Required Sections",)),
-                RuleSectionRequirement(headings=("Implementation Tree Rules",)),
-                RuleSectionRequirement(headings=("Step Contract Rules",)),
-                RuleSectionRequirement(headings=("Execution Rules",)),
                 RuleSectionRequirement(headings=("Review Checks",)),
                 RuleSectionRequirement(headings=("Handoff Checks",)),
             ),

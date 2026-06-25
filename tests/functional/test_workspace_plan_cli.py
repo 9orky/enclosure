@@ -21,41 +21,41 @@ def test_plan_without_active_event_stream_reports_none(tmp_path: Path) -> None:
 def test_plan_start_records_active_plan_event(tmp_path: Path) -> None:
     project_root = copy_fixture(tmp_path, "clean_architecture")
 
-    started = run_cli(project_root, "workspace", "plan", "start", "Planning Workflow")
+    started = run_cli(project_root, "workspace", "plan", "start", "Stage Workflow")
     status = run_cli(project_root, "workspace", "plan")
 
     assert started.returncode == 0, started.stderr
     assert "Started plan " in started.stdout
-    assert "Title: Planning Workflow" in started.stdout
+    assert "Title: Stage Workflow" in started.stdout
     assert "State: active" in started.stdout
     assert "Version: 2" in started.stdout
     assert status.returncode == 0, status.stderr
     assert "Current plan: none" not in status.stdout
-    assert "Title: Planning Workflow" in status.stdout
+    assert "Title: Stage Workflow" in status.stdout
     assert "Questions: 0" in status.stdout
     assert "Projections: 1" in status.stdout
     assert (
-        project_root / ".enclosure" / "plans" / "planning-workflow" / "DRAFT.md"
+        project_root / ".enclosure" / "plans" / "stage-workflow" / "DRAFT.md"
     ).is_file()
 
 
 def test_plan_next_projects_plan_stage_files(tmp_path: Path) -> None:
     project_root = copy_fixture(tmp_path, "clean_architecture")
 
-    started = run_cli(project_root, "workspace", "plan", "start", "Planning Workflow")
+    started = run_cli(project_root, "workspace", "plan", "start", "Stage Workflow")
     blocked = run_cli(project_root, "workspace", "plan", "next")
     answered = run_cli(
         project_root,
         "workspace",
         "plan",
         "answer",
-        "Is the draft ready for planning?",
-        "The draft is ready for planning.",
+        "Is the draft ready to advance?",
+        "The draft is ready to advance.",
     )
     advanced = run_cli(project_root, "workspace", "plan", "next")
     status = run_cli(project_root, "workspace", "plan")
 
-    plan_root = project_root / ".enclosure" / "plans" / "planning-workflow"
+    plan_root = project_root / ".enclosure" / "plans" / "stage-workflow"
 
     assert started.returncode == 0, started.stderr
     assert blocked.returncode == 1
@@ -74,9 +74,9 @@ def test_plan_next_uses_event_sourced_questions_not_stage_file_questions(
 ) -> None:
     project_root = copy_fixture(tmp_path, "clean_architecture")
 
-    started = run_cli(project_root, "workspace", "plan", "start", "Planning Workflow")
+    started = run_cli(project_root, "workspace", "plan", "start", "Stage Workflow")
     draft_path = (
-        project_root / ".enclosure" / "plans" / "planning-workflow" / "DRAFT.md"
+        project_root / ".enclosure" / "plans" / "stage-workflow" / "DRAFT.md"
     )
     draft_content = draft_path.read_text(encoding="utf-8")
     draft_path.write_text(
@@ -155,7 +155,7 @@ def test_plan_next_uses_event_sourced_questions_not_stage_file_questions(
 def test_plan_agent_reports_current_stage_file_models(tmp_path: Path) -> None:
     project_root = copy_fixture(tmp_path, "clean_architecture")
 
-    started = run_cli(project_root, "workspace", "plan", "start", "Planning Workflow")
+    started = run_cli(project_root, "workspace", "plan", "start", "Stage Workflow")
     agent = run_cli(project_root, "workspace", "plan", "agent")
 
     assert started.returncode == 0, started.stderr
@@ -249,16 +249,16 @@ def test_plan_next_projects_epic_package_and_completes(
 ) -> None:
     project_root = copy_fixture(tmp_path, "clean_architecture")
 
-    started = run_cli(project_root, "workspace", "plan", "start", "Planning Workflow")
+    started = run_cli(project_root, "workspace", "plan", "start", "Stage Workflow")
     epic_root = (
         project_root
         / ".enclosure"
         / "plans"
-        / "planning-workflow"
+        / "stage-workflow"
         / "epics"
         / "your-use-case-name"
     )
-    plan_root = project_root / ".enclosure" / "plans" / "planning-workflow"
+    plan_root = project_root / ".enclosure" / "plans" / "stage-workflow"
 
     draft_answered = run_cli(
         project_root,
@@ -322,7 +322,7 @@ def test_plan_next_projects_epic_package_and_completes(
 def test_plan_roll_requires_resolved_stage_question(tmp_path: Path) -> None:
     project_root = copy_fixture(tmp_path, "clean_architecture")
 
-    started = run_cli(project_root, "workspace", "plan", "start", "Planning Workflow")
+    started = run_cli(project_root, "workspace", "plan", "start", "Stage Workflow")
     rolled = run_cli(project_root, "workspace", "plan", "roll")
 
     assert started.returncode == 0, started.stderr

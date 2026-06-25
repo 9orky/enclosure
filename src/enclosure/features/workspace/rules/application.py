@@ -61,12 +61,12 @@ def build_rule_schema_report() -> documents.RuleSchemaReport:
     )
 
 
-def build_rule_read_plan(
+def build_rule_read_route(
     tags: tuple[str, ...],
     *,
     paths: tuple[Path, ...],
     task: str,
-) -> graph.RuleReadPlan:
+) -> graph.RuleReadRoute:
     project_root = settings.metadata.project_root
     architecture_settings = settings.query("architecture")
     rules_root = settings.metadata.rules_dir
@@ -82,7 +82,7 @@ def build_rule_read_plan(
 
     if parse_errors:
         raise ValueError(
-            "Rule route planning requires parseable rule documents: "
+            "Rule routing requires parseable rule documents: "
             + "; ".join(parse_errors)
         )
 
@@ -98,7 +98,7 @@ def build_rule_read_plan(
         )
     )
     selected_tags = inference.selected_tags(tag_selections)
-    return graph.build_rule_read_plan(
+    return graph.build_rule_read_route(
         tuple(rule_documents),
         selected_tags,
         tag_selections,
@@ -351,6 +351,6 @@ def _matches_any(
 
 
 __all__ = [
-    "build_rule_read_plan",
+    "build_rule_read_route",
     "build_rule_schema_report",
 ]

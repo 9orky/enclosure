@@ -10,7 +10,7 @@ from enclosure.shared import ui
 from .. import application
 
 app = typer.Typer(
-    help="Manage the active event-sourced planning workflow.",
+    help="Manage the active event-sourced workspace plan stage loop.",
     invoke_without_command=True,
 )
 

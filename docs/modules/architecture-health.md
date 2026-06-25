@@ -16,7 +16,7 @@ Use `enclosure architecture health` for the architecture drilldown after root `e
 - This command is the architecture collector: boundaries, shape, map, clusters, pressure, and coherence all appear here.
 - Fix boundary and shape findings first.
 - Treat unknown files as classification signals.
-- Treat hotspots, pressure, clusters, and coherence as planning signals even when no blocking errors exist.
+- Treat hotspots, pressure, clusters, and coherence as stage-loop signals even when no blocking errors exist.
 - Use focused commands when the health report points at a specific concern.
 
 ## Related Commands

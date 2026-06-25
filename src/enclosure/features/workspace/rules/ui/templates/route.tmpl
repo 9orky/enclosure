@@ -1,24 +1,24 @@
 Rule read route.
-Selected tags: {{ plan.requested_tags|join(", ") }}.
-Available tags: {{ plan.available_tags|join(", ") }}.
-{% if plan.tag_selections %}
+Selected tags: {{ route.requested_tags|join(", ") }}.
+Available tags: {{ route.available_tags|join(", ") }}.
+{% if route.tag_selections %}
 Tag selection:
-{% for selection in plan.tag_selections -%}
+{% for selection in route.tag_selections -%}
 - {{ selection.tag }}: {{ selection.reason }}
 {% endfor -%}
 {% endif %}
-{% if plan.found %}
+{% if route.found %}
 Read order:
-{% for step in plan.steps -%}
-- {{ step.path }} [{{ step.scope }}/{{ step.document_class }}]{% if step.local_supplement %} local supplement{% endif %}: {{ step.reason }}
-  Purpose: {{ step.purpose }}
+{% for entry in route.entries -%}
+- {{ entry.path }} [{{ entry.scope }}/{{ entry.document_class }}]{% if entry.local_supplement %} local supplement{% endif %}: {{ entry.reason }}
+  Purpose: {{ entry.purpose }}
 {% endfor -%}
-Stop point: {{ plan.stop_point }}.
+Stop point: {{ route.stop_point }}.
 
 Read receipt:
-- Rules read: {{ plan.steps|map(attribute="path")|join(", ") }}.
-- Reason: selected tags {{ plan.requested_tags|join(", ") }}.
-- Stop point: {{ plan.stop_point }}.
+- Rules read: {{ route.entries|map(attribute="path")|join(", ") }}.
+- Reason: selected tags {{ route.requested_tags|join(", ") }}.
+- Stop point: {{ route.stop_point }}.
 - Focused checks: enclosure workspace rules.
 - Post-change health: enclosure health.
 {% else %}

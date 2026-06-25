@@ -1,5 +1,10 @@
 # Workspace Plan
 
+`workspace plan` is the stage loop for configuring work from draft through
+epics. The agent is the preferred author because it can keep repository
+discovery, stage artifacts, gate questions, and verification aligned. A user may
+drive the same loop through the CLI when needed.
+
 `workspace plan` reports the active plan reconstructed from the event stream.
 
 `workspace plan start TITLE` creates the single active plan. Events are recorded
@@ -19,6 +24,10 @@ current stage. It does not edit markdown artifacts.
 
 `workspace plan next` validates the current stage, records its output, and
 projects the next stage.
+
+Draft is only the first stage. After draft is written, continue with
+`workspace plan next` until epics are projected and the active plan completes,
+or record a blocking question.
 
 `workspace plan restore` restores recorded projection files for the active plan
 from the event stream.

@@ -1,12 +1,12 @@
 # Execution Refinement Method
 
-Execution refinement is the method for narrowing uncertainty without losing the
-approved contract.
+Execution refinement is the stage-loop method for narrowing uncertainty without
+losing the approved contract.
 
 The refinement chain is:
 
 ```text
-calibration -> PLAN.md -> PLAN_STEP_0X.md -> implementation -> reconciliation
+calibration -> draft -> plan -> epics -> implementation -> reconciliation
 ```
 
 ## Calibration
@@ -20,19 +20,21 @@ Calibration discovers the active contract:
 - dependency direction,
 - recipe role when a target is recipe-shaped.
 
-Do not plan from memory when the contract can be read.
+Do not configure stages from memory when the contract can be read.
 
-## Phase Plan
+## Stage Loop
 
-`PLAN.md` is phase-level. It names file tree, goal, phases, acceptance, and open
-questions. It should not contain function-level implementation detail.
+Planning is the agent's process of self-configuring workspace plan stages until
+epics are materialized. The user may also run this process, but the agent is
+preferred because it can keep discovery, stage artifacts, questions, and
+verification aligned.
 
-Approved phase order becomes step order.
+Draft is only the first stage. An agent must continue the loop after draft
+unless the active plan is blocked, explicitly paused, or closed by the user.
 
-## Step Plan
-
-`PLAN_STEP_0X.md` refines one approved phase. It names implementation tree, step
-contract, ordered execution items, verification, and completion state.
+Use `workspace plan agent`, `workspace plan put`, `workspace plan ask`,
+`workspace plan answer`, and `workspace plan next` to keep stage artifacts inside
+the event-sourced workspace plan.
 
 Implementation is valid only while these remain unchanged:
 

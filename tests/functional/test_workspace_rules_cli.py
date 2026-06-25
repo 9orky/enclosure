@@ -86,7 +86,7 @@ def test_rules_route_fails_on_unparseable_rule_documents(tmp_path: Path) -> None
 
     assert result.returncode == 1
     assert result.stdout == ""
-    assert "Rule route planning requires parseable rule documents" in result.stderr
+    assert "Rule routing requires parseable rule documents" in result.stderr
     assert "local/custom/BROKEN.md" in result.stderr
 
 

@@ -1,25 +1,35 @@
 <!-- Generated from feature ui/templates/docs.tmpl files. Do not edit by hand. -->
 
-# Workspace Plan Docs
+# Workspace Plan
 
-Use `enclosure plan` to inspect the current plan folder. Use `enclosure plan <name>` to create a user-owned planning document in `.enclosure/plans/<name>/`.
+`workspace plan` is the stage loop for configuring work from draft through
+epics. The agent is the preferred author because it can keep repository
+discovery, stage artifacts, gate questions, and verification aligned. A user may
+drive the same loop through the CLI when needed.
 
-## When To Use It
+`workspace plan` reports the active plan reconstructed from the event stream.
 
-- Before creating a new module.
-- Before changing a module boundary or public seam.
-- Before asking an agent to implement a feature that needs architecture decisions.
+`workspace plan start TITLE` creates the single active plan. Events are recorded
+by the `eventsourcing` application and persisted through `eventsourcing.sqlite`
+in `.enclosure/.cache/plans.sqlite`.
 
-## How To Respond
+`workspace plan agent` lists the current stage file models.
 
-- Keep exactly one current plan folder in `.enclosure/plans/`.
-- Fill in the plan before implementation begins.
-- Keep plan files inside `.enclosure/plans/<name>/`.
-- Use `--show` to preview the scaffold without writing.
-- Use `--force` only when replacing an existing draft intentionally.
+`workspace plan put PATH` writes current-stage artifact content from stdin. The
+path must match the current stage file model.
 
-## Related Commands
+`workspace plan ask TITLE EXPLANATION` records an open gate question for the
+current stage.
 
-- `enclosure workspace recipe --docs`
-- `enclosure workspace sync --docs`
-- `enclosure architecture health --docs`
+`workspace plan answer TITLE ANSWER` records a resolved gate question for the
+current stage. It does not edit markdown artifacts.
+
+`workspace plan next` validates the current stage, records its output, and
+projects the next stage.
+
+Draft is only the first stage. After draft is written, continue with
+`workspace plan next` until epics are projected and the active plan completes,
+or record a blocking question.
+
+`workspace plan restore` restores recorded projection files for the active plan
+from the event stream.

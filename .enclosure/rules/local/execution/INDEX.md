@@ -3,10 +3,10 @@ doc_class: navigational
 rule_kind: navigation
 scope: local
 audience: agent
-purpose: Route local execution supplements after shared execution guidance.
+purpose: Route local execution supplements after shared stage-loop guidance.
 applies_when:
   - Shared execution guidance is already in scope.
-  - Repository discovery has identified repo-specific execution order or seam-timing decisions.
+  - Repository discovery has identified repo-specific stage order or seam-timing decisions.
 tags:
   - local
   - execution
@@ -18,8 +18,7 @@ entrypoint: true
 read_strategy: progressive
 child_paths:
   - MODULE_START.md
-  - BIG_PICTURE.md
-  - STEP.md
+  - STAGE_LOOP.md
 ---
 
 # Local Execution
@@ -27,17 +26,16 @@ child_paths:
 ## Use This Branch When
 
 - Shared execution rules are already in scope.
-- Phase order, step order, or seam timing needs local detail.
+- Workspace plan stage order or seam timing needs local detail.
 
 ## Stop Or Descend
 
 - Read [MODULE_START.md](MODULE_START.md) before starting feature-module code
   or refactoring a module stream.
-- Read [BIG_PICTURE.md](BIG_PICTURE.md) for local planning order.
-- Read [STEP.md](STEP.md) for local implementation order.
+- Read [STAGE_LOOP.md](STAGE_LOOP.md) for local workspace plan stage-loop order.
 - Stop when shared execution rules are enough.
 
 ## Review Checks
 
 - Shared execution guidance is already in scope.
-- Local artifact matches the current stage.
+- Local artifact matches the active workspace plan stage.

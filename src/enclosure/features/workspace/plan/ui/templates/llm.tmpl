@@ -1,5 +1,9 @@
 # Workspace Plan Command
 
+Use `workspace plan` as the stage loop for configuring work from draft through
+epics. Prefer agent-authored stages; the user may run the same loop through the
+CLI when needed.
+
 Use `workspace plan` to inspect the active plan reconstructed by the
 `eventsourcing` repository.
 
@@ -20,6 +24,10 @@ the current stage. Do not edit markdown artifacts to submit question state.
 
 Use `workspace plan next` only after the current stage artifact and its resolved
 question are present.
+
+Do not stop at draft unless the active plan is blocked, explicitly paused, or
+closed by the user. Advance the loop until epics are projected and the active
+plan completes.
 
 Use `workspace plan restore` to regenerate recorded projection files for the
 active plan from the event stream.

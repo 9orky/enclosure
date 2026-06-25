@@ -14,8 +14,7 @@ class RuleSchemaPolicy:
         rule_schema: schema.RuleDocumentSchema,
         local_policy_schema: schema.RuleDocumentSchema,
         execution_calibration_schema: schema.RuleDocumentSchema,
-        execution_big_picture_schema: schema.RuleDocumentSchema,
-        execution_step_schema: schema.RuleDocumentSchema,
+        execution_stage_loop_schema: schema.RuleDocumentSchema,
         local_execution_schema: schema.RuleDocumentSchema,
         local_max_content_chars: int,
     ) -> None:
@@ -24,8 +23,7 @@ class RuleSchemaPolicy:
         self._rule_schema = rule_schema
         self._local_policy_schema = local_policy_schema
         self._execution_calibration_schema = execution_calibration_schema
-        self._execution_big_picture_schema = execution_big_picture_schema
-        self._execution_step_schema = execution_step_schema
+        self._execution_stage_loop_schema = execution_stage_loop_schema
         self._local_execution_schema = local_execution_schema
         self._local_max_content_chars = local_max_content_chars
 
@@ -52,8 +50,7 @@ class RuleSchemaPolicy:
             rule_schema=schema.RuleDocumentSchema.rule(),
             local_policy_schema=schema.RuleDocumentSchema.local_policy(),
             execution_calibration_schema=schema.RuleDocumentSchema.execution_calibration(),
-            execution_big_picture_schema=schema.RuleDocumentSchema.execution_big_picture(),
-            execution_step_schema=schema.RuleDocumentSchema.execution_step(),
+            execution_stage_loop_schema=schema.RuleDocumentSchema.execution_stage_loop(),
             local_execution_schema=schema.RuleDocumentSchema.local_execution(),
             local_max_content_chars=local_max_content_chars,
         )
@@ -77,9 +74,7 @@ class RuleSchemaPolicy:
             return self._local_execution_schema
         if stage == "calibration":
             return self._execution_calibration_schema
-        if stage == "big_picture":
-            return self._execution_big_picture_schema
-        return self._execution_step_schema
+        return self._execution_stage_loop_schema
 
     @property
     def local_max_content_chars(self) -> int:
