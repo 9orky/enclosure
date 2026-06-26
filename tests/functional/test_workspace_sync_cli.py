@@ -26,15 +26,16 @@ def test_sync_init_creates_packaged_rules_and_update_preserves_them(
     assert "Found .enclosure." in migrate_result.stdout
 
 
-def test_sync_init_without_config_reports_bad_sync_error(tmp_path: Path) -> None:
+def test_sync_init_without_config_bootstraps_contract(tmp_path: Path) -> None:
     project_root = copy_fixture(tmp_path, "no_config_project")
 
     result = run_cli(project_root, "workspace", "sync", "init", "--language", "python")
+    config_path = project_root / ".enclosure" / "enclosure.yaml"
 
-    assert result.returncode == 1
-    assert result.stdout == ""
-    assert "Could not find a configuration file." in result.stderr
-    assert ".enclosure/enclosure.yaml" in result.stderr
+    assert result.returncode == 0, result.stderr
+    assert "Created .enclosure." in result.stdout
+    assert config_path.is_file()
+    assert "language: python" in config_path.read_text(encoding="utf-8")
 
 
 def test_sync_update_repairs_shared_rules_and_preserves_local_rules(

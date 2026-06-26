@@ -6,7 +6,7 @@ from . import queries
 
 def bootstrap_project(*, source_kind: str) -> domain.BootstrapProjectResult:
     return infrastructure.write_plan_materializer.materialize(
-        queries.load_workspace_contract(source_kind).plan_bootstrap()
+        queries.load_bootstrap_workspace_contract(source_kind).plan_bootstrap()
     )
 
 
